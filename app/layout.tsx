@@ -5,6 +5,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CookieConsent from "@/components/ui/CookieConsent";
 import TableMateAIBadge from "@/components/ui/TableMateAIBadge";
+import CartDrawer from "@/components/cart/CartDrawer";
+import ReserveTableModal from "@/components/reservations/ReserveTableModal";
+import { CartProvider } from "@/context/CartContext";
+import { ReservationProvider } from "@/context/ReservationContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -40,11 +44,17 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
-        <Navbar />
-        {children}
-        <CookieConsent />
-        <TableMateAIBadge />
-        <Footer />
+        <CartProvider>
+          <ReservationProvider>
+            <Navbar />
+            {children}
+            <CartDrawer />
+            <ReserveTableModal />
+            <CookieConsent />
+            <TableMateAIBadge />
+            <Footer />
+          </ReservationProvider>
+        </CartProvider>
       </body>
     </html>
   );
