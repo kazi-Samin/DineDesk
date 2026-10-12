@@ -32,7 +32,7 @@ export default function Footer() {
                   className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors"
                   type="submit"
                 >
-                  Subscribe ME
+                  Subscribe
                 </button>
               </form>
             </div>
