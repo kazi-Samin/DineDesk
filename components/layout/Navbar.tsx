@@ -3,10 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
+import { useReservation } from "@/context/ReservationContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { toggleDrawer, totalItemCount } = useCart();
+  const { openReservationModal } = useReservation();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState("Diner");
@@ -67,23 +72,20 @@ export default function Navbar() {
             >
               Browse Restaurants
             </Link>
-            <Link
-              href="/explore"
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs"
+            <button
+              onClick={() => openReservationModal()}
+              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs cursor-pointer"
+              type="button"
             >
               Reserve a Table
-            </Link>
+            </button>
             <div className="relative flex items-center gap-space-xs group">
-              <a
+              <Link
                 className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs"
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setRoleSwitcherOpen(!roleSwitcherOpen);
-                }}
+                href="/dashboard/orders"
               >
                 Dashboard
-              </a>
+              </Link>
               <button
                 aria-label="Switch role"
                 className="text-on-surface-variant hover:text-primary flex items-center focus:outline-none"
@@ -165,13 +167,16 @@ export default function Navbar() {
         <div className="flex items-center gap-space-md shrink-0">
           <button
             aria-label="View cart"
-            className="relative p-space-sm text-on-surface-variant hover:text-primary rounded transition-colors"
+            onClick={toggleDrawer}
+            className="relative p-space-sm text-on-surface-variant hover:text-primary rounded transition-colors cursor-pointer"
             type="button"
           >
             <span className="material-symbols-outlined text-xl">shopping_bag</span>
-            <span className="absolute top-1 right-1 w-4 h-4 bg-secondary text-on-secondary rounded-full font-label-sm text-[10px] leading-4 text-center font-bold">
-              3
-            </span>
+            {totalItemCount > 0 && (
+              <span className="absolute top-1 right-1 w-4 h-4 bg-secondary text-on-secondary rounded-full font-label-sm text-[10px] leading-4 text-center font-bold">
+                {totalItemCount}
+              </span>
+            )}
           </button>
           <button
             aria-label="Toggle theme"
