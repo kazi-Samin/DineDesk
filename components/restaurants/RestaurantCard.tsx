@@ -1,4 +1,7 @@
+"use client";
+
 import { Restaurant } from "@/types/restaurant";
+import { useReservation } from "@/context/ReservationContext";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -6,6 +9,7 @@ interface RestaurantCardProps {
 }
 
 export default function RestaurantCard({ restaurant, viewMode = "grid" }: RestaurantCardProps) {
+  const { openReservationModal } = useReservation();
   if (viewMode === "list") {
     return (
       <article
@@ -141,14 +145,33 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
         </div>
         <div className="pt-space-xs border-t border-outline-variant/50 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
           <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">
-              {restaurant.isOpen
-                ? "schedule"
-                : restaurant.deliveryTime.includes("reservations")
-                ? "event_seat"
-                : "lock_clock"}
-            </span>{" "}
-            {restaurant.deliveryTime}
+            {restaurant.deliveryTime.includes("Reserve") ? (
+              <button
+                onClick={() =>
+                  openReservationModal({
+                    id: restaurant.id,
+                    name: restaurant.name,
+                    neighborhood: restaurant.neighborhood,
+                  })
+                }
+                className="flex items-center gap-1 text-primary-container font-medium hover:underline cursor-pointer"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-sm">restaurant</span>
+                {restaurant.deliveryTime}
+              </button>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  {restaurant.isOpen
+                    ? "schedule"
+                    : restaurant.deliveryTime.includes("reservations")
+                    ? "event_seat"
+                    : "lock_clock"}
+                </span>{" "}
+                {restaurant.deliveryTime}
+              </>
+            )}
           </span>
           <span
             className={`flex items-center gap-1 ${

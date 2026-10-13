@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { TOP_RATED_RESTAURANTS } from "@/data/restaurants";
+import { useReservation } from "@/context/ReservationContext";
 
 export default function TopRatedSection() {
+  const { openReservationModal } = useReservation();
   return (
     <section className="w-full py-space-xl bg-surface-container-low">
       <div className="max-w-[1440px] mx-auto px-margin">
@@ -75,12 +79,19 @@ export default function TopRatedSection() {
                   <span>Table reservations booking 3 days ahead</span>
                 </div>
                 <div className="flex items-center gap-space-sm">
-                  <Link
-                    className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors"
-                    href="/explore"
+                  <button
+                    onClick={() =>
+                      openReservationModal({
+                        id: "izumi-courtyard",
+                        name: "Izumi Courtyard & Robata Grill",
+                        neighborhood: "Gulshan 2 · Park Road",
+                      })
+                    }
+                    className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors cursor-pointer"
+                    type="button"
                   >
                     Book Table or Order
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
@@ -137,11 +148,23 @@ export default function TopRatedSection() {
                   <span>Direct rapid insulated dispatch available</span>
                 </div>
                 <div className="flex items-center gap-space-sm">
+                  <button
+                    onClick={() =>
+                      openReservationModal({
+                        id: "star-kabab-heritage",
+                        name: "Star Kabab & Heritage Biryani",
+                        neighborhood: "Dhanmondi 2",
+                      })
+                    }
+                    className="px-space-md py-space-sm border border-primary-container text-primary-container rounded font-label-md text-label-md hover:bg-surface-container transition-colors"
+                  >
+                    Reserve Table
+                  </button>
                   <Link
                     className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors"
                     href="/explore"
                   >
-                    Book Table or Order
+                    Order Now
                   </Link>
                 </div>
               </div>
@@ -199,12 +222,19 @@ export default function TopRatedSection() {
                   <span>Open garden patio tables available tonight</span>
                 </div>
                 <div className="flex items-center gap-space-sm">
-                  <Link
-                    className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors"
-                    href="/explore"
+                  <button
+                    onClick={() =>
+                      openReservationModal({
+                        id: "le-sourdough-bistro",
+                        name: "Le Sourdough Bistro & Woodfire",
+                        neighborhood: "Banani Rd 10",
+                      })
+                    }
+                    className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors cursor-pointer"
+                    type="button"
                   >
                     Book Table or Order
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>

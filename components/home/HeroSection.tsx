@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useReservation } from "@/context/ReservationContext";
 
 export default function HeroSection() {
   const router = useRouter();
+  const { openReservationModal } = useReservation();
   const [neighborhood, setNeighborhood] = useState("gulshan");
   const [dishQuery, setDishQuery] = useState("");
 
@@ -109,13 +111,14 @@ export default function HeroSection() {
                 <span>Browse Restaurants</span>
                 <span className="material-symbols-outlined text-base">restaurant</span>
               </Link>
-              <Link
-                className="px-space-lg py-3 bg-surface-container-high text-primary rounded font-label-lg text-label-lg hover:bg-surface-container-highest transition-colors inline-flex items-center gap-space-sm"
-                href="/explore"
+              <button
+                onClick={() => openReservationModal()}
+                className="px-space-lg py-3 bg-surface-container-high text-primary rounded font-label-lg text-label-lg hover:bg-surface-container-highest transition-colors inline-flex items-center gap-space-sm cursor-pointer"
+                type="button"
               >
                 <span>Explore Reservations</span>
                 <span className="material-symbols-outlined text-base">table_restaurant</span>
-              </Link>
+              </button>
               <div className="flex items-center gap-space-sm ml-auto pl-space-md text-on-surface-variant hidden md:flex">
                 <div className="flex -space-x-2">
                   <div className="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-[11px] font-bold text-on-primary-fixed">
