@@ -187,11 +187,23 @@ export default function Navbar() {
                 >
                   <div className="flex flex-col">
                     <span>🏪 Restaurant Owner</span>
-                    <span className="text-[10px] text-on-surface-variant">Incoming orders & kitchen</span>
+                    <span className="text-[10px] text-on-surface-variant">Orders &amp; Reservations</span>
                   </div>
                   {selectedRole === "Restaurant Owner" && (
                     <span className="material-symbols-outlined text-sm text-primary-container">check</span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Restaurant Owner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/vendor/reservations");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Table Reservations</span>
+                  <span className="text-[10px] bg-secondary text-on-secondary px-1.5 py-0.2 rounded font-bold">3</span>
                 </button>
                 <button
                   type="button"
@@ -272,7 +284,15 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
             >
-              <span>🏪 Restaurant Owner (Incoming Orders)</span>
+              <span>🏪 Restaurant Owner (Live Orders)</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+            <Link
+              href="/dashboard/vendor/reservations"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
+            >
+              <span>📅 Table Reservations &amp; Floor Plan</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
             <Link

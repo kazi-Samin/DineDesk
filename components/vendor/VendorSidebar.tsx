@@ -81,19 +81,28 @@ export default function VendorSidebar({ pendingCount = 0 }: VendorSidebarProps) 
             )}
           </Link>
 
-          <button
-            type="button"
-            className="w-full flex items-center justify-between px-space-md py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left cursor-pointer"
-            onClick={() => alert("Table Reservations floor plan view is active via customer booking simulator.")}
+          <Link
+            href="/dashboard/vendor/reservations"
+            className={`flex items-center justify-between px-space-md py-2.5 rounded-xl transition-all ${
+              pathname === "/dashboard/vendor/reservations"
+                ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            }`}
           >
             <div className="flex items-center gap-space-sm">
               <span className="material-symbols-outlined text-xl">table_restaurant</span>
               <span className="font-label-lg text-label-lg">Table Reservations</span>
             </div>
-            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-sm text-[11px]">
-              2
+            <span
+              className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full font-label-sm text-[11px] ${
+                pathname === "/dashboard/vendor/reservations"
+                  ? "bg-surface-container-high text-on-surface"
+                  : "bg-surface-container-high text-on-surface"
+              }`}
+            >
+              3
             </span>
-          </button>
+          </Link>
 
           <Link
             href="/explore"
