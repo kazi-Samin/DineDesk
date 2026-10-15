@@ -208,6 +208,17 @@ export default function Navbar() {
                 <button
                   type="button"
                   onClick={() => {
+                    setSelectedRole("Restaurant Owner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/vendor/manage-menu");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Menu Management</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     setSelectedRole("System Admin");
                     setRoleSwitcherOpen(false);
                   }}
@@ -293,6 +304,14 @@ export default function Navbar() {
               className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
             >
               <span>📅 Table Reservations &amp; Floor Plan</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+            <Link
+              href="/dashboard/vendor/manage-menu"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
+            >
+              <span>🍛 Menu &amp; Culinary Management</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
             <Link
