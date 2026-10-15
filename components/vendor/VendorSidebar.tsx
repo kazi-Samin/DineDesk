@@ -119,8 +119,12 @@ export default function VendorSidebar({ pendingCount = 0 }: VendorSidebarProps) 
           </Link>
 
           <Link
-            href="/"
-            className="flex items-center justify-between px-space-md py-2.5 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+            href="/dashboard/vendor/manage-profile"
+            className={`flex items-center justify-between px-space-md py-2.5 rounded-xl transition-all ${
+              pathname === "/dashboard/vendor/manage-profile"
+                ? "bg-primary-container text-on-primary font-semibold shadow-sm"
+                : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+            }`}
           >
             <div className="flex items-center gap-space-sm">
               <span className="material-symbols-outlined text-xl">storefront</span>
