@@ -20,6 +20,11 @@ export default function Navbar() {
 
   const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
+  const isVendor = pathname?.startsWith("/dashboard/vendor");
+
+  if (isVendor) {
+    return null;
+  }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +126,7 @@ export default function Navbar() {
                   onClick={() => {
                     setSelectedRole("Restaurant Owner");
                     setRoleSwitcherOpen(false);
+                    router.push("/dashboard/vendor/orders");
                   }}
                   className="w-full flex items-center justify-between px-space-md py-space-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-left"
                 >

@@ -11,6 +11,7 @@ export type OrderStatus =
   | "out_for_delivery"
   | "delivered"
   | "completed"
+  | "rejected"
   | "cancelled";
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "cash_on_delivery";
@@ -77,6 +78,8 @@ export interface OrderConfirmation extends OrderPayload {
   estimatedDeliveryTime: string;
   remainingMinutes?: number;
   courier?: CourierInfo;
+  rejectionReason?: string;
+  specialInstructions?: string;
   createdAt: string;
   updatedAt?: string;
   timeline?: {
@@ -87,5 +90,6 @@ export interface OrderConfirmation extends OrderPayload {
     outForDeliveryAt?: string;
     deliveredAt?: string;
     cancelledAt?: string;
+    rejectedAt?: string;
   };
 }
