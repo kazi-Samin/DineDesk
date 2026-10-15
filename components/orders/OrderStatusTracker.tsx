@@ -19,21 +19,24 @@ interface StepConfig {
 export default function OrderStatusTracker({ order }: OrderStatusTrackerProps) {
   const { status, fulfillmentMode, timeline } = order;
 
-  if (status === "cancelled") {
+  if (status === "cancelled" || status === "rejected") {
     return (
       <div className="bg-error/10 border border-error/30 rounded-xl p-space-md md:p-space-lg flex items-center justify-between gap-space-md text-error">
         <div className="flex items-center gap-space-sm">
           <span className="material-symbols-outlined text-2xl">error</span>
           <div>
-            <h3 className="font-label-lg font-semibold text-error">Order Cancelled</h3>
+            <h3 className="font-label-lg font-semibold text-error">
+              {status === "rejected" ? "Order Declined by Restaurant" : "Order Cancelled"}
+            </h3>
             <p className="font-body-sm text-error/80 text-[13px]">
-              This order has been cancelled upon customer or restaurant request at{" "}
-              {timeline?.cancelledAt || "recent timestamp"}.
+              {status === "rejected"
+                ? `The restaurant declined this ticket. ${order.rejectionReason ? `Reason: "${order.rejectionReason}"` : ""}`
+                : `This order has been cancelled upon customer or restaurant request at ${timeline?.cancelledAt || "recent timestamp"}.`}
             </p>
           </div>
         </div>
         <span className="px-3 py-1 bg-error text-on-error rounded font-label-sm uppercase tracking-wider text-[11px] font-bold">
-          Cancelled
+          {status === "rejected" ? "Rejected" : "Cancelled"}
         </span>
       </div>
     );
@@ -177,6 +180,7 @@ export default function OrderStatusTracker({ order }: OrderStatusTrackerProps) {
       delivered: 4,
       completed: 4,
       cancelled: -1,
+      rejected: -1,
     };
 
     const currentRank = statusRanks[currentStatus] ?? 0;

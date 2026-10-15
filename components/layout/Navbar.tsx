@@ -20,6 +20,11 @@ export default function Navbar() {
 
   const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
+  const isVendor = pathname?.startsWith("/dashboard/vendor");
+
+  if (isVendor) {
+    return null;
+  }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,71 +84,12 @@ export default function Navbar() {
             >
               Reserve a Table
             </button>
-            <div className="relative flex items-center gap-space-xs group">
-              <Link
-                className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs"
-                href="/dashboard/orders"
-              >
-                Dashboard
-              </Link>
-              <button
-                aria-label="Switch role"
-                className="text-on-surface-variant hover:text-primary flex items-center focus:outline-none"
-                type="button"
-                onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-              >
-                <span className="material-symbols-outlined text-sm">expand_more</span>
-              </button>
-              {/* Role Switcher Menu */}
-              <div
-                className={`${
-                  roleSwitcherOpen ? "block" : "hidden group-hover:block"
-                } absolute top-full left-0 mt-space-xs w-48 bg-surface-container-lowest border border-outline-variant rounded shadow-[0_8px_24px_rgba(30,27,22,0.08)] py-space-xs z-50`}
-              >
-                <span className="block px-space-md py-space-xs font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-                  Role Switcher
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole("Diner");
-                    setRoleSwitcherOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-space-md py-space-sm font-label-md text-label-md text-on-surface hover:bg-surface-container hover:text-on-surface text-left"
-                >
-                  <span>Diner</span>
-                  {selectedRole === "Diner" && (
-                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole("Restaurant Owner");
-                    setRoleSwitcherOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-space-md py-space-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-left"
-                >
-                  <span>Restaurant Owner</span>
-                  {selectedRole === "Restaurant Owner" && (
-                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRole("System Admin");
-                    setRoleSwitcherOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-space-md py-space-sm font-label-md text-label-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface text-left"
-                >
-                  <span>System Admin</span>
-                  {selectedRole === "System Admin" && (
-                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
-                  )}
-                </button>
-              </div>
-            </div>
+            <Link
+              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs"
+              href={selectedRole === "Restaurant Owner" ? "/dashboard/vendor/orders" : "/dashboard/orders"}
+            >
+              Dashboard
+            </Link>
           </nav>
         </div>
 
@@ -188,8 +134,101 @@ export default function Navbar() {
               {isDarkMode ? "dark_mode" : "light_mode"}
             </span>
           </button>
+          {/* Role Switcher Pill / Selector */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container text-xs font-medium text-on-surface transition-colors"
+              title="Switch user role / dashboard"
+            >
+              <span className="w-2 h-2 rounded-full bg-primary-container"></span>
+              <span className="hidden sm:inline text-on-surface-variant">Role:</span>
+              <span className="font-semibold text-primary">{selectedRole}</span>
+              <span className="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
+            </button>
+
+            {roleSwitcherOpen && (
+              <div
+                className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0_12px_32px_rgba(30,27,22,0.12)] py-2 z-50 animate-in fade-in slide-in-from-top-1"
+              >
+                <div className="px-3 py-1 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                  Switch Active Role
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/orders");
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors text-left ${
+                    selectedRole === "Diner" ? "bg-primary-container/10 text-primary font-semibold" : "text-on-surface hover:bg-surface-container-low"
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span>🍽️ Customer (Diner)</span>
+                    <span className="text-[10px] text-on-surface-variant">Track orders & history</span>
+                  </div>
+                  {selectedRole === "Diner" && (
+                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Restaurant Owner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/vendor/orders");
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors text-left ${
+                    selectedRole === "Restaurant Owner" ? "bg-primary-container/10 text-primary font-semibold" : "text-on-surface hover:bg-surface-container-low"
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span>🏪 Restaurant Owner</span>
+                    <span className="text-[10px] text-on-surface-variant">Orders &amp; Reservations</span>
+                  </div>
+                  {selectedRole === "Restaurant Owner" && (
+                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Restaurant Owner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/vendor/reservations");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Table Reservations</span>
+                  <span className="text-[10px] bg-secondary text-on-secondary px-1.5 py-0.2 rounded font-bold">3</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("System Admin");
+                    setRoleSwitcherOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors text-left ${
+                    selectedRole === "System Admin" ? "bg-primary-container/10 text-primary font-semibold" : "text-on-surface hover:bg-surface-container-low"
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span>⚙️ System Admin</span>
+                    <span className="text-[10px] text-on-surface-variant">Platform oversight</span>
+                  </div>
+                  {selectedRole === "System Admin" && (
+                    <span className="material-symbols-outlined text-sm text-primary-container">check</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
           <Link
-            className="hidden sm:inline-flex items-center px-space-md py-space-sm border border-primary-container text-primary-container hover:bg-primary-container/5 rounded font-label-md text-label-md transition-colors"
+            className="hidden md:inline-flex items-center px-space-md py-space-sm border border-primary-container text-primary-container hover:bg-primary-container/5 rounded font-label-md text-label-md transition-colors"
             href="#"
           >
             Sign In / Register
@@ -225,13 +264,47 @@ export default function Navbar() {
           >
             Browse Restaurants
           </Link>
-          <Link
-            href="/explore"
-            onClick={() => setMobileMenuOpen(false)}
-            className="py-2 text-sm font-medium text-on-surface-variant"
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              openReservationModal();
+            }}
+            type="button"
+            className="py-2 text-sm font-medium text-left text-on-surface-variant hover:text-primary"
           >
             Reserve a Table
-          </Link>
+          </button>
+          
+          <div className="pt-2 border-t border-outline-variant flex flex-col gap-1">
+            <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider mb-1">
+              Dashboards & Portals
+            </span>
+            <Link
+              href="/dashboard/vendor/orders"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
+            >
+              <span>🏪 Restaurant Owner (Live Orders)</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+            <Link
+              href="/dashboard/vendor/reservations"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 text-sm font-semibold text-primary flex items-center justify-between"
+            >
+              <span>📅 Table Reservations &amp; Floor Plan</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+            <Link
+              href="/dashboard/orders"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-3 rounded-lg hover:bg-surface-container-low text-sm font-medium text-on-surface flex items-center justify-between"
+            >
+              <span>🍽️ Customer Order History</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
+          </div>
+
           <div className="pt-2 border-t border-outline-variant">
             <form onSubmit={handleSearchSubmit} className="relative w-full">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-outline">
