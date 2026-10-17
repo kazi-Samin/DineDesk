@@ -18,6 +18,7 @@ import {
 import { OrderConfirmation, OrderStatus, FulfillmentMode } from "@/types/order";
 
 export default function VendorIncomingOrdersPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>("DD-84920");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -220,9 +221,13 @@ export default function VendorIncomingOrdersPage() {
   };
 
   return (
-    <div className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
+    <div className="bg-background font-body-md text-on-surface antialiased min-h-screen">
       {/* 1. Left Sidebar for Restaurant Owner */}
-      <VendorSidebar pendingCount={stats.newOrders} />
+      <VendorSidebar
+        pendingCount={stats.newOrders}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* 2. Top Header with Outlet Switcher and Online Toggle */}
       <div className="lg:pl-72">
@@ -230,19 +235,21 @@ export default function VendorIncomingOrdersPage() {
           restaurantName="Sultan's Heritage Kitchen"
           pendingCount={stats.newOrders}
           onRefresh={loadOrders}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         {/* 3. Main Console Workspace */}
-        <main className="relative pt-16 bg-surface min-h-screen">
+        <main className="relative pt-16 bg-background min-h-screen">
           <div className="flex flex-col w-full px-space-md sm:px-space-lg lg:px-space-xl py-space-lg max-w-[1440px] mx-auto gap-space-lg">
             {/* Header & Controls Strip */}
             <div className="flex flex-col gap-space-md">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-sm border-b border-outline-variant/30">
                 <div className="flex flex-col">
                   <div className="flex items-center gap-space-xs text-on-surface-variant font-label-sm uppercase tracking-wider mb-1">
-                    <span>Kitchen Orchestration</span>
+                    <span>Vendor Dashboard</span>
                     <span>/</span>
-                    <span className="text-primary font-semibold">Live Ticket Stream</span>
+                    <span className="text-primary font-semibold">Orders</span>
                   </div>
                   <h1 className="font-headline-lg text-2xl sm:text-3xl lg:text-4xl text-primary tracking-tight font-display font-medium">
                     Incoming Orders
@@ -256,7 +263,7 @@ export default function VendorIncomingOrdersPage() {
                   {/* Simulate New Order Dev Button */}
                   <button
                     onClick={handleSimulateNewOrder}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-on-secondary hover:bg-secondary/90 font-label-md text-label-md font-semibold transition-all shadow-xs cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90 font-label-md text-label-md font-semibold transition-all shadow-xs cursor-pointer"
                     type="button"
                     title="Simulate a new incoming customer order for testing"
                   >
@@ -274,7 +281,7 @@ export default function VendorIncomingOrdersPage() {
                           : "Kitchen sound notifications enabled."
                       );
                     }}
-                    className="flex items-center gap-space-xs px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer border border-outline-variant/40"
+                    className="flex items-center gap-space-xs px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer border border-outline-variant"
                     type="button"
                   >
                     <span className="material-symbols-outlined text-lg text-primary font-semibold">
@@ -292,7 +299,7 @@ export default function VendorIncomingOrdersPage() {
                   {/* Batch KOT Print */}
                   <button
                     onClick={() => showToast("Sent all active kitchen tickets to thermal KOT.")}
-                    className="flex items-center gap-space-xs px-3.5 py-2 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer border border-outline-variant/40"
+                    className="flex items-center gap-space-xs px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer border border-outline-variant"
                     type="button"
                   >
                     <span className="material-symbols-outlined text-lg text-on-surface-variant">
@@ -314,7 +321,7 @@ export default function VendorIncomingOrdersPage() {
               {/* Left / Center Column (8 cols on XL) */}
               <div className="xl:col-span-8 flex flex-col gap-space-md">
                 {/* Segmented Status Tabs & Search Bar */}
-                <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-xs border border-outline-variant/40 flex flex-col md:flex-row items-center justify-between gap-space-sm">
+                <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-2xs border border-outline-variant flex flex-col md:flex-row items-center justify-between gap-space-sm">
                   {/* Status Tabs */}
                   <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
                     <button
@@ -403,7 +410,7 @@ export default function VendorIncomingOrdersPage() {
                     <input
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-8 pr-3 py-1.5 bg-surface rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30 transition-all"
+                      className="w-full pl-8 pr-3 py-1.5 bg-surface-container-low rounded-md font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest border border-outline-variant transition-all"
                       placeholder="Search Order #, diner name..."
                       type="text"
                     />

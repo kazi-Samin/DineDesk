@@ -73,10 +73,10 @@ export default function MenuItemsTable({
   }
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+    <div className="bg-surface-container-lowest rounded-xl shadow-2xs border border-outline-variant overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-surface-container text-on-surface-variant font-label-sm uppercase tracking-wider text-xs border-b border-outline-variant/30">
+          <thead className="bg-surface-container text-on-surface-variant font-label-sm uppercase tracking-wider text-xs border-b border-outline-variant">
             <tr>
               <th className="py-3.5 px-space-md font-semibold" scope="col">
                 Dish Details
@@ -98,7 +98,7 @@ export default function MenuItemsTable({
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-surface-container font-body-sm text-body-sm text-on-surface">
+          <tbody className="divide-y divide-outline-variant/30 font-body-sm text-body-sm text-on-surface">
             {paginatedItems.map((item) => {
               const isOut = !item.isAvailable;
 
@@ -114,7 +114,7 @@ export default function MenuItemsTable({
                   {/* Dish Details */}
                   <td className="py-3.5 px-space-md">
                     <div className="flex items-center gap-space-md">
-                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 shadow-sm bg-surface-container">
+                      <div className="relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 shadow-2xs bg-surface-container border border-outline-variant">
                         <img
                           className={`w-full h-full object-cover transition-all ${
                             isOut ? "grayscale-[40%]" : ""
@@ -124,7 +124,7 @@ export default function MenuItemsTable({
                           loading="lazy"
                           onError={(e) => {
                             (e.currentTarget as HTMLImageElement).src =
-                              "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80";
+                              "/images/food-placeholder.svg";
                           }}
                         />
                       </div>

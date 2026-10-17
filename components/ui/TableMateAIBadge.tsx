@@ -9,14 +9,14 @@ export default function TableMateAIBadge() {
     <div className="fixed bottom-space-lg right-space-lg z-40">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-space-sm px-space-lg py-space-md bg-surface-container-lowest border border-outline-variant rounded-full text-primary-container shadow-[0_8px_24px_rgba(30,27,22,0.08)] hover:border-primary-container transition-all group"
+        className="inline-flex items-center gap-space-sm px-space-lg py-space-md bg-surface-container-lowest border border-outline-variant rounded-full text-primary-container shadow-[0_4px_16px_rgba(30,27,22,0.06)] hover:border-primary-container transition-all group"
         type="button"
         aria-label="TableMate AI Assistant"
       >
         <span className="material-symbols-outlined text-xl text-primary-container group-hover:scale-110 transition-transform">
           auto_awesome
         </span>
-        <span className="font-label-lg text-label-lg font-semibold tracking-tight text-on-surface">
+        <span className="font-label-lg text-label-lg font-medium tracking-tight text-on-surface">
           TableMate AI
         </span>
       </button>

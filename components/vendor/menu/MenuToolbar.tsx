@@ -27,14 +27,14 @@ export default function MenuToolbar({
   categoryCounts,
 }: MenuToolbarProps) {
   return (
-    <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-sm flex flex-col md:flex-row items-center justify-between gap-space-sm border border-outline-variant/30">
+    <div className="bg-surface-container-lowest p-space-sm rounded-xl shadow-2xs flex flex-col md:flex-row items-center justify-between gap-space-sm border border-outline-variant">
       {/* Search Input */}
       <div className="relative w-full md:w-80">
         <span className="material-symbols-outlined absolute left-3 top-2.5 text-on-surface-variant text-xl pointer-events-none">
           search
         </span>
         <input
-          className="w-full pl-10 pr-space-md py-2 bg-surface-container rounded-lg font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest transition-colors shadow-inner border border-outline-variant/30"
+          className="w-full pl-10 pr-space-md py-2 bg-surface-container-low rounded-md font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest transition-colors shadow-2xs border border-outline-variant"
           placeholder="Search menu items, ingredients, notes..."
           type="text"
           value={searchQuery}

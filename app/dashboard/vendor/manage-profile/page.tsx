@@ -33,6 +33,7 @@ import {
 import { INITIAL_RESTAURANT_PROFILE } from "@/data/mockRestaurantProfile";
 
 export default function RestaurantProfilePage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<RestaurantProfile>(
     INITIAL_RESTAURANT_PROFILE
   );
@@ -351,32 +352,39 @@ export default function RestaurantProfilePage() {
   const allDayNames = profile.operatingHours.map((h) => h.day);
 
   return (
-    <div className="min-h-screen bg-surface font-body-md text-on-surface antialiased">
+    <div className="min-h-screen bg-background font-body-md text-on-surface antialiased">
       {/* Shared Vendor Sidebar */}
-      <VendorSidebar />
+      <VendorSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
       <div className="pl-0 lg:pl-72 transition-all duration-300">
         {/* Vendor Top Header */}
-        <VendorHeader restaurantName={profile.name} />
+        <VendorHeader
+          restaurantName={profile.name}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
 
-        <main className="relative pt-16 bg-surface min-h-screen">
+        <main className="relative pt-16 bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="w-full max-w-7xl mx-auto px-margin py-space-lg space-y-space-xl">
               {/* Top Bar: Header, Verification Badge & Live Status */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-space-md pb-space-md border-b border-outline-variant/30">
                 <div className="space-y-space-xs">
-                  <div className="flex items-center gap-space-xs text-primary font-label-sm uppercase tracking-widest font-semibold">
+                  <div className="flex items-center gap-space-xs text-primary font-label-sm uppercase tracking-wider font-semibold">
                     <span className="material-symbols-outlined text-sm">
                       storefront
                     </span>
-                    <span>Merchant Identity &amp; Setup</span>
+                    <span>Restaurant Profile</span>
                   </div>
                   <h1 className="font-headline-lg text-headline-lg text-on-surface text-primary tracking-tight">
-                    Restaurant Profile &amp; Operating Details
+                    Profile &amp; Operating Hours
                   </h1>
                   <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                    Configure your public marketplace listing, cover imagery, cuisine tags, location coordinates, and weekly service hours.
+                    Manage your restaurant information, cover photo, cuisine tags, location, and weekly opening hours.
                   </p>
                 </div>
 

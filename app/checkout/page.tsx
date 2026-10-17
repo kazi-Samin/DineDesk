@@ -209,7 +209,7 @@ export default function CheckoutPage() {
                   {cart.restaurantName}
                 </span>
                 <span>/</span>
-                <span className="text-primary font-semibold">Table &amp; Delivery Checkout</span>
+                <span className="text-primary font-semibold">Checkout</span>
               </div>
               <div className="flex items-center gap-space-md">
                 <div className="flex items-center gap-space-xs font-label-sm text-label-sm text-primary-container bg-surface-container-high px-space-md py-1.5 rounded">
@@ -297,7 +297,7 @@ export default function CheckoutPage() {
                           Step 02
                         </span>
                         <h3 className="font-headline-md text-headline-md text-on-surface">
-                          Delivery Coordinates
+                          Delivery Address
                         </h3>
                       </div>
                       <span className="font-label-sm text-label-sm text-primary-container flex items-center gap-1 font-semibold">
@@ -344,7 +344,7 @@ export default function CheckoutPage() {
                                   : "text-on-surface-variant"
                               }`}
                             >
-                              {addr.isDefault ? "Default Destination" : "Secondary"}
+                              {addr.isDefault ? "Default Address" : "Secondary"}
                             </span>
                           </label>
                         );
@@ -413,7 +413,7 @@ export default function CheckoutPage() {
                       {/* Location Map Preview with GPS pin */}
                       <div className="md:col-span-5 flex flex-col">
                         <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                          Location Coordinates
+                          Map Pin
                         </label>
                         <div className="relative w-full h-full min-h-[170px] bg-surface-container rounded overflow-hidden flex flex-col justify-end p-space-sm shadow-inner">
                           <div className="absolute inset-0 bg-primary/10 pointer-events-none"></div>
@@ -434,14 +434,14 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Section 3: Contact Details & Orderer */}
+                {/* Section 3: Contact Details */}
                 <div className="bg-surface-container-lowest p-space-lg rounded shadow-sm">
                   <div className="flex items-center gap-space-sm mb-space-md">
                     <span className="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">
                       {fulfillmentMode === "delivery" ? "Step 03" : "Step 02"}
                     </span>
                     <h3 className="font-headline-md text-headline-md text-on-surface">
-                      Recipient &amp; Orderer
+                      Contact Information
                     </h3>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
@@ -483,7 +483,7 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                        Email Invoice
+                        Email Address
                       </label>
                       <div className="relative">
                         <input
@@ -517,7 +517,7 @@ export default function CheckoutPage() {
                       <span className="material-symbols-outlined text-sm text-primary">
                         verified_user
                       </span>
-                      <span>PCI-DSS Tier-1</span>
+                      <span>Secure 256-bit SSL</span>
                     </div>
                   </div>
 

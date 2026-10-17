@@ -394,6 +394,9 @@ export default function AddEditDishModal({
                       className="w-full h-full object-cover"
                       src={imageUrl}
                       alt="Showcase preview"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/images/food-placeholder.svg";
+                      }}
                     />
                     <span className="absolute bottom-1 right-1 bg-surface-container-lowest/90 px-1 py-0.5 rounded text-[10px] font-semibold text-primary">
                       PREVIEW

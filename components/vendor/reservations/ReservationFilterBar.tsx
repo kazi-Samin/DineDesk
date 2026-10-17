@@ -77,7 +77,7 @@ export default function ReservationFilterBar({
   const hasActiveFilters = selectedZone !== "all" || selectedPartySize !== "all";
 
   return (
-    <section className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+    <section className="bg-surface-container-lowest rounded-xl p-space-lg border border-outline-variant shadow-2xs space-y-space-md">
       {/* Top Title & Date Control Row */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-space-md">
         <div>
@@ -257,7 +257,7 @@ export default function ReservationFilterBar({
               search
             </span>
             <input
-              className="w-full bg-surface-container-low pl-9 pr-3 py-2 rounded-lg text-on-surface font-body-sm text-body-sm placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest border border-outline-variant/30 shadow-inner"
+              className="w-full bg-surface-container-low pl-9 pr-3 py-2 rounded-md text-on-surface font-body-sm text-body-sm placeholder:text-on-surface-variant focus:outline-none focus:bg-surface-container-lowest border border-outline-variant focus:border-primary transition-colors"
               placeholder="Search diner, phone, or #TB ID..."
               type="text"
               value={searchQuery}

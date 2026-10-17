@@ -42,6 +42,7 @@ interface ToastMessage {
 }
 
 export default function VendorReservationsPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [reservations, setReservations] = useState<VendorReservation[]>([]);
   const [tables, setTables] = useState<TableEntity[]>([]);
   const [isClientLoaded, setIsClientLoaded] = useState(false);
@@ -242,9 +243,13 @@ export default function VendorReservationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface font-body-md text-on-surface antialiased">
+    <div className="min-h-screen bg-background font-body-md text-on-surface antialiased">
       {/* Vendor Shared Sidebar */}
-      <VendorSidebar pendingCount={pendingCount} />
+      <VendorSidebar
+        pendingCount={pendingCount}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
       <div className="pl-0 lg:pl-72 transition-all duration-300">
@@ -253,9 +258,11 @@ export default function VendorReservationsPage() {
           restaurantName="Sultan's Heritage Kitchen"
           pendingCount={pendingCount}
           onRefresh={handleRefresh}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        <main className="relative pt-16 bg-surface min-h-screen">
+        <main className="relative pt-16 bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="px-space-md sm:px-space-lg lg:px-space-xl py-space-lg max-w-[1400px] mx-auto w-full space-y-space-xl">
               {/* Top Bar: Metrics Strip */}

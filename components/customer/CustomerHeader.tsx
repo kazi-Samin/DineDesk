@@ -15,7 +15,7 @@ interface CustomerHeaderProps {
 export default function CustomerHeader({
   userName = "Tahmid Rahman",
   userRole = "Verified Foodie",
-  avatarUrl = "https://lh3.googleusercontent.com/aida/AEtjO1Xvc2MrKyLPPwPKRHPvGiuGzzv3Vl3xudUMnfKmM_OejgtKJObOFHcqNPF4XgM99yJVO2vd5xVNy1ialfL7MMAf-mTYsbOekfDFOQeP3J_05sjjK_dG1-TowYtfmniCeQ5oWP3YUL0mOpQ_Kd_4gnUIQvBpdLJfX7FS7iKDGaNDFcEeOV3fOJ7c2-_IHK7W8BGBNX8pIPLWpzKWXacemtS8HMQtfBJOmvihWXCsfl9OXjXlGaVf6vC98QUC",
+  avatarUrl = "/avatars/tahmid-avatar.svg",
   onToggleSidebar,
   isSidebarOpen,
 }: CustomerHeaderProps) {
@@ -90,7 +90,7 @@ export default function CustomerHeader({
               search
             </span>
             <input
-              className="w-60 pl-8 pr-space-md py-1.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-xl placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/40"
+              className="w-60 pl-8 pr-space-md py-1.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-md placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container shadow-xs border border-outline-variant"
               placeholder="Search restaurants, cuisines..."
               type="text"
               value={searchQuery}
@@ -102,7 +102,7 @@ export default function CustomerHeader({
           <div className="relative">
             <button
               aria-label="Notifications"
-              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-xl relative"
+              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg relative"
               type="button"
               onClick={() => setNotificationsOpen(!notificationsOpen)}
             >
@@ -114,7 +114,7 @@ export default function CustomerHeader({
 
             {/* Notifications Dropdown Preview */}
             {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-surface-container-lowest border border-outline-variant/40 rounded-xl shadow-lg p-space-md z-50">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-md p-space-md z-50">
                 <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
                   <span className="font-label-md text-label-md font-semibold text-primary">
                     Activity Notifications
@@ -144,8 +144,11 @@ export default function CustomerHeader({
           >
             <img
               alt={userName}
-              className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40"
+              className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40 bg-surface-container"
               src={avatarUrl}
+              onError={(e) => {
+                e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+              }}
             />
             <div className="hidden md:flex flex-col text-left">
               <span className="font-label-md text-label-md text-on-surface font-medium leading-tight">

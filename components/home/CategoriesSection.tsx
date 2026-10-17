@@ -6,14 +6,14 @@ export default function CategoriesSection() {
     <section className="w-full py-space-xl">
       <div className="max-w-[1440px] mx-auto px-margin">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto mb-space-xl">
-          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest font-semibold">
-            Gastronomic Spectrum
+          <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+            Categories
           </span>
           <h2 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-            Explore by Craving
+            Browse by Cuisine
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-            Discover curated culinary styles from century-old heritage pots to contemporary artisanal fire.
+            Explore popular cuisines and local specialties across Dhaka.
           </p>
         </div>
 
@@ -22,7 +22,7 @@ export default function CategoriesSection() {
           {FOOD_CATEGORIES.map((category) => (
             <Link
               key={category.id}
-              className="group relative h-64 rounded-lg overflow-hidden shadow-sm flex flex-col justify-end p-space-md"
+              className="group relative h-64 rounded-xl overflow-hidden shadow-xs border border-outline-variant/60 flex flex-col justify-end p-space-md"
               href={`/explore?cuisine=${category.categoryFilter}`}
             >
               <div className="absolute inset-0 bg-surface-container">
@@ -34,13 +34,13 @@ export default function CategoriesSection() {
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/40 to-transparent"></div>
               </div>
               <div className="relative z-10 text-on-primary">
-                <span className="font-label-sm text-label-sm text-secondary-fixed uppercase tracking-wider block">
+                <span className="text-[11px] font-medium text-[#f7dfd6] uppercase tracking-wider block">
                   {category.tagline}
                 </span>
-                <h3 className="font-headline-sm text-headline-sm font-semibold">
+                <h3 className="font-headline-sm text-lg font-medium text-on-primary font-serif">
                   {category.title}
                 </h3>
-                <p className="font-body-sm text-[12px] opacity-80 mt-0.5">
+                <p className="font-body-sm text-[12px] text-on-primary/75 font-normal mt-0.5">
                   {category.subtitle}
                 </p>
               </div>

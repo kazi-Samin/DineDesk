@@ -7,35 +7,53 @@ interface VendorHeaderProps {
   restaurantName?: string;
   pendingCount?: number;
   onRefresh?: () => void;
+  isSidebarOpen?: boolean;
+  onToggleSidebar?: () => void;
 }
 
 export default function VendorHeader({
   restaurantName = "Sultan's Heritage Kitchen",
   pendingCount = 0,
   onRefresh,
+  isSidebarOpen = false,
+  onToggleSidebar,
 }: VendorHeaderProps) {
   const [isAccepting, setIsAccepting] = useState(true);
 
   return (
-    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/40 z-30 flex items-center justify-between px-space-md lg:px-space-lg">
-      <div className="flex items-center gap-space-md">
+    <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-low/95 backdrop-blur-md border-b border-outline-variant z-30 flex items-center justify-between px-space-md lg:px-space-lg">
+      <div className="flex items-center gap-space-sm sm:gap-space-md">
+        {/* Mobile Hamburger Menu Toggle */}
+        {onToggleSidebar && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="lg:hidden p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+            aria-label={isSidebarOpen ? "Close navigation sidebar" : "Open navigation sidebar"}
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {isSidebarOpen ? "close" : "menu"}
+            </span>
+          </button>
+        )}
+
         {/* Restaurant selector pill */}
-        <div className="flex items-center gap-space-xs bg-surface-container px-space-sm py-1.5 rounded-xl border border-outline-variant/50 cursor-pointer">
+        <div className="flex items-center gap-space-xs bg-surface-container-lowest px-3 py-1.5 rounded-lg border border-outline-variant cursor-pointer shadow-2xs">
           <span className="material-symbols-outlined text-lg text-primary">store</span>
-          <span className="font-label-md text-label-md text-on-surface font-semibold truncate max-w-[140px] sm:max-w-none">
+          <span className="font-label-md text-label-md text-on-surface font-semibold truncate max-w-[130px] sm:max-w-none">
             {restaurantName}
           </span>
-          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px]">
-            <span className="material-symbols-outlined text-xs">verified</span>Verified Partner
+          <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-semibold">
+            <span className="material-symbols-outlined text-xs">verified</span>Verified Outlet
           </span>
         </div>
 
         {/* Live status toggle */}
-        <div className="hidden sm:flex items-center gap-space-xs pl-space-sm border-l border-outline-variant/40">
+        <div className="hidden sm:flex items-center gap-space-xs pl-space-sm border-l border-outline-variant">
           <button
             type="button"
             onClick={() => setIsAccepting(!isAccepting)}
-            className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-xl border border-outline-variant/60 shadow-xs cursor-pointer"
+            className="flex items-center gap-2 bg-surface-container-lowest px-3 py-1.5 rounded-lg border border-outline-variant shadow-2xs cursor-pointer hover:bg-surface-container-low transition-colors"
           >
             <span
               className={`w-2.5 h-2.5 rounded-full ${
@@ -51,7 +69,7 @@ export default function VendorHeader({
               }`}
             >
               <span
-                className={`absolute top-0.5 w-3 h-3 bg-surface rounded-full shadow-xs transition-transform ${
+                className={`absolute top-0.5 w-3 h-3 bg-surface rounded-full shadow-2xs transition-transform ${
                   isAccepting ? "right-0.5" : "left-0.5"
                 }`}
               ></span>
@@ -61,12 +79,12 @@ export default function VendorHeader({
       </div>
 
       {/* Right User Actions */}
-      <div className="flex items-center gap-space-sm sm:gap-space-md">
+      <div className="flex items-center gap-1 sm:gap-space-sm">
         {onRefresh && (
           <button
             onClick={onRefresh}
             title="Refresh order stream"
-            className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
+            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors cursor-pointer"
             type="button"
           >
             <span className="material-symbols-outlined text-xl">refresh</span>
@@ -74,7 +92,7 @@ export default function VendorHeader({
         )}
 
         <button
-          className="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors cursor-pointer"
+          className="relative p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors cursor-pointer"
           type="button"
           aria-label="Notifications"
         >
@@ -86,23 +104,26 @@ export default function VendorHeader({
           )}
         </button>
 
-        <div className="h-7 w-px bg-outline-variant/40 hidden sm:block"></div>
+        <div className="h-6 w-px bg-outline-variant hidden sm:block"></div>
 
         {/* Profile */}
         <Link
-          href="/dashboard/orders"
-          className="flex items-center gap-space-sm pl-space-xs hover:opacity-85 transition-opacity"
+          href="/dashboard/vendor/manage-profile"
+          className="flex items-center gap-2 pl-space-xs hover:opacity-85 transition-opacity"
         >
           <img
-            alt="Chef Profile"
-            className="w-8 h-8 rounded-full object-cover border border-outline-variant/60"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuATj-5bVpB67KqXwRJDHpOF-tOKDVAizyDorsdPffwl_Xjw-R7SZAbgsdymkx90d5OalmiW-ir8JfCJVOOTA2zrriohTjINKBIeK0a12SWLMOtlCkYQWtw48YdQPb_fIMHbeZ37HB2maP4LrP2Yw3FP0ytPlWzkTuT2XeHGpoRyUcDXObLkwxNYEKOM3MJMDvbwB1Ks4xTuu3z3aEzOtjc9_i-LlBaoSsmJSx2CNst06Oo5ga2QQd2k2Q"
+            alt="Chef Kabir Profile"
+            className="w-8 h-8 rounded-full object-cover border border-outline-variant bg-surface-container"
+            src="/avatars/chef-kabir.svg"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/avatars/default-avatar.svg";
+            }}
           />
           <div className="hidden sm:flex flex-col text-left">
-            <span className="font-label-md text-label-md text-on-surface font-semibold">
+            <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
               Chef Kabir
             </span>
-            <span className="font-label-sm text-[11px] text-on-surface-variant">
+            <span className="font-label-sm text-[11px] text-on-surface-variant leading-tight">
               General Manager
             </span>
           </div>

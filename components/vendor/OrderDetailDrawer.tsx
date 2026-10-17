@@ -56,9 +56,9 @@ export default function OrderDetailDrawer({
   };
 
   return (
-    <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-md border border-outline-variant/40 flex flex-col gap-space-md">
+    <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs border border-outline-variant flex flex-col gap-space-md">
       {/* Drawer Header */}
-      <div className="flex items-center justify-between pb-space-sm bg-surface-container-low p-space-sm rounded-lg border border-outline-variant/30">
+      <div className="flex items-center justify-between pb-space-sm bg-surface-container-low p-space-sm rounded-lg border border-outline-variant">
         <div className="flex flex-col">
           <span className="font-label-sm text-[11px] text-secondary uppercase tracking-widest font-bold">
             Active Live Ticket

@@ -10,7 +10,7 @@ export default function CompletenessChecklist({
   audit,
 }: CompletenessChecklistProps) {
   return (
-    <div className="bg-surface-container-low p-space-md rounded-xl border border-outline-variant/50 space-y-space-sm">
+    <div className="bg-surface-container-low p-space-md rounded-xl border border-outline-variant space-y-space-sm">
       <div className="flex items-center justify-between">
         <span className="font-label-md text-label-md text-on-surface font-semibold">
           Storefront Completeness

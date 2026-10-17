@@ -12,9 +12,9 @@ export default function Footer() {
     return null;
   }
   return (
-    <footer className="w-full bg-surface-container-low border-t border-outline-variant mt-margin">
+    <footer className="w-full bg-surface-container-low border-t border-outline-variant mt-16">
       <div className="max-w-[1440px] mx-auto px-margin py-space-xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter pb-space-xl border-b border-outline-variant">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-gutter pb-space-xl border-b border-outline-variant/60">
           <div className="lg:col-span-2 flex flex-col gap-space-md">
             <Link className="flex items-center" href="/">
               <img
@@ -24,20 +24,20 @@ export default function Footer() {
               />
             </Link>
             <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm">
-              Handcrafted reservation workflows, authentic regional dining directories, and editorial table stewardship for discerning gourmands.
+              Online food delivery and table reservations for Dhaka&apos;s best restaurants and dining spots.
             </p>
             <div className="pt-space-sm">
-              <p className="font-label-md text-label-md text-on-surface mb-space-sm">
-                Receive curated seasonal dining chronicles:
+              <p className="font-label-md text-label-md text-on-surface mb-space-sm font-medium">
+                Subscribe for local restaurant guides and exclusive offers:
               </p>
               <form onSubmit={(e) => e.preventDefault()} className="flex items-center gap-space-xs max-w-md">
                 <input
-                  className="flex-1 bg-surface-container-lowest border border-outline-variant rounded px-space-md py-space-sm font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container"
+                  className="flex-1 bg-surface-container-lowest border border-outline-variant rounded-lg px-space-md py-2 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none focus:border-primary"
                   placeholder="Your email address"
                   type="email"
                 />
                 <button
-                  className="px-space-lg py-space-sm bg-primary-container text-on-primary rounded font-label-md text-label-md hover:bg-primary transition-colors"
+                  className="px-space-lg py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md font-medium hover:bg-primary/90 transition-colors cursor-pointer"
                   type="submit"
                 >
                   Subscribe

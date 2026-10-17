@@ -10,7 +10,7 @@ export default function VendorSummaryCards({ stats }: VendorSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
       {/* Stat 1: Today's Revenue */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-outline-variant/30 flex flex-col justify-between">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between">
         <div className="flex items-center justify-between text-on-surface-variant mb-space-xs">
           <span className="font-label-md text-label-md uppercase tracking-wider">Today&apos;s Revenue</span>
           <span className="material-symbols-outlined text-primary text-xl">payments</span>
@@ -29,7 +29,7 @@ export default function VendorSummaryCards({ stats }: VendorSummaryCardsProps) {
       </div>
 
       {/* Stat 2: Active Orders / In Queue */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-outline-variant/30 flex flex-col justify-between">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between">
         <div className="flex items-center justify-between text-on-surface-variant mb-space-xs">
           <span className="font-label-md text-label-md uppercase tracking-wider">Active Queue</span>
           <span className="material-symbols-outlined text-secondary text-xl">local_fire_department</span>
@@ -50,7 +50,7 @@ export default function VendorSummaryCards({ stats }: VendorSummaryCardsProps) {
       </div>
 
       {/* Stat 3: Avg Prep Speed */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-outline-variant/30 flex flex-col justify-between">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between">
         <div className="flex items-center justify-between text-on-surface-variant mb-space-xs">
           <span className="font-label-md text-label-md uppercase tracking-wider">Avg. Prep Speed</span>
           <span className="material-symbols-outlined text-primary text-xl">avg_pace</span>
@@ -70,7 +70,7 @@ export default function VendorSummaryCards({ stats }: VendorSummaryCardsProps) {
       </div>
 
       {/* Stat 4: Completed Orders Today */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-xs border border-outline-variant/30 flex flex-col justify-between">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between">
         <div className="flex items-center justify-between text-on-surface-variant mb-space-xs">
           <span className="font-label-md text-label-md uppercase tracking-wider">Completed Today</span>
           <span className="material-symbols-outlined text-primary text-xl">verified</span>

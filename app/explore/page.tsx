@@ -165,14 +165,14 @@ function ExploreContent() {
             <div>
               <div className="flex items-baseline gap-space-sm">
                 <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-                  Dhaka&apos;s Culinary Compass
+                  Explore Restaurants in Dhaka
                 </h1>
                 <span className="font-label-md text-label-md text-on-surface-variant font-medium">
-                  ({filteredRestaurants.length > 0 ? "142 curated spots" : "0 spots"})
+                  ({filteredRestaurants.length} restaurants)
                 </span>
               </div>
               <p className="font-body-md text-body-md text-on-surface-variant max-w-xl mt-space-xs">
-                From generational kacchi biryani cauldrons in Puran Dhaka to handcrafted Neapolitan crusts in Gulshan.
+                Discover popular dining spots, order food delivery, or book a table across Dhaka.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm">
@@ -181,7 +181,7 @@ function ExploreContent() {
                   <span className="material-symbols-outlined text-lg">tune</span>
                 </span>
                 <select
-                  aria-label="Sort culinary results"
+                  aria-label="Sort restaurants"
                   className="w-full appearance-none bg-surface-container-lowest border border-outline-variant rounded py-space-sm pl-10 pr-space-xl font-label-md text-label-md text-on-surface focus:outline-none focus:border-primary-container cursor-pointer"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -216,7 +216,7 @@ function ExploreContent() {
                       ? "bg-surface-container-lowest text-primary shadow-sm"
                       : "text-on-surface-variant hover:text-primary"
                   }`}
-                  title="Editorial List View"
+                  title="List View"
                   type="button"
                 >
                   <span className="material-symbols-outlined text-lg">view_list</span>
@@ -230,13 +230,13 @@ function ExploreContent() {
       {/* Main Browse Container */}
       <div className="max-w-[1440px] mx-auto px-margin py-space-xl w-full">
         <div className="flex flex-col lg:flex-row gap-gutter items-start">
-          {/* Refine By Sidebar */}
+          {/* Filters Sidebar */}
           <aside className="w-full lg:w-[280px] shrink-0 sticky top-24 bg-surface-container-lowest border border-outline-variant rounded p-space-lg flex flex-col gap-space-lg">
             <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant">
               <div className="flex items-center gap-space-xs text-primary">
                 <span className="material-symbols-outlined text-lg">filter_alt</span>
                 <span className="font-label-lg text-label-lg font-semibold uppercase tracking-wider">
-                  Refine By
+                  Filters
                 </span>
               </div>
               <button
@@ -255,7 +255,7 @@ function ExploreContent() {
                   Open Kitchens Only
                 </span>
                 <span className="block font-body-sm text-[12px] text-on-surface-variant">
-                  Live seating &amp; dispatched now
+                  Open for orders &amp; dining right now
                 </span>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -274,13 +274,13 @@ function ExploreContent() {
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
                 Service Mode
               </span>
-              <div className="grid grid-cols-2 gap-space-xs bg-surface-container-low p-1 rounded border border-outline-variant">
+              <div className="grid grid-cols-2 gap-space-xs bg-surface-container-low p-1 rounded-lg border border-outline-variant">
                 <button
                   type="button"
                   onClick={() => setServiceMode("delivery")}
-                  className={`py-1.5 px-space-sm rounded font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1 transition-all ${
+                  className={`py-1.5 px-space-sm rounded-md font-label-sm text-label-sm font-semibold flex items-center justify-center gap-1 transition-all ${
                     serviceMode === "delivery"
-                      ? "bg-surface-container-lowest text-primary shadow-sm"
+                      ? "bg-surface-container-lowest text-primary shadow-xs"
                       : "text-on-surface-variant hover:text-primary font-medium"
                   }`}
                 >
@@ -289,9 +289,9 @@ function ExploreContent() {
                 <button
                   type="button"
                   onClick={() => setServiceMode("dine-in")}
-                  className={`py-1.5 px-space-sm rounded font-label-sm text-label-sm flex items-center justify-center gap-1 transition-all ${
+                  className={`py-1.5 px-space-sm rounded-md font-label-sm text-label-sm flex items-center justify-center gap-1 transition-all ${
                     serviceMode === "dine-in"
-                      ? "bg-surface-container-lowest text-primary shadow-sm font-semibold"
+                      ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
                       : "text-on-surface-variant hover:text-primary font-medium"
                   }`}
                 >
@@ -300,10 +300,10 @@ function ExploreContent() {
               </div>
             </div>
 
-            {/* Cuisine & Terroir */}
+            {/* Cuisines */}
             <div className="flex flex-col gap-space-sm pt-space-xs border-t border-outline-variant">
               <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                Cuisine &amp; Terroir
+                Cuisines
               </span>
               <div className="flex flex-col gap-space-xs max-h-56 overflow-y-auto pr-space-xs">
                 <label className="flex items-center gap-space-sm font-body-sm text-body-sm text-on-surface cursor-pointer select-none">
@@ -395,7 +395,7 @@ function ExploreContent() {
                       key={tier}
                       type="button"
                       onClick={() => togglePriceTier(tier)}
-                      className={`py-1.5 border rounded font-label-md text-label-md transition-colors ${
+                      className={`py-1.5 border rounded-md font-label-md text-label-md transition-colors ${
                         isSelected
                           ? "border-primary-container bg-primary-container text-on-primary font-semibold"
                           : "border-outline-variant text-on-surface hover:border-primary"
@@ -415,7 +415,7 @@ function ExploreContent() {
               </span>
               <div className="flex flex-col gap-space-xs">
                 <label
-                  className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-colors ${
                     minRating === 4.5
                       ? "border-primary-container/60 bg-primary-fixed/20"
                       : "border-outline-variant/60 hover:bg-surface-container-low"
@@ -436,7 +436,7 @@ function ExploreContent() {
                   <span className="font-body-sm text-[11px] text-on-surface-variant">42 spots</span>
                 </label>
                 <label
-                  className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-colors ${
                     minRating === 4.0
                       ? "border-primary-container/60 bg-primary-fixed/20"
                       : "border-outline-variant/60 hover:bg-surface-container-low"
@@ -457,7 +457,7 @@ function ExploreContent() {
                   <span className="font-body-sm text-[11px] text-on-surface-variant">98 spots</span>
                 </label>
                 <label
-                  className={`flex items-center justify-between p-2 rounded border cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-colors ${
                     minRating === 3.5
                       ? "border-primary-container/60 bg-primary-fixed/20"
                       : "border-outline-variant/60 hover:bg-surface-container-low"
@@ -559,7 +559,7 @@ function ExploreContent() {
               {selectedCuisines.map((c) => (
                 <span
                   key={c}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-lowest border border-outline-variant rounded font-label-sm text-label-sm text-primary"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-lowest border border-outline-variant rounded-sm font-label-sm text-xs text-primary font-medium shadow-xs"
                 >
                   <span className="capitalize">{c === "desi" ? "Desi & Biryani" : c}</span>
                   <button
@@ -599,7 +599,7 @@ function ExploreContent() {
                 ))}
               </div>
             ) : (
-              <div className="bg-surface-container-lowest border border-outline-variant rounded p-space-xl flex flex-col items-center justify-center text-center my-6">
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xs p-space-xl flex flex-col items-center justify-center text-center my-6">
                 <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary-container mb-space-sm">
                   <span className="material-symbols-outlined text-3xl">soup_kitchen</span>
                 </div>
@@ -609,7 +609,7 @@ function ExploreContent() {
                 </p>
                 <button
                   onClick={handleResetAll}
-                  className="px-space-md py-2 border border-primary-container text-primary-container hover:bg-primary-container/5 rounded font-label-sm text-label-sm font-semibold transition-colors"
+                  className="px-space-md py-2 border border-primary-container text-primary-container hover:bg-primary-container/5 rounded-lg font-label-sm text-label-sm font-semibold transition-colors"
                   type="button"
                 >
                   Clear Active Filters
@@ -617,108 +617,46 @@ function ExploreContent() {
               </div>
             )}
 
-            {/* Operational State Previews (Exact from Reference HTML) */}
-            <section className="mt-space-xl pt-space-xl border-t border-outline-variant flex flex-col gap-space-lg">
-              <div className="flex items-baseline justify-between">
-                <div>
-                  <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-                    UI State Architecture
-                  </span>
-                  <h2 className="font-headline-sm text-headline-sm text-primary">
-                    Operational State Previews
-                  </h2>
-                </div>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  Live component testbed
-                </span>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-                <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-space-md bg-surface-container-low p-space-md rounded border border-outline-variant">
-                  <div className="flex flex-col gap-space-xs col-span-full">
-                    <span className="font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse"></span>
-                      Skeleton Loading Matrix (Network Pending)
-                    </span>
-                  </div>
-                  <div className="bg-surface-container-lowest border border-outline-variant rounded p-space-sm flex flex-col gap-space-sm animate-pulse">
-                    <div className="w-full aspect-[4/3] bg-surface-container-highest rounded"></div>
-                    <div className="h-4 bg-surface-container-highest rounded w-3/4"></div>
-                    <div className="h-3 bg-surface-container-highest rounded w-1/2"></div>
-                    <div className="pt-space-xs border-t border-outline-variant flex justify-between">
-                      <div className="h-3 bg-surface-container-highest rounded w-1/4"></div>
-                      <div className="h-3 bg-surface-container-highest rounded w-1/3"></div>
-                    </div>
-                  </div>
-                  <div className="bg-surface-container-lowest border border-outline-variant rounded p-space-sm flex flex-col gap-space-sm animate-pulse">
-                    <div className="w-full aspect-[4/3] bg-surface-container-highest rounded"></div>
-                    <div className="h-4 bg-surface-container-highest rounded w-2/3"></div>
-                    <div className="h-3 bg-surface-container-highest rounded w-1/3"></div>
-                    <div className="pt-space-xs border-t border-outline-variant flex justify-between">
-                      <div className="h-3 bg-surface-container-highest rounded w-1/4"></div>
-                      <div className="h-3 bg-surface-container-highest rounded w-1/3"></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-surface-container-lowest border border-outline-variant rounded p-space-lg flex flex-col items-center justify-center text-center">
-                  <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-primary-container mb-space-sm">
-                    <span className="material-symbols-outlined text-2xl">soup_kitchen</span>
-                  </div>
-                  <h3 className="font-headline-sm text-lg text-on-surface mb-1">No matches found</h3>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xs mb-space-md">
-                    Try widening your price tier or disabling the &ldquo;Open Kitchens Only&rdquo; constraint.
-                  </p>
-                  <button
-                    onClick={handleResetAll}
-                    className="px-space-md py-2 border border-primary-container text-primary-container hover:bg-primary-container/5 rounded font-label-sm text-label-sm font-semibold transition-colors"
-                    type="button"
-                  >
-                    Clear Active Filters
-                  </button>
-                </div>
-              </div>
-            </section>
-
             {/* Pagination Controls */}
             <div className="mt-space-lg pt-space-lg border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-space-md">
               <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Showing <span className="font-semibold text-on-surface">1–{filteredRestaurants.length}</span> of{" "}
-                <span className="font-semibold text-on-surface">142</span> curated dining spots
+                Showing <span className="font-semibold text-on-surface">{filteredRestaurants.length}</span> restaurant{filteredRestaurants.length === 1 ? "" : "s"}
               </p>
               <div className="flex items-center gap-space-xs">
                 <button
-                  className="px-3 py-1.5 border border-outline-variant rounded font-label-md text-label-md text-outline hover:text-on-surface hover:border-on-surface disabled:opacity-40 transition-colors flex items-center gap-1"
+                  className="px-3 py-1.5 border border-outline-variant rounded-md font-label-md text-label-md text-outline hover:text-on-surface hover:border-on-surface disabled:opacity-40 transition-colors flex items-center gap-1"
                   disabled
                   type="button"
                 >
                   <span className="material-symbols-outlined text-sm">arrow_back</span> Prev
                 </button>
                 <button
-                  className="w-8 h-8 rounded bg-primary-container text-on-primary font-label-md text-label-md font-semibold"
+                  className="w-8 h-8 rounded-md bg-primary-container text-on-primary font-label-md text-label-md font-semibold"
                   type="button"
                 >
                   1
                 </button>
                 <button
-                  className="w-8 h-8 rounded border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
+                  className="w-8 h-8 rounded-md border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
                   type="button"
                 >
                   2
                 </button>
                 <button
-                  className="w-8 h-8 rounded border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
+                  className="w-8 h-8 rounded-md border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
                   type="button"
                 >
                   3
                 </button>
                 <span className="px-1 text-outline">...</span>
                 <button
-                  className="w-8 h-8 rounded border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
+                  className="w-8 h-8 rounded-md border border-outline-variant hover:border-primary-container font-label-md text-label-md text-on-surface transition-colors"
                   type="button"
                 >
                   12
                 </button>
                 <button
-                  className="px-3 py-1.5 border border-outline-variant rounded font-label-md text-label-md text-on-surface hover:border-primary-container transition-colors flex items-center gap-1"
+                  className="px-3 py-1.5 border border-outline-variant rounded-md font-label-md text-label-md text-on-surface hover:border-primary-container transition-colors flex items-center gap-1"
                   type="button"
                 >
                   Next <span className="material-symbols-outlined text-sm">arrow_forward</span>

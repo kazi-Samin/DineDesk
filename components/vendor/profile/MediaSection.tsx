@@ -142,12 +142,15 @@ export default function MediaSection({
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Marketplace Avatar
           </span>
-          <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-outline-variant/80 shadow-xs bg-surface-container-lowest">
+          <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-outline-variant shadow-2xs bg-surface-container-lowest">
             {logoImage ? (
               <img
                 className="w-full h-full object-cover"
                 src={logoImage}
                 alt="Marketplace Avatar Logo"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/avatars/default-avatar.svg";
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
@@ -158,7 +161,7 @@ export default function MediaSection({
           <button
             type="button"
             onClick={() => logoFileInputRef.current?.click()}
-            className="w-full py-1.5 rounded-lg border border-outline text-on-surface hover:bg-surface-container font-label-sm text-label-sm font-semibold transition-colors cursor-pointer"
+            className="w-full py-1.5 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container font-label-sm text-label-sm font-semibold transition-colors cursor-pointer"
           >
             Upload New Logo
           </button>
@@ -179,12 +182,16 @@ export default function MediaSection({
             {galleryImages.map((photo) => (
               <div
                 key={photo.id}
-                className="relative h-24 rounded-lg overflow-hidden border border-outline-variant/60 group bg-surface-container"
+                className="relative h-24 rounded-lg overflow-hidden border border-outline-variant group bg-surface-container"
               >
                 <img
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   src={photo.url}
                   alt={photo.alt}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src =
+                      "/images/food-placeholder.svg";
+                  }}
                 />
                 <div className="absolute inset-0 bg-primary/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-on-primary transition-opacity">
                   <button
