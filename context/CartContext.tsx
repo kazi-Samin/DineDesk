@@ -11,6 +11,7 @@ interface CartContextType {
   closeDrawer: () => void;
   toggleDrawer: () => void;
   updateQuantity: (id: string, delta: number) => void;
+  addItem: (item: CartItem) => void;
   removeItem: (id: string) => void;
   addRecommendation: () => void;
   applyCoupon: (code: string) => boolean;
@@ -62,6 +63,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         })
         .filter((item): item is CartItem => item !== null)
     );
+  };
+
+  const addItem = (newItem: CartItem) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.id === newItem.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.id === newItem.id
+            ? { ...i, quantity: i.quantity + newItem.quantity }
+            : i
+        );
+      }
+      return [...prev, newItem];
+    });
   };
 
   const removeItem = (id: string) => {
@@ -142,6 +157,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         closeDrawer: () => setIsDrawerOpen(false),
         toggleDrawer: () => setIsDrawerOpen(!isDrawerOpen),
         updateQuantity,
+        addItem,
         removeItem,
         addRecommendation,
         applyCoupon,
