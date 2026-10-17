@@ -1,0 +1,256 @@
+import {
+  FavoriteRestaurant,
+  FavoriteDish,
+} from "@/types/customerFavorites";
+
+export const INITIAL_FAVORITE_RESTAURANTS: FavoriteRestaurant[] = [
+  {
+    id: "fav-rest-1",
+    type: "restaurant",
+    restaurantId: "sultans-heritage",
+    name: "Sultan's Heritage Kitchen",
+    neighborhood: "Banani 11",
+    areaKey: "banani",
+    areaBadge: "Banani 11 • Royal Suite",
+    cuisine: "Mughlai & Kacchi Dum Biryani",
+    cuisineKey: "mughlai",
+    rating: 4.9,
+    reviewCount: 428,
+    description:
+      "Historic recipes prepared in brass deghs, cold-pressed mustard infusions, and fragrant chinigura rice.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDmBuV3W1C2rq5R2AQQ8Yh-0foo2v6cfzSgpgVEd0WtQdxpqvTlvc9tu1CnjVQpPjykp4Z8ZrF4YfuFW62SeTAZ_NMqERVLoymc68XNGSeuy6Cv8EoEhM4QatJ0W4ZApd5YmARhQidbagUpYMnOjdfZbvVSiCcjCFBo18JXZygZJOAELmzTerxY8DqDIZIHwbcI1pF2CGUShpD2dvgnHoAS5RaDb2bQOGaRm5GnUTUz5jpJDtAHPWqZdQ",
+    imageAlt: "Warmly lit luxury Mughlai dining hall with brass accents and teak tables",
+    isOpen: true,
+    statusLabel: "Open Now",
+    statusVariant: "live",
+  },
+  {
+    id: "fav-rest-2",
+    type: "restaurant",
+    restaurantId: "izumi-courtyard",
+    name: "Izumi Courtyard & Robata",
+    neighborhood: "Gulshan 2",
+    areaKey: "gulshan",
+    areaBadge: "Gulshan 2 • Japanese Haven",
+    cuisine: "Robatayaki & Modern Omakase",
+    cuisineKey: "japanese",
+    rating: 4.95,
+    reviewCount: 310,
+    description:
+      "Authentic binchotan charcoal grilling, sashimi graded imports, and courtyard garden dining.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAFc4Kn4oe0VFl_vYH8nyQH_2pCpM3NpXg4Iapl-hxebg_k5X3o3RmDzRsVZHVcLhyS98DjaNB6RqdnBukx8qrdUtqb-JaXIYarASjeY72bxLTZMn3xiYy6kMBGEVu_dTs_yagLxa3Ov09d1q6wyDlNd0GKK7K-73rYkeFtZXYoNcagyO3RuQ4iXr7-xDr6UVx8qReigdMBC1fHwFQZgZpBmxBOK1Rr04TM5bB-pOgXjmVwiZx3O56F-g",
+    imageAlt: "Minimalist Japanese courtyard with dark charred yakisugi wood and stone lantern",
+    isOpen: true,
+    statusLabel: "Open for Dinner",
+    statusVariant: "secondary",
+  },
+  {
+    id: "fav-rest-3",
+    type: "restaurant",
+    restaurantId: "smashcraft-studio",
+    name: "SmashCraft Studio",
+    neighborhood: "Banani",
+    areaKey: "banani",
+    areaBadge: "Banani • Craft Workshop",
+    cuisine: "Artisan Smash Burgers & Shakes",
+    cuisineKey: "artisan",
+    rating: 4.7,
+    reviewCount: 310,
+    description:
+      "Crispy lacy-edge smashed beef, house-fermented potato rolls, and homemade truffle garlic butter.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBh_uKZUn6NE_HSDPfeJwzOpZoZMj6r5u52_aJQzNc38G5NxZP06BCbpNDCcv7cMypBaYEn59LkMInNXXoMW7bIy2aRVH8uWJHczH3n1ZYswjmNFou0C9hIWk8hIaUcN-svvf18tNr2G-0Hj80Lu-Net4SzHFnkVqDCHSSr57HI5icEM8ViReeqxu71ydudj65Bt2OU51CknuCGgbCdDoOhXEMoLhDW2I2Blzziv4ZI4vope1ZJ7eE-Wg",
+    imageAlt: "Rustic artisanal burger kitchen counter with exposed brick and warm amber lighting",
+    isOpen: true,
+    statusLabel: "Open Now",
+    statusVariant: "live",
+  },
+  {
+    id: "fav-rest-4",
+    type: "restaurant",
+    restaurantId: "dacca-tehari-ghar",
+    name: "Dacca Tehari Ghar",
+    neighborhood: "Old Dhaka",
+    areaKey: "old-dhaka",
+    areaBadge: "Old Dhaka • Lalbagh Heritage",
+    cuisine: "Old Dacca Heritage Mustard Tehari",
+    cuisineKey: "dhakaiya",
+    rating: 4.8,
+    reviewCount: 950,
+    description:
+      "Pungent cold-pressed mustard oil, short-grain chinigura rice, and hand-tenderized spiced beef morsels.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAHmdDAyvLeoacifacW8rJicKfpVI81Ncf-D0RTKPNT6Ucw8fsWL1jQgRlYE91KdTQAiw6ZgfbT13w6oeWpBaNxl9lwjAUo6yp6TYzyXtFba4JAzxQb9Fmzgg-akhptWEBZ6ehtJ7HGrQT8cyMW12dW4cSToNbWrNkUY0BPvZg4tEBJA9Ft0jkUVFkyjmB4A7vzmoKUABdywjbwDe4dqdcVuqczOvVDKTGbvX_gfwgObtmEFqLi0ZX6qQ",
+    imageAlt: "Authentic Old Dhaka mustard beef tehari platter with green chilies",
+    isOpen: true,
+    statusLabel: "Open Now",
+    statusVariant: "live",
+  },
+  {
+    id: "fav-rest-5",
+    type: "restaurant",
+    restaurantId: "the-copper-chimney",
+    name: "The Copper Chimney",
+    neighborhood: "Banani 11",
+    areaKey: "banani",
+    areaBadge: "Banani 11 • Royal Kebabs",
+    cuisine: "Mughlai & Charred Galouti Kebabs",
+    cuisineKey: "mughlai",
+    rating: 4.8,
+    reviewCount: 512,
+    description:
+      "Charcoal-smoked galouti and reshmi kebabs served on rustic dark slate with fresh mint raita.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBiAGBrLH5ajusIu7MHAoby2pk5Jg418M6J-Cu78oi9qx2qQNV5BYEXCeJ0hsH8X2IKSXO0xfl4XYHK79Jsn5QPMfA42-LID3nUIbxgR2AE_KRQQv-npk7IODpra2R_UsvgQMVVSEJF1OYGeuMJozAdr2lEpT0rHR31pllAG-hN7PGVjX6KSzv8WysfPBAs7P8WiqeM59l5lHd95zIiLQBMP_QrKLqwwNqnwX0UdOW6FPem6vSbJ_mQvQ",
+    imageAlt: "North Indian clay tandoor kebabs charred over charcoal skewers",
+    isOpen: true,
+    statusLabel: "Open Now",
+    statusVariant: "live",
+  },
+  {
+    id: "fav-rest-6",
+    type: "restaurant",
+    restaurantId: "mori-artisan-sushi",
+    name: "Mori Artisan Sushi & Izakaya",
+    neighborhood: "Gulshan 2",
+    areaKey: "gulshan",
+    areaBadge: "Gulshan 2 • Contemporary Robata",
+    cuisine: "Japanese Contemporary & Fresh Nigiri",
+    cuisineKey: "japanese",
+    rating: 4.9,
+    reviewCount: 190,
+    description:
+      "Fresh salmon sashimi, torched unagi nigiri, and tranquil courtyard dinner ambiance.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDyyVCRSNT6MhKzuuEpQ3QGMeiukmx8qbdXO4l-wkXQnHi4COl9TsVnZ2ohAN3Min7LEfzRrIiob2y9lFDTfG2a0X_pkDEBdQ7etl_af_sfbYG0aspVaolv1nQbwwe33HxTOG16MIl8sLIEoRiMoTx3zzFTfn8nqCB2OijjRmL28OH1UQenp7KC1VO9XBFAjDkxf7QPxphVET4A-_eyDpH21f2zOz5ln1og_0Chi43fVifEDk1GxUjPzw",
+    imageAlt: "Sophisticated Japanese sushi omakase presentation with fresh salmon sashimi",
+    isOpen: true,
+    statusLabel: "Open for Dinner",
+    statusVariant: "secondary",
+  },
+];
+
+export const INITIAL_FAVORITE_DISHES: FavoriteDish[] = [
+  {
+    id: "fav-dish-1",
+    type: "dish",
+    restaurantId: "sultans-heritage",
+    restaurantName: "Sultan's Heritage Kitchen",
+    name: "Special Mutton Kacchi Biryani",
+    price: 650,
+    description:
+      "Fragrant chinigura rice dum-cooked with tender mutton shank marinated in house spice paste.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCiBGdC-dA6FHvH_cmS1DkcmJJqUBce1EyDTmJgtl1YFBr5OjTJAlRTFDPxezpOHKIU_iE2oU8JHEt7doa4id6r1fwMlVGzThP2sWqI43GOsu7uDY_PfO4_8ABZZnC_W9yBVjd29HJaJSMpNgDGhxOerDaGTXGDfAVuUHEpeOnPR7oGLh-ulOfRww__p9bNNhZhB9pHhWcQiF1t8tffognB8YHW6K_pKtR24qB70zNIwVymWt0l52gvag",
+    imageAlt: "Steaming platter of authentic Dum Kacchi Biryani with golden chinigura rice",
+    cuisineKey: "mughlai",
+    areaKey: "banani",
+  },
+  {
+    id: "fav-dish-2",
+    type: "dish",
+    restaurantId: "smashcraft-studio",
+    restaurantName: "SmashCraft Studio",
+    name: "Double Smashed Truffle Burger",
+    price: 580,
+    description:
+      "Aged beef patties seared on cast iron, melted artisan cheddar, and black truffle garlic aioli.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCU-LFCjrDpRp6nsSJa9E1cPFjl3vip6IKHcqC7roCWRaLymf-RRd49I1Rum6Veukb64d1Q6ptlJbnOp0m4q9mb5gqbvs5xKLtt3AQz5hzVbg9WdzvOX9gozD2BNBPL7soVbx37uxAflXMOOIcMTDf1OHNtZ8WRlDvyUOJGegNMmkqeQDQxow0-bFuNbXo5_VQlRYuKDzsYqrMSUmCSGRrirZpRtUaw14zHRdj4U7rklRXCbHADAL_8RQ",
+    imageAlt: "Artisanal smash burger with deeply seared double beef patties and melted cheese",
+    cuisineKey: "artisan",
+    areaKey: "banani",
+  },
+  {
+    id: "fav-dish-3",
+    type: "dish",
+    restaurantId: "dacca-tehari-ghar",
+    restaurantName: "Dacca Tehari Ghar",
+    name: "Old Dhaka Beef Tehari",
+    price: 480,
+    description:
+      "Pungent mustard oil tempered short-grain rice cooked with spiced beef chunks and pickled chillies.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBKxlxyVPqOb0vDuUHgGDyPgF349gHeU9Iu7-Pwj697fNjlhpewZmW0nsruewctQvKRi4hBWeDMoQ9FzfekyNDHBIQ7F3INGh0_puZZc6N9OqQEG83ju7049J9nSYfuY8aKPUpwUu22kTIYCVQwI2toPjJ2uy9Iv39ZUMWmF_CqA-5IJjProrYS9lsGCjQmM2nXuCLMDfxy4yiDuWW-1hrmDeOnM71WV4cJ9QKa3sAaiVKlHCYNFFerIQ",
+    imageAlt: "Old Dhaka spicy beef tehari garnished with fresh green chilies and mustard oil",
+    cuisineKey: "dhakaiya",
+    areaKey: "old-dhaka",
+  },
+  {
+    id: "fav-dish-4",
+    type: "dish",
+    restaurantId: "sultans-heritage",
+    restaurantName: "Sultan's Heritage Kitchen",
+    name: "Mishti Doi in Clay Pot",
+    price: 140,
+    description:
+      "Slow-caramelized buffalo milk fermented overnight in natural earthen pots for smoky sweetness.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuB9hpGiSKInf6wROqwOGxj6qNOlOoC_VdLwK_EoEXFbZLW9XHvg4rWScIW0OdHikgfBH6GXvOZ6XLIVFXFnM6hvTmEq2hmVeLWXiYy2-3Hp-gqGYSgbvK0iUTOQyTNwseYoZZ-OE8kEmIpIaveNmCIK8z1ltF0Jf4PM4UMm2X4g3OgXehvhTiiv4UweGOvmKrrNj6RqmLyty5MJknTfYCMSzOVgiXIFbkQhgY9xq-BoiA_L80Y6PhwQjQ",
+    imageAlt: "Traditional terracotta clay pot filled with thick, glossy caramelized Bengali sweet yogurt",
+    cuisineKey: "mughlai",
+    areaKey: "banani",
+  },
+  {
+    id: "fav-dish-5",
+    type: "dish",
+    restaurantId: "izumi-courtyard",
+    restaurantName: "Izumi Courtyard & Robata",
+    name: "Torched Salmon & Unagi Nigiri Set",
+    price: 920,
+    description:
+      "Fresh Atlantic salmon brushed with nikiri glaze and kabayaki glazed freshwater eel over sushi rice.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDyyVCRSNT6MhKzuuEpQ3QGMeiukmx8qbdXO4l-wkXQnHi4COl9TsVnZ2ohAN3Min7LEfzRrIiob2y9lFDTfG2a0X_pkDEBdQ7etl_af_sfbYG0aspVaolv1nQbwwe33HxTOG16MIl8sLIEoRiMoTx3zzFTfn8nqCB2OijjRmL28OH1UQenp7KC1VO9XBFAjDkxf7QPxphVET4A-_eyDpH21f2zOz5ln1og_0Chi43fVifEDk1GxUjPzw",
+    imageAlt: "Fresh torched salmon nigiri and unagi over seasoned sushi rice",
+    cuisineKey: "japanese",
+    areaKey: "gulshan",
+  },
+  {
+    id: "fav-dish-6",
+    type: "dish",
+    restaurantId: "smashcraft-studio",
+    restaurantName: "SmashCraft Studio",
+    name: "Melted Cheddar & Jalapeno Fries",
+    price: 320,
+    description:
+      "Hand-cut Idaho russet fries smothered in artisan aged cheddar and charred jalapeno relish.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBbUX39LmZnKcPElw0YvglkBGE3e7_hAsRyCSoo9KjYOrTtOGoUq9GjM86lOKpcD2OyftLQs0-YJ-wgnDabWEtj-DV2FZmdi_l-LxWNZzhm-_Xh6jdTZ2yxMaCr_wS9HEy5K5SdEpJGc2fx164Dvd1KBTrAsnt8HQZK6iryHXz_xEwhzExRdQf5x-0iiUTEEywx33AnfrzDJNdBkoF9J3u7nPF1TWXp6whuhP5-c5CNjeUuN8gyXlJMrA",
+    imageAlt: "Crispy golden french fries topped with melted cheddar cheese and sliced jalapenos",
+    cuisineKey: "artisan",
+    areaKey: "banani",
+  },
+  {
+    id: "fav-dish-7",
+    type: "dish",
+    restaurantId: "the-copper-chimney",
+    restaurantName: "The Copper Chimney",
+    name: "Smoked Galouti Kebab with Sheermal",
+    price: 540,
+    description:
+      "Melt-in-mouth Awadhi minced mutton infused with 24 royal herbs on saffron-scented flatbread.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBiAGBrLH5ajusIu7MHAoby2pk5Jg418M6J-Cu78oi9qx2qQNV5BYEXCeJ0hsH8X2IKSXO0xfl4XYHK79Jsn5QPMfA42-LID3nUIbxgR2AE_KRQQv-npk7IODpra2R_UsvgQMVVSEJF1OYGeuMJozAdr2lEpT0rHR31pllAG-hN7PGVjX6KSzv8WysfPBAs7P8WiqeM59l5lHd95zIiLQBMP_QrKLqwwNqnwX0UdOW6FPem6vSbJ_mQvQ",
+    imageAlt: "Charcoal-smoked Galouti kebabs served with sheermal bread and mint chutney",
+    cuisineKey: "mughlai",
+    areaKey: "banani",
+  },
+  {
+    id: "fav-dish-8",
+    type: "dish",
+    restaurantId: "sultans-heritage",
+    restaurantName: "Sultan's Heritage Kitchen",
+    name: "Shahi Morog Polao",
+    price: 520,
+    description:
+      "Tender country chicken simmered in rich zafrani gravy and served over aromatic chinigura rice.",
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAAynW47GxjfwGapFKKcsY7IuW4kqHfCXUe7TiLX200KTAEtDwDlSZIcenq9-NqhRY35p_T8Yb5-OACxT5MBxecujPwMRSdQt_kpCY8JfgaXQ0X08WEk5TlLafJqxmaZc79Dys1jgger7AyfwAFr7bDnJSFpG4DuIoHL2Bh-kgu8PhDo_YTITymqVIjmJAv4sdbubdPl3PhUejLyMmYiOfZjgRkpttoKmrKuAvyRgFUUJu19y4XX9NCZg",
+    imageAlt: "Aromatic golden shahi morog polao with roasted chicken quarter and boiled egg",
+    cuisineKey: "mughlai",
+    areaKey: "banani",
+  },
+];

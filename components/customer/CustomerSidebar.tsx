@@ -24,7 +24,19 @@ export default function CustomerSidebar({
 }: CustomerSidebarProps) {
   const pathname = usePathname();
 
-  const isProfileActive = pathname === "/dashboard/customer/profile";
+  const isProfileActive =
+    pathname === "/dashboard/customer/profile" ||
+    pathname === "/dashboard/user/profile";
+  const isAddressesActive =
+    pathname === "/dashboard/customer/addresses" ||
+    pathname === "/dashboard/user/addresses";
+  const isReservationsActive = pathname === "/dashboard/customer/reservations";
+  const isReviewsActive =
+    pathname === "/dashboard/customer/reviews" ||
+    pathname === "/dashboard/user/reviews";
+  const isFavoritesActive =
+    pathname === "/dashboard/customer/favorites" ||
+    pathname === "/dashboard/user/favorites";
   const isOrdersActive =
     pathname === "/dashboard/customer/orders" || pathname === "/dashboard/orders";
 
@@ -43,31 +55,38 @@ export default function CustomerSidebar({
     },
     {
       label: "Table Reservations",
-      href: "#",
+      href: "/dashboard/customer/reservations",
       icon: "table_restaurant",
       badge: <span className="w-2 h-2 rounded-full bg-secondary" />,
-      isActive: false,
+      isActive: isReservationsActive,
     },
     {
-      label: "Profile & Addresses",
+      label: "Personal Profile",
       href: "/dashboard/customer/profile",
-      icon: "person_pin_circle",
+      icon: "person",
       badge: null,
       isActive: isProfileActive,
     },
     {
+      label: "Delivery Addresses",
+      href: "/dashboard/customer/addresses",
+      icon: "location_on",
+      badge: null,
+      isActive: isAddressesActive,
+    },
+    {
       label: "My Reviews & Ratings",
-      href: "#",
+      href: "/dashboard/customer/reviews",
       icon: "rate_review",
       badge: null,
-      isActive: false,
+      isActive: isReviewsActive,
     },
     {
       label: "Saved Favorites",
-      href: "#",
+      href: "/dashboard/customer/favorites",
       icon: "bookmark_heart",
       badge: null,
-      isActive: false,
+      isActive: isFavoritesActive,
     },
     {
       label: "Loyalty Rewards",

@@ -21,7 +21,9 @@ export default function Navbar() {
   const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
   const isVendor = pathname?.startsWith("/dashboard/vendor");
-  const isCustomerDashboard = pathname?.startsWith("/dashboard/customer");
+  const isCustomerDashboard =
+    pathname?.startsWith("/dashboard/customer") ||
+    pathname?.startsWith("/dashboard/user");
 
   if (isVendor || isCustomerDashboard) {
     return null;
@@ -180,11 +182,55 @@ export default function Navbar() {
                   onClick={() => {
                     setSelectedRole("Diner");
                     setRoleSwitcherOpen(false);
+                    router.push("/dashboard/customer/reservations");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Table Reservations</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/customer/favorites");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Saved Favorites</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/customer/reviews");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ My Reviews & Ratings</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
                     router.push("/dashboard/customer/profile");
                   }}
                   className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
                 >
-                  <span>↳ Profile &amp; Addresses</span>
+                  <span>↳ Personal Profile</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/customer/addresses");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Delivery Addresses</span>
                 </button>
                 <button
                   type="button"
