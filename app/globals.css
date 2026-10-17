@@ -86,7 +86,67 @@
      8. RATINGS & SPECIAL HIGHLIGHTS
      ------------------------------------------------------------------------ */
   --color-rating-star: #d97706;              /* Warm Golden Amber — Food & Restaurant Review Stars */
+  --color-rating-star-fill: #b45309;         /* Deep Amber Star Fill */
+  --color-rating-star-muted: #c2c8c1;        /* Unfilled / Outline Variant Star */
+
+  /* ------------------------------------------------------------------------
+     9. NEWLY ADDED: RESERVATIONS, REVIEWS & DELIVERY BADGES
+     ------------------------------------------------------------------------ */
+  /* Reservation Statuses */
+  --color-status-confirmed-bg: #c8ebd1;      /* Confirmed Seating Background */
+  --color-status-confirmed-text: #022111;    /* Confirmed Seating Text */
+  --color-status-pending-bg: #fef3c7;        /* Pending Confirmation Background (Warm Amber) */
+  --color-status-pending-text: #92400e;      /* Pending Confirmation Text (Deep Amber) */
+  --color-status-pending-border: #fde68a;    /* Pending Confirmation Border */
+  --color-status-completed-bg: #f5ede4;      /* Completed / Visited Background */
+  --color-status-completed-text: #424843;    /* Completed / Visited Text */
+  --color-status-cancelled-bg: #ffdad6;      /* Cancelled / Declined Background */
+  --color-status-cancelled-text: #93000a;    /* Cancelled / Declined Text */
+
+  /* Verification Badges */
+  --color-badge-dinein-bg: #c8ebd1;          /* Verified Dine-in Background (Mint Sage) */
+  --color-badge-dinein-text: #022111;        /* Verified Dine-in Text */
+  --color-badge-delivery-bg: #ffdbd0;        /* Verified Delivery Background (Soft Peach) */
+  --color-badge-delivery-text: #3a0b00;      /* Verified Delivery Text */
+
+  /* Reviews & Upvotes */
+  --color-upvote-active-bg: #ffdbd0;         /* Upvoted State Background */
+  --color-upvote-active-text: #7f2a0c;       /* Upvoted State Text */
+  --color-dish-chip-bg: #efe7de;             /* Tagged Dish Chip Background */
+  --color-dish-chip-text: #082717;           /* Tagged Dish Chip Text */
+
+  /* Delivery Address Categories */
+  --color-addr-home-icon: #1f3d2b;           /* Home Coordinate Icon */
+  --color-addr-office-icon: #9f4122;         /* Office Coordinate Icon */
+  --color-addr-family-icon: #466551;         /* Family Residence Icon */
+  --color-addr-custom-icon: #727972;         /* Custom Delivery Icon */
+
+  /* TableMate AI Floating Concierge */
+  --color-tablemate-bg: #1f3d2b;             /* TableMate AI Background */
+  --color-tablemate-hover: #082717;          /* TableMate AI Hover */
+  --color-tablemate-glow: rgba(31, 61, 43, 0.25); /* TableMate AI Shadow */
 }
+
+/* ==========================================================================
+   PARTNER CHEAT SHEET: QUICK COPY-PASTE COLOR CODES FOR DESIGN COLLABORATION
+   ==========================================================================
+   • Primary Green (Brand/Headings):  #082717
+   • Primary Container (Buttons/Nav): #1f3d2b
+   • Sage Fixed (Verified Dine-in):   #c8ebd1 (Text: #022111)
+   • Terracotta Rust (Accents/Heart): #9f4122
+   • Peach Fixed (Delivery Badges):   #ffdbd0 (Text: #3a0b00)
+   • Coral Container (Alerts/Active): #fc8863 (Text: #722104)
+   • Amber Pending (Table Hold):      #fef3c7 (Text: #92400e)
+   • Crimson Red (Cancel/Delete):     #ba1a1a
+   • Pink Error Container:            #ffdad6 (Text: #93000a)
+   • Warm Background Canvas:          #fff8f2
+   • Soft Low Container (Sidebar):    #faf2ea
+   • Linen Container (Inputs/Cards):  #f5ede4
+   • Elevated Card White:             #ffffff
+   • Primary Text (Espresso):         #1e1b16
+   • Subtitle Text (Slate Olive):     #424843
+   • Rating Gold Stars:               #d97706
+   ========================================================================== */
 
 @layer base {
   html,
