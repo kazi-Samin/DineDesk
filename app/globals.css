@@ -3,8 +3,26 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   DINEDESK OFFICIAL DESIGN SYSTEM COLOR PALETTE
-   Use this comprehensive reference for all UI components and sections.
+   DINEDESK OFFICIAL DESIGN SYSTEM — COLOR PALETTE & DESIGN TOKENS
+   Quick Reference & Tokens for Frontend Engineers & Designers
+   ==========================================================================
+   
+   QUICK COLOR CHEAT SHEET (Easy Copy-Paste):
+   --------------------------------------------------------------------------
+   • Main Page Background:            #F7F7F4  (bg-background / bg-surface-container-low)
+   • Secondary Section Background:    #F0F1EC  (bg-surface-container)
+   • Card and Form Surfaces:          #FFFFFF  (bg-surface-container-lowest)
+   • Subtle Borders & Dividers:       #E3E5DF  (border-outline-variant)
+   • Primary Brand Green:             #1F3D2B  (text-primary / bg-primary-container)
+   • On-Primary Text:                 #F7F7F4  (text-on-primary)
+   • Secondary Terracotta Accent:     #9F4122  (text-secondary / bg-secondary)
+   • Main Text:                       #252B26  (text-on-surface)
+   • Secondary / Muted Text:          #686D67  (text-on-surface-variant)
+   • Mint Sage (Verified Badges):     #E2E8DF  (text: #172E20)
+   • Soft Peach (Active Status):      #F7DFD6  (text: #3D1408)
+   • Warm Amber (Hold / Pending):     #FEF3C7  (text: #92400E)
+   • Crimson Red (Alert / Delete):    #BA1A1A  (text: #FFFFFF)
+   • Review Stars:                    #D97706
    ========================================================================== */
 
 :root {
@@ -13,13 +31,13 @@
      ------------------------------------------------------------------------ */
   --color-primary: #1f3d2b;                  /* Primary Forest Green — #1F3D2B */
   --color-primary-container: #1f3d2b;        /* Hunter Green — Primary CTA buttons, active sidebar items */
-  --color-on-primary: #f7f7f4;               /* Clean Warm Soft White — Crisp & elegant, readable without harsh glare */
+  --color-on-primary: #f7f7f4;               /* Clean Warm Soft White — Crisp & readable */
   --color-on-primary-container: #d6e2d9;     /* Soft Sage — Secondary text on dark green containers */
   --color-primary-fixed: #e2e8df;            /* Mint Sage — Verified badges, light green badge background */
   --color-primary-fixed-dim: #cdd6c9;        /* Soft Sage — Hover state for sage badges */
   --color-on-primary-fixed: #172e20;         /* Very Dark Green — High contrast text inside mint sage badges */
   --color-on-primary-fixed-variant: #2d4c38; /* Deep Sage — Subtle text inside fixed green badges */
-  --color-surface-tint: #3b5c46;             /* Live Forest Pulse — "Live", "Synchronized to Cloud", indicators */
+  --color-surface-tint: #3b5c46;             /* Live Forest Pulse — "Live", "Synchronized" indicators */
 
   /* ------------------------------------------------------------------------
      2. ACCENT & SECONDARY TERRACOTTA (Warm Spice, Active Orders, Badges)
@@ -40,10 +58,10 @@
   --color-surface: #f7f7f4;                  /* Base Surface Canvas — #F7F7F4 */
   --color-surface-bright: #f7f7f4;           /* Bright Neutral Surface — #F7F7F4 */
   --color-surface-dim: #eaebe5;              /* Muted Canvas Surface */
-  --color-surface-container-lowest: #ffffff; /* Card & Form Surfaces — #FFFFFF (Crisp White on neutral canvas) */
+  --color-surface-container-lowest: #ffffff; /* Card & Form Surfaces — #FFFFFF */
   --color-surface-container-low: #f7f7f4;    /* Canvas Surface — Standard page background */
   --color-surface-container: #f0f1ec;        /* Secondary Section Background — #F0F1EC */
-  --color-surface-container-high: #e8eae3;   /* Neutral Tint — Hover background on list items and rows */
+  --color-surface-container-high: #e8eae3;   /* Neutral Tint — Hover background on list items */
   --color-surface-container-highest: #e0e3dc;/* Subtle Neutral — Dividers, active selection backgrounds */
   --color-surface-variant: #f0f1ec;          /* Surface variant */
 
@@ -54,7 +72,7 @@
   --color-on-surface-variant: #686d67;       /* Secondary Text — #686D67 */
   --color-on-background: #252b26;            /* Primary page typography */
   --color-inverse-surface: #252b26;          /* Deep Dark Charcoal — Dark mode tooltips, snackbars */
-  --color-inverse-on-surface: #f7f7f4;       /* Soft Light Neutral — Text inside dark tooltips & snackbars */
+  --color-inverse-on-surface: #f7f7f4;       /* Soft Light Neutral — Text inside dark tooltips */
 
   /* ------------------------------------------------------------------------
      5. BORDERS, DIVIDERS & OUTLINES
@@ -65,10 +83,10 @@
   /* ------------------------------------------------------------------------
      6. ALERT, ERROR & DESTRUCTIVE ACTIONS
      ------------------------------------------------------------------------ */
-  --color-error: #ba1a1a;                    /* Crimson Red — Delete actions, reject buttons, cancellation badges */
-  --color-error-container: #ffdad6;          /* Soft Rose/Pink — Background for error messages & delete modals */
+  --color-error: #ba1a1a;                    /* Crimson Red — Delete actions, reject buttons */
+  --color-error-container: #ffdad6;          /* Soft Rose/Pink — Error messages & delete modals */
   --color-on-error: #ffffff;                 /* Pure White — Text on red error buttons */
-  --color-on-error-container: #93000a;       /* Deep Wine Red — High contrast text inside error containers */
+  --color-on-error-container: #93000a;       /* Deep Wine Red — Text inside error containers */
 
   /* ------------------------------------------------------------------------
      7. TERTIARY WINE & SPECIALTY PALETTE
@@ -85,14 +103,32 @@
   /* ------------------------------------------------------------------------
      8. RATINGS & SPECIAL HIGHLIGHTS
      ------------------------------------------------------------------------ */
-  --color-rating-star: #d97706;              /* Warm Golden Amber — Food & Restaurant Review Stars */
+  --color-rating-star: #d97706;              /* Warm Golden Amber — Review Stars */
   --color-rating-star-fill: #b45309;         /* Deep Amber Star Fill */
   --color-rating-star-muted: #e3e5df;        /* Unfilled / Outline Variant Star */
 
   /* ------------------------------------------------------------------------
-     9. STATUS BADGES & ACCENTS
+     9. BORDER RADIUS SCALE
      ------------------------------------------------------------------------ */
-  /* Reservation Statuses */
+  --radius-xs: 4px;                          /* Badges, micro indicators */
+  --radius-sm: 6px;                          /* Inputs, selects, small controls */
+  --radius-md: 8px;                          /* Standard buttons, dropdown toggles */
+  --radius-lg: 10px;                         /* Standard cards, list containers */
+  --radius-xl: 12px;                         /* Feature cards, hero panels */
+  --radius-2xl: 16px;                        /* Modals, bottom sheets */
+  --radius-full: 9999px;                     /* Pill buttons, circular avatars */
+
+  /* ------------------------------------------------------------------------
+     10. SUBTLE ELEVATION & SHADOWS
+     ------------------------------------------------------------------------ */
+  --shadow-2xs: 0 1px 2px 0 rgba(37, 43, 38, 0.03);
+  --shadow-xs: 0 1px 3px 0 rgba(37, 43, 38, 0.05);
+  --shadow-sm: 0 2px 6px -1px rgba(37, 43, 38, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(37, 43, 38, 0.08);
+
+  /* ------------------------------------------------------------------------
+     11. STATUS BADGES & ACCENTS
+     ------------------------------------------------------------------------ */
   --color-status-confirmed-bg: #e2e8df;      /* Confirmed Seating Background */
   --color-status-confirmed-text: #172e20;    /* Confirmed Seating Text */
   --color-status-pending-bg: #fef3c7;        /* Pending Confirmation Background (Warm Amber) */
@@ -127,31 +163,13 @@
   --color-tablemate-glow: rgba(31, 61, 43, 0.15); /* TableMate AI Shadow */
 }
 
-/* ==========================================================================
-   PARTNER CHEAT SHEET: QUICK COPY-PASTE COLOR CODES FOR DESIGN COLLABORATION
-   ==========================================================================
-   • Main Page Background:            #F7F7F4
-   • Secondary Section Background:    #F0F1EC
-   • Card and Form Surfaces:          #FFFFFF
-   • Subtle Borders:                  #E3E5DF
-   • Primary Brand Green:             #1F3D2B
-   • Dark Green Section Background:   #1F3D2B
-   • Main Text:                       #252B26
-   • Secondary Text:                  #686D67
-   • Terracotta Accent:               #9F4122
-   • On Primary Text:                 #F7F7F4
-   • Sage Fixed (Verified Dine-in):   #E2E8DF (Text: #172E20)
-   • Peach Fixed (Delivery Badges):   #F7DFD6 (Text: #3D1408)
-   • Amber Pending (Table Hold):      #FEF3C7 (Text: #92400E)
-   • Crimson Red (Cancel/Delete):     #BA1A1A
-   • Rating Gold Stars:               #D97706
-   ========================================================================== */
-
 @layer base {
   html,
   body {
     margin: 0;
     padding: 0;
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
   }
   body {
     overscroll-behavior: none;
@@ -164,6 +182,52 @@
   }
 }
 
+/* ==========================================================================
+   REUSABLE DINEDESK COMPONENT UTILITIES
+   ========================================================================== */
+@layer components {
+  /* Standard Clean Surface Card */
+  .dinedesk-card {
+    @apply bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xs;
+  }
+
+  /* Interactive Hover Card */
+  .dinedesk-card-interactive {
+    @apply bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xs hover:shadow-xs hover:border-primary/40 transition-all;
+  }
+
+  /* Standard Clean Form Input */
+  .dinedesk-input {
+    @apply bg-surface-container-low border border-outline-variant rounded-md px-3.5 py-2 text-on-surface font-body-sm focus:outline-none focus:bg-surface-container-lowest focus:border-primary transition-colors;
+  }
+
+  /* Primary Brand Button */
+  .dinedesk-btn-primary {
+    @apply bg-primary-container text-on-primary font-semibold rounded-lg px-4 py-2 hover:bg-primary transition-colors shadow-2xs cursor-pointer;
+  }
+
+  /* Secondary Terracotta Button */
+  .dinedesk-btn-secondary {
+    @apply bg-secondary text-on-secondary font-semibold rounded-lg px-4 py-2 hover:bg-secondary/90 transition-colors shadow-2xs cursor-pointer;
+  }
+
+  /* Outlined Button */
+  .dinedesk-btn-outline {
+    @apply bg-transparent border border-outline-variant text-on-surface font-semibold rounded-lg px-4 py-2 hover:bg-surface-container transition-colors cursor-pointer;
+  }
+
+  /* Verified Sage Badge */
+  .dinedesk-badge-verified {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-semibold;
+  }
+
+  /* Alert Warning / Active Badge */
+  .dinedesk-badge-warning {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-fixed text-secondary font-label-sm text-xs font-semibold;
+  }
+}
+
+/* Minimal Scrollbars */
 ::-webkit-scrollbar {
   display: none;
 }
