@@ -30,6 +30,15 @@ export function getCustomerProfile(): CustomerProfileData {
       );
       return INITIAL_CUSTOMER_PROFILE;
     }
+    // Auto-migrate broken external avatar URL if previously cached in localStorage
+    if (
+      !parsed.avatarUrl ||
+      parsed.avatarUrl.includes("lh3.googleusercontent.com/aida/AEtj") ||
+      parsed.avatarUrl.includes("friendly_portrait_headshot")
+    ) {
+      parsed.avatarUrl = "/avatars/tahmid-avatar.svg";
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed));
+    }
     return parsed;
   } catch (err) {
     console.error("Error reading customer profile from localStorage:", err);

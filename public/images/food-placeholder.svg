@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="food-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7F5F0" />
+      <stop offset="100%" stop-color="#ECE7DD" />
+    </linearGradient>
+    <linearGradient id="plate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="100%" stop-color="#E8E4DA" />
+    </linearGradient>
+    <linearGradient id="dish-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1F3D2B" />
+      <stop offset="100%" stop-color="#14281C" />
+    </linearGradient>
+    <linearGradient id="warm-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9F4122" />
+      <stop offset="100%" stop-color="#7C3219" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Surface -->
+  <rect width="400" height="300" fill="url(#food-bg)" />
+  <circle cx="200" cy="150" r="120" fill="#E4DED2" opacity="0.4" />
+
+  <!-- Outer Plate Rim -->
+  <ellipse cx="200" cy="170" rx="140" ry="60" fill="#D3CBC0" opacity="0.6" />
+  <ellipse cx="200" cy="165" rx="135" ry="55" fill="url(#plate)" stroke="#D5CFC6" stroke-width="2" />
+  <ellipse cx="200" cy="165" rx="105" ry="40" fill="#F4EFE6" stroke="#E0D9CD" stroke-width="1.5" />
+
+  <!-- Ceramic Pot / Food Base -->
+  <ellipse cx="200" cy="160" rx="85" ry="32" fill="url(#dish-accent)" />
+  
+  <!-- Food / Saffron Rice Mound -->
+  <path d="M 125 158 C 125 120 160 100 200 100 C 240 100 275 120 275 158 Z" fill="url(#warm-accent)" opacity="0.9" />
+  <ellipse cx="200" cy="152" rx="72" ry="22" fill="#C96839" opacity="0.8" />
+  <ellipse cx="200" cy="144" rx="55" ry="16" fill="#D98A53" opacity="0.9" />
+
+  <!-- Saffron Garnish Specks -->
+  <circle cx="185" cy="138" r="3" fill="#FFE082" />
+  <circle cx="215" cy="142" r="2.5" fill="#FFE082" />
+  <circle cx="198" cy="130" r="2" fill="#FFFFFF" />
+  <circle cx="170" cy="148" r="3" fill="#588157" />
+  <circle cx="230" cy="146" r="2.5" fill="#588157" />
+
+  <!-- Aroma / Steam Swirls -->
+  <path d="M 180 90 Q 170 70 185 55 T 180 35" stroke="#9F4122" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.45" />
+  <path d="M 200 85 Q 215 65 205 50 T 215 30" stroke="#1F3D2B" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.45" />
+  <path d="M 220 92 Q 230 72 220 58 T 225 40" stroke="#9F4122" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.45" />
+
+  <!-- Brand Plate Crest -->
+  <circle cx="200" cy="198" r="8" fill="#1F3D2B" opacity="0.15" />
+  <path d="M 196 198 L 204 198 M 200 194 L 200 202" stroke="#1F3D2B" stroke-width="1.2" stroke-linecap="round" opacity="0.3" />
+</svg>

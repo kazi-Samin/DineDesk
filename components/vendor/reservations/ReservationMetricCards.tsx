@@ -10,7 +10,7 @@ export default function ReservationMetricCards({ stats }: ReservationMetricCards
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
       {/* Metric 1: Confirmed Covers */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between relative overflow-hidden group">
         <div className="flex items-center justify-between">
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Confirmed Covers
@@ -44,7 +44,7 @@ export default function ReservationMetricCards({ stats }: ReservationMetricCards
       </div>
 
       {/* Metric 2: Pending Requests */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between relative overflow-hidden group">
         <div className="flex items-center justify-between">
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Pending Action
@@ -84,7 +84,7 @@ export default function ReservationMetricCards({ stats }: ReservationMetricCards
       </div>
 
       {/* Metric 3: Occupancy Rate */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between relative overflow-hidden group">
         <div className="flex items-center justify-between">
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Peak Occupancy
@@ -113,7 +113,7 @@ export default function ReservationMetricCards({ stats }: ReservationMetricCards
       </div>
 
       {/* Metric 4: Capacity & Zones */}
-      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden group">
+      <div className="bg-surface-container-lowest p-space-lg rounded-xl shadow-2xs border border-outline-variant flex flex-col justify-between relative overflow-hidden group">
         <div className="flex items-center justify-between">
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Floor Status

@@ -6,8 +6,7 @@ export const INITIAL_CUSTOMER_PROFILE: CustomerProfileData = {
   phone: "+880 1712-345678",
   language: "en",
   dietaryPreferences: ["halal_only", "nut_allergy"],
-  avatarUrl:
-    "https://lh3.googleusercontent.com/aida/AEtjO1Xvc2MrKyLPPwPKRHPvGiuGzzv3Vl3xudUMnfKmM_OejgtKJObOFHcqNPF4XgM99yJVO2vd5xVNy1ialfL7MMAf-mTYsbOekfDFOQeP3J_05sjjK_dG1-TowYtfmniCeQ5oWP3YUL0mOpQ_Kd_4gnUIQvBpdLJfX7FS7iKDGaNDFcEeOV3fOJ7c2-_IHK7W8BGBNX8pIPLWpzKWXacemtS8HMQtfBJOmvihWXCsfl9OXjXlGaVf6vC98QUC",
+  avatarUrl: "/avatars/tahmid-avatar.svg",
   isEmailVerified: true,
   isPhoneVerified: true,
   roleBadge: "Verified Foodie",

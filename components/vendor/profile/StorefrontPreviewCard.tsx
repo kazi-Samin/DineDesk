@@ -49,11 +49,11 @@ export default function StorefrontPreviewCard({
 
   return (
     <div
-      className="bg-surface-container-lowest rounded-xl border border-outline-variant/60 shadow-sm overflow-hidden"
+      className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-2xs overflow-hidden"
       id="storefront-preview"
     >
       {/* Top Header Strip */}
-      <div className="p-space-sm bg-surface-container-high/60 border-b border-outline-variant/40 flex items-center justify-between">
+      <div className="p-space-sm bg-surface-container-high/60 border-b border-outline-variant flex items-center justify-between">
         <span className="font-label-sm text-label-sm text-primary font-semibold uppercase tracking-wider">
           Public Marketplace Card
         </span>
@@ -70,6 +70,9 @@ export default function StorefrontPreviewCard({
             className="w-full h-full object-cover"
             src={coverImage}
             alt={name || "Storefront Preview"}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/images/restaurant-cover-placeholder.svg";
+            }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
@@ -78,12 +81,12 @@ export default function StorefrontPreviewCard({
         )}
 
         {/* Price Tier Badge */}
-        <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-xs font-medium shadow-xs">
+        <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-primary-container text-on-primary font-label-sm text-xs font-medium shadow-2xs">
           {priceTierLabel}
         </span>
 
         {/* Rating Badge */}
-        <span className="absolute top-2 right-2 px-2 py-0.5 rounded bg-surface/90 text-on-surface font-label-sm text-xs font-bold flex items-center gap-0.5 shadow-xs backdrop-blur-xs">
+        <span className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-surface/90 text-on-surface font-label-sm text-xs font-bold flex items-center gap-0.5 shadow-2xs backdrop-blur-xs">
           <span
             className="material-symbols-outlined text-xs text-amber-600"
             style={{ fontVariationSettings: "'FILL' 1" }}
@@ -111,6 +114,9 @@ export default function StorefrontPreviewCard({
                 className="w-full h-full object-cover"
                 src={logoImage}
                 alt={name}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/avatars/default-avatar.svg";
+                }}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-on-primary-fixed">

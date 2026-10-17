@@ -220,13 +220,13 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-bold">
-                    Culinary Stewardship
+                    Kitchen Preparation
                   </span>
                   <h4 className="font-headline-sm text-headline-sm text-primary">
-                    Traditional Dum Slow-Steam
+                    Freshly Prepared Order
                   </h4>
                   <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    {order.restaurantName} uses natural wood charcoal seal for their signature mutton handi. Food is packed in insulated thermal sleeves to retain 68°C serving warmth.
+                    {order.restaurantName} prepares each dish fresh to order and packs it in insulated packaging to keep your food hot and fresh during transit.
                   </p>
                 </div>
               </div>

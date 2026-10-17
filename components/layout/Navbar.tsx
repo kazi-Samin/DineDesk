@@ -48,7 +48,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest border-b border-outline-variant">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-outline-variant">
       <div className="h-20 max-w-[1440px] mx-auto px-margin flex items-center justify-between gap-space-md">
         {/* Brand & Desktop Navigation */}
         <div className="flex items-center gap-space-lg shrink-0">
@@ -64,7 +64,7 @@ export default function Navbar() {
               href="/"
               className={`transition-colors py-space-xs ${
                 isHome
-                  ? "text-primary font-semibold underline underline-offset-8 decoration-2 decoration-primary-container"
+                  ? "text-primary font-semibold underline underline-offset-8 decoration-2 decoration-primary"
                   : "font-label-lg text-label-lg text-on-surface-variant hover:text-primary"
               }`}
             >
@@ -74,7 +74,7 @@ export default function Navbar() {
               href="/explore"
               className={`transition-colors py-space-xs ${
                 isExplore
-                  ? "text-primary font-semibold underline underline-offset-8 decoration-2 decoration-primary-container"
+                  ? "text-primary font-semibold underline underline-offset-8 decoration-2 decoration-primary"
                   : "font-label-lg text-label-lg text-on-surface-variant hover:text-primary"
               }`}
             >
@@ -82,13 +82,13 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => openReservationModal()}
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs cursor-pointer"
+              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs cursor-pointer font-medium"
               type="button"
             >
               Reserve a Table
             </button>
             <Link
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs"
+              className="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors py-space-xs font-medium"
               href={selectedRole === "Restaurant Owner" ? "/dashboard/vendor/orders" : "/dashboard/orders"}
             >
               Dashboard
@@ -99,11 +99,11 @@ export default function Navbar() {
         {/* Global Search Bar */}
         <div className="hidden md:flex flex-1 max-w-md mx-space-sm">
           <form onSubmit={handleSearchSubmit} className="relative w-full">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-space-md pointer-events-none text-outline">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-space-md pointer-events-none text-on-surface-variant">
               <span className="material-symbols-outlined text-lg">search</span>
             </span>
             <input
-              className="w-full bg-surface-container-low border border-outline-variant rounded py-space-sm pl-10 pr-space-md font-body-sm text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:bg-surface-container-lowest transition-all"
+              className="w-full bg-surface-container border border-outline-variant rounded-lg py-2 pl-10 pr-space-md font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-all"
               placeholder="Search restaurants, dishes (biryani, smash burger)..."
               type="text"
               value={searchQuery}
@@ -117,7 +117,7 @@ export default function Navbar() {
           <button
             aria-label="View cart"
             onClick={toggleDrawer}
-            className="relative p-space-sm text-on-surface-variant hover:text-primary rounded transition-colors cursor-pointer"
+            className="relative p-2 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
             type="button"
           >
             <span className="material-symbols-outlined text-xl">shopping_bag</span>
@@ -130,7 +130,7 @@ export default function Navbar() {
           <button
             aria-label="Toggle theme"
             onClick={toggleDarkMode}
-            className="p-space-sm text-on-surface-variant hover:text-primary rounded transition-colors"
+            className="p-2 text-on-surface-variant hover:text-primary rounded-lg hover:bg-surface-container transition-colors"
             type="button"
           >
             <span className="material-symbols-outlined text-xl">
@@ -142,10 +142,10 @@ export default function Navbar() {
             <button
               type="button"
               onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container-low hover:bg-surface-container text-xs font-medium text-on-surface transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high text-xs font-medium text-on-surface transition-colors"
               title="Switch user role / dashboard"
             >
-              <span className="w-2 h-2 rounded-full bg-primary-container"></span>
+              <span className="w-2 h-2 rounded-full bg-primary"></span>
               <span className="hidden sm:inline text-on-surface-variant">Role:</span>
               <span className="font-semibold text-primary">{selectedRole}</span>
               <span className="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
@@ -153,7 +153,7 @@ export default function Navbar() {
 
             {roleSwitcherOpen && (
               <div
-                className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0_12px_32px_rgba(30,27,22,0.12)] py-2 z-50 animate-in fade-in slide-in-from-top-1"
+                className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0_8px_24px_rgba(37,43,38,0.08)] py-2 z-50 animate-in fade-in slide-in-from-top-1"
               >
                 <div className="px-3 py-1 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
                   Switch Active Role
@@ -208,7 +208,7 @@ export default function Navbar() {
                   }}
                   className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
                 >
-                  <span>↳ My Reviews & Ratings</span>
+                  <span>↳ My Reviews</span>
                 </button>
                 <button
                   type="button"
@@ -308,7 +308,7 @@ export default function Navbar() {
           </div>
 
           <Link
-            className="hidden md:inline-flex items-center px-space-md py-space-sm border border-primary-container text-primary-container hover:bg-primary-container/5 rounded font-label-md text-label-md transition-colors"
+            className="hidden md:inline-flex items-center px-4 py-2 border border-primary/30 text-primary hover:bg-primary/5 rounded-lg font-label-md text-label-md font-medium transition-colors"
             href="#"
           >
             Sign In / Register
@@ -317,7 +317,7 @@ export default function Navbar() {
           <button
             aria-label="Open mobile navigation"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-space-sm text-on-surface-variant hover:text-primary rounded transition-colors"
+            className="xl:hidden p-2 text-on-surface-variant hover:text-primary rounded-lg transition-colors"
             type="button"
           >
             <span className="material-symbols-outlined text-2xl">
@@ -329,7 +329,7 @@ export default function Navbar() {
 
       {/* Mobile navigation drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-surface-container-lowest border-b border-outline-variant px-margin py-space-md flex flex-col gap-space-sm">
+        <div className="xl:hidden bg-background border-b border-outline-variant px-margin py-space-md flex flex-col gap-space-sm">
           <Link
             href="/"
             onClick={() => setMobileMenuOpen(false)}

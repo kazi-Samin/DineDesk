@@ -34,6 +34,7 @@ interface ToastMessage {
 const PAGE_SIZE = 8;
 
 export default function ManageMenuPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isClientLoaded, setIsClientLoaded] = useState(false);
 
@@ -189,9 +190,12 @@ export default function ManageMenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface font-body-md text-on-surface antialiased">
+    <div className="min-h-screen bg-background font-body-md text-on-surface antialiased">
       {/* Vendor Shared Sidebar */}
-      <VendorSidebar />
+      <VendorSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
 
       {/* Main Content Area */}
       <div className="pl-0 lg:pl-72 transition-all duration-300">
@@ -199,9 +203,11 @@ export default function ManageMenuPage() {
         <VendorHeader
           restaurantName="Sultan's Heritage Kitchen"
           onRefresh={handleRefresh}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        <main className="relative pt-16 bg-surface min-h-screen">
+        <main className="relative pt-16 bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="p-space-lg max-w-7xl mx-auto w-full space-y-space-lg">
               {/* Heading & Bulk Actions Bar */}
@@ -209,13 +215,13 @@ export default function ManageMenuPage() {
                 <div className="space-y-1">
                   <div className="flex items-center gap-space-xs text-primary font-label-sm uppercase tracking-wider font-semibold">
                     <span className="material-symbols-outlined text-base">restaurant_menu</span>
-                    <span>Culinary Inventory &amp; Live Catalog</span>
+                    <span>Menu Catalog</span>
                   </div>
                   <h1 className="font-headline-lg text-headline-lg text-on-surface font-semibold tracking-tight">
                     Menu Management
                   </h1>
                   <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-                    Update culinary offerings, pricing in ৳ (BDT), categories, and real-time kitchen availability for Sultan&apos;s Heritage.
+                    Update dishes, prices, categories, and item availability for your restaurant.
                   </p>
                 </div>
 

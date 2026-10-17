@@ -242,15 +242,15 @@ export default function CustomerReservationsPage() {
 
               {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md">
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Total Orders
                   </span>
                   <span className="font-headline-sm text-headline-sm text-primary font-semibold">
-                    {profile.stats.totalOrders}
+                    {profile.stats?.totalOrders ?? 28}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Active Bookings
                   </span>
@@ -258,20 +258,20 @@ export default function CustomerReservationsPage() {
                     {tabCounts.upcoming}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Saved Spots
                   </span>
                   <span className="font-headline-sm text-headline-sm text-primary font-semibold">
-                    {profile.stats.savedSpots}
+                    {profile.stats?.savedSpots ?? 14}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Loyalty Points
                   </span>
                   <span className="font-headline-sm text-headline-sm text-primary-container font-semibold">
-                    {profile.stats.loyaltyPoints.toLocaleString()} pts
+                    {profile.stats?.loyaltyPoints?.toLocaleString() ?? "1,450"} pts
                   </span>
                 </div>
               </div>
@@ -284,14 +284,11 @@ export default function CustomerReservationsPage() {
               {/* Introduction Header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
                 <div className="flex flex-col gap-1">
-                  <span className="font-label-sm text-label-sm text-secondary tracking-widest uppercase font-semibold">
-                    Patron Concierge
-                  </span>
-                  <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-medium">
-                    Table Reservations &amp; Dining Requests
+                  <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
+                    Table Reservations
                   </h1>
-                  <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl leading-relaxed">
-                    Manage your confirmed seatings, pending venue confirmations, and personal dining history across premier culinary rooms.
+                  <p className="font-body-md text-body-md text-on-surface-variant max-w-xl">
+                    View and manage your upcoming table bookings and past dining visits.
                   </p>
                 </div>
                 <div className="flex items-center gap-space-sm self-start md:self-auto">
@@ -304,7 +301,7 @@ export default function CustomerReservationsPage() {
                         neighborhood: "Banani, Dhaka",
                       })
                     }
-                    className="inline-flex items-center gap-space-xs px-space-md py-2.5 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-primary transition-colors shadow-sm font-semibold"
+                    className="inline-flex items-center gap-space-xs px-space-md py-2.5 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-xs font-semibold cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-base">
                       add
@@ -316,7 +313,7 @@ export default function CustomerReservationsPage() {
 
               {/* Featured Upcoming Reservation Card */}
               {featuredReservation ? (
-                <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl shadow-md p-space-lg md:p-space-xl border border-outline-variant/30">
+                <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl shadow-xs p-space-lg md:p-space-xl border border-outline-variant">
                   <div className="absolute -top-16 -right-16 w-64 h-64 bg-primary-container/5 rounded-full blur-2xl pointer-events-none" />
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center relative z-10">
                     {/* Left: Image Card with overlays */}
@@ -516,7 +513,7 @@ export default function CustomerReservationsPage() {
                         search
                       </span>
                       <input
-                        className="w-full pl-8 pr-space-md py-1.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-lg placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container border border-outline-variant/50 shadow-2xs"
+                        className="w-full pl-8 pr-space-md py-1.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-md placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-2xs"
                         placeholder="Filter by venue or reference..."
                         type="text"
                         value={searchQuery}
@@ -524,7 +521,7 @@ export default function CustomerReservationsPage() {
                       />
                     </div>
                     <button
-                      className="p-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface rounded-lg shadow-xs border border-outline-variant/40 transition-colors"
+                      className="p-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface rounded-md shadow-2xs border border-outline-variant transition-colors"
                       title="Download Dining Transcript"
                       type="button"
                       onClick={handleDownloadTranscript}
@@ -537,21 +534,21 @@ export default function CustomerReservationsPage() {
                 </div>
 
                 {/* Reservation Table Card */}
-                <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+                <div className="bg-surface-container-lowest rounded-xl shadow-xs border border-outline-variant overflow-hidden">
                   {/* Desktop Table View */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left font-body-sm text-body-sm text-on-surface">
                       <thead>
-                        <tr className="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm tracking-wide uppercase border-b border-outline-variant/30">
-                          <th className="py-3 px-space-lg">Ref &amp; Date</th>
-                          <th className="py-3 px-space-md">Venue &amp; Location</th>
-                          <th className="py-3 px-space-md">Party &amp; Area</th>
-                          <th className="py-3 px-space-md">Dietary / Notes</th>
-                          <th className="py-3 px-space-md">Seating Status</th>
-                          <th className="py-3 px-space-lg text-right">Actions</th>
+                        <tr className="bg-surface-container-low text-on-surface-variant font-label-sm text-label-sm tracking-wide uppercase border-b border-outline-variant">
+                          <th className="w-[18%] py-3 px-space-lg">Ref &amp; Date</th>
+                          <th className="w-[26%] py-3 px-space-md">Venue &amp; Location</th>
+                          <th className="w-[16%] py-3 px-space-md">Party &amp; Area</th>
+                          <th className="w-[16%] py-3 px-space-md">Dietary / Notes</th>
+                          <th className="w-[12%] py-3 px-space-md">Seating Status</th>
+                          <th className="w-[12%] py-3 px-space-lg text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-outline-variant/20">
+                      <tbody className="divide-y divide-outline-variant/30">
                         {paginatedReservations.length === 0 ? (
                           <tr>
                             <td

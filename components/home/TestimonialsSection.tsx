@@ -6,19 +6,19 @@ export default function TestimonialsSection() {
       <div className="max-w-[1440px] mx-auto px-margin">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-space-md pb-space-lg mb-space-lg">
           <div>
-            <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest font-semibold">
-              Patron Chronicles
+            <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+              Customer Reviews
             </span>
             <h2 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-              What Our Customers Say
+              What Diners Say
             </h2>
             <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Unfiltered reflections from discerning gourmands and frequent Dhaka diners.
+              Real feedback from food lovers and regular diners in Dhaka.
             </p>
           </div>
           <div className="flex items-center gap-space-xs text-secondary font-label-md text-label-md font-semibold">
             <span className="material-symbols-outlined text-base">forum</span>
-            <span>Over 14,000 reservation memories created</span>
+            <span>Over 14,000 reservations &amp; orders completed</span>
           </div>
         </div>
 
@@ -26,7 +26,7 @@ export default function TestimonialsSection() {
           {CUSTOMER_REVIEWS.map((review) => (
             <article
               key={review.id}
-              className="bg-surface-container-lowest p-space-xl rounded-xl shadow-sm flex flex-col justify-between"
+              className="bg-surface-container-lowest p-space-xl rounded-xl border border-outline-variant shadow-xs flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center gap-1 text-secondary mb-space-md">
@@ -40,7 +40,7 @@ export default function TestimonialsSection() {
                   {review.quote}
                 </blockquote>
               </div>
-              <div className="pt-space-lg mt-space-lg flex items-center gap-space-sm bg-surface-container-low p-space-sm rounded">
+              <div className="pt-space-lg mt-space-lg flex items-center gap-space-sm bg-surface-container/60 p-space-sm rounded-lg border border-outline-variant/40">
                 <div
                   className={`w-10 h-10 rounded-full ${review.badgeColorClass} flex items-center justify-center font-bold ${review.textColorClass} text-sm`}
                 >

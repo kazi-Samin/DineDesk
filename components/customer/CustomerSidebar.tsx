@@ -15,8 +15,8 @@ interface CustomerSidebarProps {
 
 export default function CustomerSidebar({
   userName = "Tahmid's Account",
-  memberSince = "Patron since 2023",
-  avatarUrl = "https://lh3.googleusercontent.com/aida/AEtjO1Xvc2MrKyLPPwPKRHPvGiuGzzv3Vl3xudUMnfKmM_OejgtKJObOFHcqNPF4XgM99yJVO2vd5xVNy1ialfL7MMAf-mTYsbOekfDFOQeP3J_05sjjK_dG1-TowYtfmniCeQ5oWP3YUL0mOpQ_Kd_4gnUIQvBpdLJfX7FS7iKDGaNDFcEeOV3fOJ7c2-_IHK7W8BGBNX8pIPLWpzKWXacemtS8HMQtfBJOmvihWXCsfl9OXjXlGaVf6vC98QUC",
+  memberSince = "Member since 2023",
+  avatarUrl = "/avatars/tahmid-avatar.svg",
   isOpen = false,
   onClose,
   activeOrderCount = 1,
@@ -24,6 +24,8 @@ export default function CustomerSidebar({
 }: CustomerSidebarProps) {
   const pathname = usePathname();
 
+  const isOverviewActive =
+    pathname === "/dashboard/customer" || pathname === "/dashboard";
   const isProfileActive =
     pathname === "/dashboard/customer/profile" ||
     pathname === "/dashboard/user/profile";
@@ -39,15 +41,25 @@ export default function CustomerSidebar({
     pathname === "/dashboard/user/favorites";
   const isOrdersActive =
     pathname === "/dashboard/customer/orders" || pathname === "/dashboard/orders";
+  const isLoyaltyActive =
+    pathname === "/dashboard/customer/loyalty" ||
+    pathname === "/dashboard/customer/rewards";
 
   const navItems = [
+    {
+      label: "Dashboard Overview",
+      href: "/dashboard/customer",
+      icon: "dashboard",
+      badge: null,
+      isActive: isOverviewActive,
+    },
     {
       label: "Order History",
       href: "/dashboard/customer/orders",
       icon: "receipt_long",
       badge:
         activeOrderCount > 0 ? (
-          <span className="px-2 py-0.5 font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed rounded-xl font-medium">
+          <span className="px-2 py-0.5 font-label-sm text-xs bg-secondary-fixed text-on-secondary-fixed rounded-sm font-medium">
             {activeOrderCount} active
           </span>
         ) : null,
@@ -75,7 +87,7 @@ export default function CustomerSidebar({
       isActive: isAddressesActive,
     },
     {
-      label: "My Reviews & Ratings",
+      label: "My Reviews",
       href: "/dashboard/customer/reviews",
       icon: "rate_review",
       badge: null,
@@ -90,14 +102,14 @@ export default function CustomerSidebar({
     },
     {
       label: "Loyalty Rewards",
-      href: "#",
+      href: "/dashboard/customer/loyalty",
       icon: "loyalty",
       badge: (
-        <span className="font-label-sm text-label-sm text-primary font-semibold">
+        <span className="font-label-sm text-xs text-primary font-semibold">
           {loyaltyPoints.toLocaleString()} pts
         </span>
       ),
-      isActive: false,
+      isActive: isLoyaltyActive,
     },
   ];
 
@@ -121,8 +133,11 @@ export default function CustomerSidebar({
           <div className="p-space-lg flex items-center gap-space-md bg-surface-container-low border-b border-outline-variant/20">
             <img
               alt={userName}
-              className="w-10 h-10 rounded-full object-cover shadow-sm ring-1 ring-primary/10"
+              className="w-10 h-10 rounded-full object-cover shadow-xs ring-1 ring-primary/10 bg-surface-container"
               src={avatarUrl}
+              onError={(e) => {
+                e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+              }}
             />
             <div className="flex flex-col">
               <span className="font-headline-sm text-body-lg text-on-surface font-medium">
@@ -135,7 +150,7 @@ export default function CustomerSidebar({
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex flex-col gap-space-xs px-space-md py-space-sm">
+          <nav className="flex flex-col gap-1 px-space-md py-space-sm">
             {navItems.map((item) => {
               const activeClass = item.isActive
                 ? "bg-primary-container text-on-primary font-semibold shadow-xs"
@@ -146,7 +161,7 @@ export default function CustomerSidebar({
                   key={item.label}
                   href={item.href}
                   onClick={() => onClose?.()}
-                  className={`flex items-center justify-between px-space-md py-2.5 rounded-xl font-label-lg text-label-lg transition-all ${activeClass}`}
+                  className={`flex items-center justify-between px-space-md py-2.5 rounded-lg font-label-md text-sm transition-all ${activeClass}`}
                 >
                   <div className="flex items-center gap-space-md">
                     <span className="material-symbols-outlined text-lg">
@@ -164,7 +179,7 @@ export default function CustomerSidebar({
         {/* Bottom Sign Out */}
         <div className="p-space-md border-t border-outline-variant/20">
           <Link
-            className="flex items-center gap-space-md px-space-md py-2.5 rounded-xl font-label-lg text-label-lg text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-all"
+            className="flex items-center gap-space-md px-space-md py-2.5 rounded-lg font-label-md text-sm text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-all"
             href="/"
           >
             <span className="material-symbols-outlined text-lg">logout</span>

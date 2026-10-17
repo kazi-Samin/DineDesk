@@ -45,7 +45,7 @@ export default function FloorPlanMatrix({
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md relative">
+    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-2xs border border-outline-variant space-y-space-md relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">map</span>

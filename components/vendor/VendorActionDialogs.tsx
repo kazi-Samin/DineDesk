@@ -57,7 +57,7 @@ export default function VendorActionDialogs({
               <select
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded font-body-sm text-on-surface focus:outline-none focus:border-primary-container"
+                className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-md font-body-sm text-on-surface focus:outline-none focus:border-primary-container"
               >
                 <option value="Kitchen at maximum banquet capacity">
                   Kitchen at maximum banquet capacity
@@ -80,7 +80,7 @@ export default function VendorActionDialogs({
                   placeholder="Type specific reason..."
                   value={customReason}
                   onChange={(e) => setCustomReason(e.target.value)}
-                  className="w-full p-2 bg-surface-container-low border border-outline-variant rounded font-body-sm text-on-surface"
+                  className="w-full p-2 bg-surface-container-low border border-outline-variant rounded-md font-body-sm text-on-surface focus:outline-none focus:border-primary-container"
                 />
               )}
 
@@ -88,7 +88,7 @@ export default function VendorActionDialogs({
                 <button
                   type="button"
                   onClick={onCloseReject}
-                  className="px-4 py-2 text-body-sm font-medium text-on-surface-variant hover:bg-surface-container rounded cursor-pointer"
+                  className="px-4 py-2 text-body-sm font-medium text-on-surface-variant hover:bg-surface-container rounded-lg cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
@@ -100,7 +100,7 @@ export default function VendorActionDialogs({
                       rejectReason === "Other" && customReason.trim() ? customReason : rejectReason
                     )
                   }
-                  className="px-4 py-2 bg-secondary text-on-secondary hover:bg-secondary/90 font-semibold text-body-sm rounded shadow cursor-pointer transition-colors"
+                  className="px-4 py-2 bg-secondary text-on-secondary hover:bg-secondary/90 font-semibold text-body-sm rounded-lg shadow-2xs cursor-pointer transition-colors"
                 >
                   Confirm Rejection
                 </button>
@@ -157,14 +157,14 @@ export default function VendorActionDialogs({
                 <button
                   type="button"
                   onClick={onCloseDeliver}
-                  className="px-4 py-2 text-body-sm font-medium text-on-surface-variant hover:bg-surface-container rounded cursor-pointer"
+                  className="px-4 py-2 text-body-sm font-medium text-on-surface-variant hover:bg-surface-container rounded-lg cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={() => onConfirmDeliver(deliverModal.orderId, codCollected)}
-                  className="px-4 py-2 bg-emerald-800 text-white hover:bg-emerald-900 font-semibold text-body-sm rounded shadow cursor-pointer transition-colors"
+                  className="px-4 py-2 bg-emerald-800 text-white hover:bg-emerald-900 font-semibold text-body-sm rounded-lg shadow-2xs cursor-pointer transition-colors"
                 >
                   Confirm Delivered
                 </button>

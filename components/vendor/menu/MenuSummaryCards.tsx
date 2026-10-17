@@ -10,7 +10,7 @@ export default function MenuSummaryCards({ stats }: MenuSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
       {/* 1. Total Curated Dishes */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between border border-outline-variant/30">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs flex items-center justify-between border border-outline-variant">
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Total Curated Dishes
@@ -28,7 +28,7 @@ export default function MenuSummaryCards({ stats }: MenuSummaryCardsProps) {
       </div>
 
       {/* 2. Live In-Kitchen */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between border border-outline-variant/30">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs flex items-center justify-between border border-outline-variant">
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Live In-Kitchen
@@ -46,7 +46,7 @@ export default function MenuSummaryCards({ stats }: MenuSummaryCardsProps) {
       </div>
 
       {/* 3. Sold Out Tonight */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between border border-outline-variant/30">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs flex items-center justify-between border border-outline-variant">
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Sold Out Tonight
@@ -64,7 +64,7 @@ export default function MenuSummaryCards({ stats }: MenuSummaryCardsProps) {
       </div>
 
       {/* 4. Avg Dish Margin */}
-      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex items-center justify-between border border-outline-variant/30">
+      <div className="bg-surface-container-lowest p-space-md rounded-xl shadow-2xs flex items-center justify-between border border-outline-variant">
         <div>
           <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
             Avg Dish Margin

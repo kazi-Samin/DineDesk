@@ -13,11 +13,11 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
   if (viewMode === "list") {
     return (
       <article
-        className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary-container rounded flex flex-col md:flex-row transition-all duration-200 overflow-hidden ${
+        className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary/60 rounded-xl flex flex-col md:flex-row transition-all duration-200 overflow-hidden shadow-xs ${
           !restaurant.isOpen ? "opacity-95" : ""
         }`}
       >
-        <div className="relative w-full md:w-72 aspect-[4/3] md:aspect-auto shrink-0 bg-surface-container-high overflow-hidden">
+        <div className="relative w-full md:w-72 aspect-[16/10] md:aspect-auto shrink-0 bg-surface-container-high overflow-hidden">
           <img
             className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
               !restaurant.isOpen ? "grayscale-[30%]" : ""
@@ -26,7 +26,7 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
             src={restaurant.image}
           />
           {!restaurant.isOpen && <div className="absolute inset-0 bg-inverse-surface/20"></div>}
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant/60 font-label-sm text-[11px] font-semibold text-primary">
+          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-sm bg-surface-container-lowest/90 backdrop-blur-xs border border-outline-variant/60 font-label-sm text-[11px] font-semibold text-primary">
             <span className="material-symbols-outlined text-[14px] text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>
               star
             </span>
@@ -35,17 +35,17 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
           </div>
           {restaurant.badge && (
             <div
-              className={`absolute top-2 right-2 px-2 py-0.5 rounded font-label-sm text-[10px] tracking-wider uppercase font-semibold ${
+              className={`absolute top-2 right-2 px-2 py-0.5 rounded-sm font-label-sm text-[10px] tracking-wider uppercase font-semibold ${
                 restaurant.badge === "Heritage"
                   ? "bg-primary-container text-on-primary"
-                  : "bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant/60 text-primary"
+                  : "bg-surface-container-lowest/90 backdrop-blur-xs border border-outline-variant/60 text-primary"
               }`}
             >
               {restaurant.badge}
             </div>
           )}
           {restaurant.closedNotice && (
-            <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-surface-container-lowest border border-secondary text-secondary font-label-sm text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+            <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-sm bg-surface-container-lowest border border-secondary text-secondary font-label-sm text-[11px] font-semibold flex items-center gap-1 shadow-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
               <span>{restaurant.closedNotice}</span>
             </div>
@@ -85,11 +85,11 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
 
   return (
     <article
-      className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary-container rounded flex flex-col transition-all duration-200 overflow-hidden ${
+      className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary/60 rounded-xl flex flex-col transition-all duration-200 overflow-hidden shadow-xs h-full justify-between ${
         !restaurant.isOpen ? "opacity-95" : ""
       }`}
     >
-      <div className="relative w-full aspect-[4/3] bg-surface-container-high overflow-hidden">
+      <div className="relative w-full aspect-[16/10] bg-surface-container-high overflow-hidden">
         <img
           className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
             !restaurant.isOpen ? "grayscale-[30%]" : ""
@@ -98,7 +98,7 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
           src={restaurant.image}
         />
         {!restaurant.isOpen && <div className="absolute inset-0 bg-inverse-surface/20"></div>}
-        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant/60 font-label-sm text-[11px] font-semibold text-primary">
+        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-sm bg-surface-container-lowest/90 backdrop-blur-xs border border-outline-variant/60 font-label-sm text-[11px] font-semibold text-primary">
           <span className="material-symbols-outlined text-[14px] text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>
             star
           </span>
@@ -107,24 +107,24 @@ export default function RestaurantCard({ restaurant, viewMode = "grid" }: Restau
         </div>
         {restaurant.badge && (
           <div
-            className={`absolute top-2 right-2 px-2 py-0.5 rounded font-label-sm text-[10px] tracking-wider uppercase font-semibold ${
+            className={`absolute top-2 right-2 px-2 py-0.5 rounded-sm font-label-sm text-[10px] tracking-wider uppercase font-semibold ${
               restaurant.badge === "Heritage"
                 ? "bg-primary-container text-on-primary"
                 : restaurant.badge === "Chef's Table"
-                ? "bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant/60 text-primary-container"
-                : "bg-surface-container-lowest/90 backdrop-blur-sm border border-outline-variant/60 text-primary"
+                ? "bg-surface-container-lowest/90 backdrop-blur-xs border border-outline-variant/60 text-primary-container"
+                : "bg-surface-container-lowest/90 backdrop-blur-xs border border-outline-variant/60 text-primary"
             }`}
           >
             {restaurant.badge}
           </div>
         )}
         {restaurant.id === "osteria-bella" && (
-          <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold tracking-wide">
+          <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-sm bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold tracking-wide">
             Live Woodfire Oven
           </div>
         )}
         {restaurant.closedNotice && (
-          <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded bg-surface-container-lowest border border-secondary text-secondary font-label-sm text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+          <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-sm bg-surface-container-lowest border border-secondary text-secondary font-label-sm text-[11px] font-semibold flex items-center gap-1 shadow-xs">
             <span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
             <span>{restaurant.closedNotice}</span>
           </div>

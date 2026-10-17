@@ -19,7 +19,7 @@ export default function HeadHostLogCard({ onPageHost }: HeadHostLogCardProps) {
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm space-y-space-md">
+    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-2xs border border-outline-variant space-y-space-md">
       <div className="flex items-center justify-between">
         <h2 className="font-headline-sm text-headline-sm text-primary font-medium">
           Head Host Log
@@ -33,7 +33,7 @@ export default function HeadHostLogCard({ onPageHost }: HeadHostLogCardProps) {
         {DEFAULT_HOST_LOGS.map((log) => (
           <div
             key={log.id}
-            className="flex items-start gap-2 p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/30"
+            className="flex items-start gap-2 p-2.5 rounded-lg bg-surface-container-low border border-outline-variant"
           >
             <span
               className={`material-symbols-outlined text-base mt-0.5 ${

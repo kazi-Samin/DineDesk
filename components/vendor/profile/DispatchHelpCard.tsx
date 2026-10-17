@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function DispatchHelpCard() {
   return (
-    <div className="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant/40 space-y-space-xs shadow-xs">
+    <div className="p-space-md rounded-xl bg-surface-container-lowest border border-outline-variant space-y-space-xs shadow-2xs">
       <div className="flex items-center gap-2 text-secondary font-label-md font-semibold">
         <span className="material-symbols-outlined text-lg">support_agent</span>
         <span>Need Profile Verification?</span>

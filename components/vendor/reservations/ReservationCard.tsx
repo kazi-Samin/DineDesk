@@ -58,7 +58,7 @@ export default function ReservationCard({
   };
 
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-2xs hover:shadow-xs border border-outline-variant transition-all relative overflow-hidden">
       {/* Left Accent Stripe */}
       <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripeColor}`}></div>
 

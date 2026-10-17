@@ -201,7 +201,7 @@ export default function CustomerFavoritesPage() {
 
               {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md">
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Total Orders
                   </span>
@@ -209,7 +209,7 @@ export default function CustomerFavoritesPage() {
                     {profile.stats.totalOrders}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Active Bookings
                   </span>
@@ -217,7 +217,7 @@ export default function CustomerFavoritesPage() {
                     {profile.stats.activeBookings}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Saved Spots
                   </span>
@@ -225,7 +225,7 @@ export default function CustomerFavoritesPage() {
                     {totalSavedSpots}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.02)] border border-outline-variant/30">
+                <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
                   <span className="font-label-sm text-label-sm text-on-surface-variant block">
                     Loyalty Points
                   </span>
@@ -243,29 +243,20 @@ export default function CustomerFavoritesPage() {
               {/* Heading Row */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-lg mb-space-xl">
                 <div>
-                  <div className="flex items-center gap-space-sm mb-space-xs">
-                    <span className="font-label-sm text-label-sm uppercase tracking-wider text-secondary font-semibold">
-                      Curated Selection
-                    </span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                    <span className="font-label-sm text-label-sm text-on-surface-variant">
-                      Archived for {profile.fullName}
-                    </span>
-                  </div>
-                  <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-medium">
+                  <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
                     Saved Favorites
                   </h1>
-                  <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">
-                    Your personal collection of bookmarked kitchens and go-to comfort dishes across Dhaka.
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-xl">
+                    Restaurants and dishes you&apos;ve bookmarked across Dhaka.
                   </p>
                 </div>
 
                 {/* 3 Filter Tabs */}
-                <div className="flex items-center gap-space-sm self-start md:self-auto bg-surface-container-low p-1.5 rounded-xl shadow-sm border border-outline-variant/30">
+                <div className="flex items-center gap-space-sm self-start md:self-auto bg-surface-container-low p-1 rounded-lg border border-outline-variant">
                   <button
-                    className={`tab-btn px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-all font-semibold ${
+                    className={`tab-btn px-space-md py-1.5 rounded-md font-label-md text-label-md transition-all font-semibold ${
                       activeTab === "all"
-                        ? "bg-primary-container text-on-primary shadow-sm"
+                        ? "bg-surface-container-lowest text-primary shadow-xs"
                         : "text-on-surface-variant hover:text-on-surface"
                     }`}
                     onClick={() => setActiveTab("all")}
@@ -274,9 +265,9 @@ export default function CustomerFavoritesPage() {
                     All Saved ({totalSavedSpots})
                   </button>
                   <button
-                    className={`tab-btn px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-all font-semibold ${
+                    className={`tab-btn px-space-md py-1.5 rounded-md font-label-md text-label-md transition-all font-semibold ${
                       activeTab === "restaurants"
-                        ? "bg-primary-container text-on-primary shadow-sm"
+                        ? "bg-surface-container-lowest text-primary shadow-xs"
                         : "text-on-surface-variant hover:text-on-surface"
                     }`}
                     onClick={() => setActiveTab("restaurants")}
@@ -285,9 +276,9 @@ export default function CustomerFavoritesPage() {
                     Saved Restaurants ({restaurants.length})
                   </button>
                   <button
-                    className={`tab-btn px-space-md py-1.5 rounded-lg font-label-md text-label-md transition-all font-semibold ${
+                    className={`tab-btn px-space-md py-1.5 rounded-md font-label-md text-label-md transition-all font-semibold ${
                       activeTab === "dishes"
-                        ? "bg-primary-container text-on-primary shadow-sm"
+                        ? "bg-surface-container-lowest text-primary shadow-xs"
                         : "text-on-surface-variant hover:text-on-surface"
                     }`}
                     onClick={() => setActiveTab("dishes")}
@@ -306,7 +297,7 @@ export default function CustomerFavoritesPage() {
                     search
                   </span>
                   <input
-                    className="w-full pl-10 pr-space-md py-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded-xl placeholder:text-on-surface-variant shadow-sm border border-outline-variant/40 focus:outline-none focus:border-primary-container focus:shadow-md transition-all"
+                    className="w-full pl-10 pr-space-md py-2.5 bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded-md placeholder:text-on-surface-variant shadow-xs border border-outline-variant focus:outline-none focus:border-primary-container transition-all"
                     id="savedSearch"
                     placeholder="Search saved kitchens, specialties, or cuisines..."
                     type="text"
@@ -329,7 +320,7 @@ export default function CustomerFavoritesPage() {
                 <div className="lg:col-span-3">
                   <div className="relative">
                     <select
-                      className="w-full appearance-none pl-space-md pr-10 py-2.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-xl shadow-sm border border-outline-variant/40 focus:outline-none focus:border-primary-container cursor-pointer"
+                      className="w-full appearance-none pl-space-md pr-10 py-2.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-lg shadow-xs border border-outline-variant focus:outline-none focus:border-primary-container cursor-pointer"
                       id="cuisineSelect"
                       value={cuisineFilter}
                       onChange={(e) => setCuisineFilter(e.target.value as CuisineFilterType)}
@@ -350,7 +341,7 @@ export default function CustomerFavoritesPage() {
                 <div className="lg:col-span-3">
                   <div className="relative">
                     <select
-                      className="w-full appearance-none pl-space-md pr-10 py-2.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-xl shadow-sm border border-outline-variant/40 focus:outline-none focus:border-primary-container cursor-pointer"
+                      className="w-full appearance-none pl-space-md pr-10 py-2.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-lg shadow-xs border border-outline-variant focus:outline-none focus:border-primary-container cursor-pointer"
                       id="areaSelect"
                       value={areaFilter}
                       onChange={(e) => setAreaFilter(e.target.value as AreaFilterType)}
@@ -375,7 +366,7 @@ export default function CustomerFavoritesPage() {
                       <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
                         Bookmarked Restaurants
                       </h2>
-                      <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant font-medium">
+                      <span className="font-label-sm text-xs px-2 py-0.5 rounded-sm bg-surface-container-high text-on-surface-variant font-medium">
                         {filteredRestaurants.length} Ensembles
                       </span>
                     </div>
@@ -392,18 +383,18 @@ export default function CustomerFavoritesPage() {
                     {filteredRestaurants.map((restaurant) => (
                       <article
                         key={restaurant.id}
-                        className="card-item group flex flex-col bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-outline-variant/30"
+                        className="card-item group flex flex-col bg-surface-container-lowest rounded-xl overflow-hidden shadow-xs hover:shadow-sm transition-all border border-outline-variant h-full justify-between"
                       >
                         {/* Image & Badges */}
-                        <div className="relative h-48 w-full overflow-hidden bg-surface-container">
+                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-container">
                           <img
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             alt={restaurant.imageAlt}
                             src={restaurant.image}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/20 to-transparent" />
-                          <div className="absolute top-3 left-3">
-                            <span className="px-2.5 py-1 rounded-lg bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-label-sm text-label-sm flex items-center gap-1 shadow-sm font-medium">
+                          <div className="absolute top-2.5 left-2.5">
+                            <span className="px-2.5 py-1 rounded-sm bg-surface-container-lowest/90 backdrop-blur-xs text-primary font-label-sm text-xs flex items-center gap-1 shadow-xs border border-outline-variant/60 font-medium">
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
                                   restaurant.statusVariant === "live"
@@ -418,14 +409,14 @@ export default function CustomerFavoritesPage() {
                           {/* Heart Remove Button */}
                           <button
                             aria-label="Remove from Favorites"
-                            className="favorite-toggle absolute top-3 right-3 w-8 h-8 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center text-secondary hover:scale-110 transition-transform shadow-sm cursor-pointer"
+                            className="favorite-toggle absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-container-lowest/90 backdrop-blur-xs flex items-center justify-center text-secondary hover:scale-110 transition-transform shadow-xs cursor-pointer border border-outline-variant/60"
                             onClick={() =>
                               handleRemoveRestaurant(restaurant.id, restaurant.name)
                             }
                             type="button"
                           >
                             <span
-                              className="material-symbols-outlined text-lg"
+                              className="material-symbols-outlined text-base"
                               style={{ fontVariationSettings: "'FILL' 1" }}
                             >
                               favorite
@@ -433,17 +424,17 @@ export default function CustomerFavoritesPage() {
                           </button>
 
                           {/* Bottom info on image */}
-                          <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between text-on-primary">
+                          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-end justify-between text-on-primary">
                             <div>
-                              <span className="font-label-sm text-label-sm text-secondary-fixed block">
+                              <span className="font-label-sm text-xs text-secondary-fixed block font-medium">
                                 {restaurant.areaBadge}
                               </span>
-                              <p className="font-headline-sm text-headline-sm text-on-primary leading-tight font-semibold">
+                              <p className="font-headline-sm text-base sm:text-lg text-on-primary leading-tight font-semibold line-clamp-1">
                                 {restaurant.name}
                               </p>
                             </div>
-                            <div className="flex items-center gap-1 bg-primary-container/80 px-2 py-0.5 rounded text-on-primary font-label-sm text-label-sm backdrop-blur-xs font-semibold">
-                              <span className="material-symbols-outlined text-sm text-secondary-fixed">
+                            <div className="flex items-center gap-1 bg-primary-container/90 px-2 py-0.5 rounded-sm text-on-primary font-label-sm text-xs backdrop-blur-xs font-semibold">
+                              <span className="material-symbols-outlined text-xs text-secondary-fixed">
                                 star
                               </span>
                               <span>{restaurant.rating}</span>
@@ -452,21 +443,21 @@ export default function CustomerFavoritesPage() {
                         </div>
 
                         {/* Card Body */}
-                        <div className="p-space-lg flex flex-col flex-1 justify-between gap-space-md">
+                        <div className="p-space-md flex flex-col flex-1 justify-between gap-space-md">
                           <div className="space-y-space-xs">
-                            <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-body-sm">
-                              <span>{restaurant.cuisine}</span>
-                              <span className="font-label-sm text-label-sm text-outline">
+                            <div className="flex items-center justify-between text-on-surface-variant font-body-sm text-xs">
+                              <span className="font-medium text-primary line-clamp-1">{restaurant.cuisine}</span>
+                              <span className="shrink-0 text-on-surface-variant/80">
                                 {restaurant.reviewCount} reviews
                               </span>
                             </div>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 leading-relaxed">
+                            <p className="font-body-sm text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
                               {restaurant.description}
                             </p>
                           </div>
 
                           {/* Card Actions */}
-                          <div className="pt-space-md bg-surface-container-lowest flex items-center gap-space-sm border-t border-outline-variant/20">
+                          <div className="pt-3 bg-surface-container-lowest flex items-center gap-space-sm border-t border-outline-variant/50">
                             <button
                               onClick={() =>
                                 openReservationModal({
@@ -475,7 +466,7 @@ export default function CustomerFavoritesPage() {
                                   neighborhood: restaurant.neighborhood,
                                 })
                               }
-                              className="flex-1 py-2 px-space-md bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-sm font-semibold"
+                              className="flex-1 py-2 px-3 bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                               type="button"
                             >
                               <span className="material-symbols-outlined text-sm">
@@ -485,7 +476,7 @@ export default function CustomerFavoritesPage() {
                             </button>
                             <button
                               onClick={() => setDetailsRestaurant(restaurant)}
-                              className="py-2 px-space-md bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md rounded-lg transition-colors font-medium"
+                              className="py-2 px-3 bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-xs font-medium rounded-lg transition-colors border border-outline-variant/60"
                               type="button"
                             >
                               Details
@@ -506,7 +497,7 @@ export default function CustomerFavoritesPage() {
                       <h2 className="font-headline-md text-headline-md text-on-surface font-bold">
                         Favorite Dishes
                       </h2>
-                      <span className="font-label-sm text-label-sm px-2 py-0.5 rounded-lg bg-surface-container-high text-on-surface-variant font-medium">
+                      <span className="font-label-sm text-xs px-2 py-0.5 rounded-sm bg-surface-container-high text-on-surface-variant font-medium">
                         Quick Reorder
                       </span>
                     </div>
@@ -523,11 +514,11 @@ export default function CustomerFavoritesPage() {
                       return (
                         <article
                           key={dish.id}
-                          className="card-item group bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col justify-between border border-outline-variant/30"
+                          className="card-item group bg-surface-container-lowest rounded-xl overflow-hidden shadow-xs hover:shadow-sm transition-all flex flex-col justify-between border border-outline-variant h-full"
                         >
                           <div>
                             {/* Dish Image */}
-                            <div className="relative h-44 w-full bg-surface-container overflow-hidden">
+                            <div className="relative aspect-[16/10] w-full bg-surface-container overflow-hidden">
                               <img
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 alt={dish.imageAlt}
@@ -535,7 +526,7 @@ export default function CustomerFavoritesPage() {
                               />
                               <button
                                 aria-label="Remove item"
-                                className="favorite-toggle absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-container-lowest/90 backdrop-blur-sm flex items-center justify-center text-secondary hover:scale-110 transition-transform shadow-sm cursor-pointer"
+                                className="favorite-toggle absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-surface-container-lowest/90 backdrop-blur-xs flex items-center justify-center text-secondary hover:scale-110 transition-transform shadow-xs cursor-pointer border border-outline-variant/60"
                                 onClick={() => handleRemoveDish(dish.id, dish.name)}
                                 type="button"
                               >
@@ -546,7 +537,7 @@ export default function CustomerFavoritesPage() {
                                   favorite
                                 </span>
                               </button>
-                              <span className="absolute bottom-2.5 left-2.5 font-label-sm text-label-sm px-2 py-0.5 bg-surface-container-lowest/95 backdrop-blur-xs rounded-lg text-primary shadow-xs font-semibold">
+                              <span className="absolute bottom-2.5 left-2.5 font-label-sm text-xs px-2 py-0.5 bg-surface-container-lowest/95 backdrop-blur-xs rounded-sm text-primary shadow-xs font-medium border border-outline-variant/60">
                                 {dish.restaurantName}
                               </span>
                             </div>
@@ -554,23 +545,23 @@ export default function CustomerFavoritesPage() {
                             {/* Dish Info */}
                             <div className="p-space-md">
                               <div className="flex items-start justify-between gap-2 mb-1">
-                                <h3 className="font-headline-sm text-headline-sm text-on-surface leading-snug font-bold">
+                                <h3 className="font-headline-sm text-base text-on-surface leading-snug font-semibold line-clamp-1">
                                   {dish.name}
                                 </h3>
                               </div>
-                              <div className="text-secondary font-headline-sm text-headline-sm mb-2 font-bold">
+                              <div className="text-secondary font-headline-sm text-base mb-1.5 font-bold">
                                 ৳{dish.price}
                               </div>
-                              <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2 leading-relaxed">
+                              <p className="font-body-sm text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
                                 {dish.description}
                               </p>
                             </div>
                           </div>
 
                           {/* Add to Cart Button */}
-                          <div className="p-space-md pt-0">
+                          <div className="p-space-md pt-0 mt-auto">
                             <button
-                              className={`w-full py-2 px-space-md font-label-md text-label-md rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95 font-semibold ${
+                              className={`w-full py-2 px-space-md font-label-md text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 font-medium ${
                                 isAdding
                                   ? "bg-primary text-on-primary scale-98"
                                   : "bg-primary-container hover:bg-primary text-on-primary"
