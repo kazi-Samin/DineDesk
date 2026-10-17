@@ -2,6 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   DINEDESK OFFICIAL DESIGN SYSTEM COLOR PALETTE
+   Use this comprehensive reference for all UI components and sections.
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. BRAND & PRIMARY GREENS (Heritage Dining, Headers, Primary Buttons)
+     ------------------------------------------------------------------------ */
+  --color-primary: #082717;                  /* Deep Forest Green — Headings, brand title, prominent elements */
+  --color-primary-container: #1f3d2b;        /* Hunter Green — Primary CTA buttons, active sidebar items, header accents */
+  --color-on-primary: #ffffff;               /* Pure White — Text & icons on primary/container backgrounds */
+  --color-on-primary-container: #87a890;     /* Muted Sage — Secondary text on dark green containers */
+  --color-primary-fixed: #c8ebd1;            /* Mint Sage — Verified badges, light green badge background */
+  --color-primary-fixed-dim: #accfb6;        /* Soft Sage — Hover state for sage badges */
+  --color-on-primary-fixed: #022111;         /* Very Dark Green — High contrast text inside mint sage badges */
+  --color-on-primary-fixed-variant: #2f4d3a; /* Deep Sage — Subtle text inside fixed green badges */
+  --color-surface-tint: #466551;             /* Live Forest Pulse — "Live", "Synchronized to Cloud", verified indicators */
+
+  /* ------------------------------------------------------------------------
+     2. ACCENT & SECONDARY TERRACOTTA (Warm Spice, Active Orders, Badges)
+     ------------------------------------------------------------------------ */
+  --color-secondary: #9f4122;                /* Warm Terracotta Rust — Accent badges, pending orders, highlights */
+  --color-secondary-container: #fc8863;      /* Coral Terracotta — Hover states, promotional chips */
+  --color-on-secondary: #ffffff;             /* Pure White — Text on secondary buttons & badges */
+  --color-on-secondary-container: #722104;   /* Deep Burnt Orange — Text on coral containers */
+  --color-secondary-fixed: #ffdbd0;          /* Soft Peach — Active order pills ("1 active", "Trending") */
+  --color-secondary-fixed-dim: #ffb59e;      /* Muted Peach — Secondary badges */
+  --color-on-secondary-fixed: #3a0b00;       /* Dark Espresso Brown — Text inside peach status pills */
+  --color-on-secondary-fixed-variant: #7f2a0c; /* Burnt Rust — Subtitle text on secondary chips */
+
+  /* ------------------------------------------------------------------------
+     3. WARM SURFACES & CANVAS BACKGROUNDS (Warm Editorial Paper Aesthetic)
+     ------------------------------------------------------------------------ */
+  --color-background: #fff8f2;               /* Warm Cream/Linen — Global page background */
+  --color-surface: #fff8f2;                  /* Base Surface Canvas */
+  --color-surface-bright: #fff8f2;           /* Bright Warm Surface */
+  --color-surface-dim: #e0d9d1;              /* Muted Canvas Surface */
+  --color-surface-container-lowest: #ffffff; /* Crisp Pure White — Elevated cards, modal dialogs, drawers */
+  --color-surface-container-low: #faf2ea;    /* Warm Soft Cream — Sidebar, stats banners, section footers */
+  --color-surface-container: #f5ede4;        /* Soft Linen — Form inputs, table rows, button backgrounds */
+  --color-surface-container-high: #efe7de;   /* Neutral Sand — Hover background on list items and rows */
+  --color-surface-container-highest: #e9e1d9;/* Dark Sand — Dividers, active selection backgrounds */
+  --color-surface-variant: #e9e1d9;          /* Surface variant */
+
+  /* ------------------------------------------------------------------------
+     4. TYPOGRAPHY & TEXT COLORS
+     ------------------------------------------------------------------------ */
+  --color-on-surface: #1e1b16;               /* Espresso Charcoal — High-contrast primary body text */
+  --color-on-surface-variant: #424843;       /* Muted Slate Olive — Secondary descriptions, captions, timestamps */
+  --color-on-background: #1e1b16;            /* Primary page typography */
+  --color-inverse-surface: #33302a;          /* Deep Dark Charcoal — Dark mode tooltips, snackbars */
+  --color-inverse-on-surface: #f7efe7;       /* Soft Light Cream — Text inside dark tooltips & snackbars */
+
+  /* ------------------------------------------------------------------------
+     5. BORDERS, DIVIDERS & OUTLINES
+     ------------------------------------------------------------------------ */
+  --color-outline: #727972;                  /* Medium Border Grey — Active inputs, strong borders */
+  --color-outline-variant: #c2c8c1;          /* Subtle Light Grey — Card borders, dividers, separators */
+
+  /* ------------------------------------------------------------------------
+     6. ALERT, ERROR & DESTRUCTIVE ACTIONS
+     ------------------------------------------------------------------------ */
+  --color-error: #ba1a1a;                    /* Crimson Red — Delete actions, reject buttons, cancellation badges */
+  --color-error-container: #ffdad6;          /* Soft Rose/Pink — Background for error messages & delete modals */
+  --color-on-error: #ffffff;                 /* Pure White — Text on red error buttons */
+  --color-on-error-container: #93000a;       /* Deep Wine Red — High contrast text inside error containers */
+
+  /* ------------------------------------------------------------------------
+     7. TERTIARY WINE & SPECIALTY PALETTE
+     ------------------------------------------------------------------------ */
+  --color-tertiary: #38181b;                 /* Vintage Dark Wine */
+  --color-tertiary-container: #512d30;       /* Muted Plum Container */
+  --color-on-tertiary: #ffffff;              /* Pure White on tertiary */
+  --color-on-tertiary-container: #c69497;    /* Dusty Rose on plum container */
+  --color-tertiary-fixed: #ffdadb;           /* Soft Blush Pink — Specialty badges */
+  --color-tertiary-fixed-dim: #efb9bc;       /* Dimmed Blush */
+  --color-on-tertiary-fixed: #301215;        /* Deep Wine Text on blush badge */
+  --color-on-tertiary-fixed-variant: #633c3f;/* Medium Wine Text */
+
+  /* ------------------------------------------------------------------------
+     8. RATINGS & SPECIAL HIGHLIGHTS
+     ------------------------------------------------------------------------ */
+  --color-rating-star: #d97706;              /* Warm Golden Amber — Food & Restaurant Review Stars */
+}
+
 @layer base {
   html,
   body {
