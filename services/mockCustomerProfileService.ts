@@ -47,6 +47,7 @@ export function saveCustomerProfile(
   if (isClient()) {
     try {
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("dinedesk_profile_updated"));
     } catch (err) {
       console.error("Error saving customer profile to localStorage:", err);
     }
