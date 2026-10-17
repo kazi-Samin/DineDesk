@@ -21,8 +21,9 @@ export default function Navbar() {
   const isHome = pathname === "/";
   const isExplore = pathname === "/explore";
   const isVendor = pathname?.startsWith("/dashboard/vendor");
+  const isCustomerDashboard = pathname?.startsWith("/dashboard/customer");
 
-  if (isVendor) {
+  if (isVendor || isCustomerDashboard) {
     return null;
   }
 
@@ -173,6 +174,17 @@ export default function Navbar() {
                   {selectedRole === "Diner" && (
                     <span className="material-symbols-outlined text-sm text-primary-container">check</span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRole("Diner");
+                    setRoleSwitcherOpen(false);
+                    router.push("/dashboard/customer/profile");
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-1.5 pl-6 text-xs text-on-surface-variant hover:text-primary hover:bg-surface-container-low text-left"
+                >
+                  <span>↳ Profile &amp; Addresses</span>
                 </button>
                 <button
                   type="button"
