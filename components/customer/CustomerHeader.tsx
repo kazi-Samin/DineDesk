@@ -190,6 +190,14 @@ export default function CustomerHeader({
                     <span>Switch to Restaurant Owner</span>
                   </Link>
                   <Link
+                    href="/dashboard/admin"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">admin_panel_settings</span>
+                    <span>Governance Hub (Admin)</span>
+                  </Link>
+                  <Link
                     href="/"
                     onClick={() => setProfileDropdownOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"

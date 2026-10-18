@@ -58,7 +58,7 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 lg:px-16 pt-4 pointer-events-none">
       <motion.nav
-        initial={{ y: -30, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`pointer-events-auto max-w-[1400px] mx-auto h-20 px-5 sm:px-8 flex items-center justify-between gap-4 transition-all duration-500 rounded-3xl border shadow-xl ${scrolled
@@ -207,6 +207,7 @@ export default function Navbar() {
                     onClick={() => {
                       setSelectedRole("System Admin");
                       setRoleSwitcherOpen(false);
+                      router.push("/dashboard/admin");
                     }}
                     className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "System Admin" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
                       }`}
@@ -225,7 +226,7 @@ export default function Navbar() {
           {/* Authentication CTA */}
           <Link
             className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
-            href="#"
+            href="/dashboard/customer/profile"
           >
             Sign In
           </Link>
@@ -287,11 +288,11 @@ export default function Navbar() {
             {/* Mobile Authentication Button */}
             <div className="pt-2">
               <Link
-                href="#"
+                href="/dashboard/customer/profile"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md"
+                className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
-                <span>Sign In / Secure Register</span>
+                <span>Sign In / Profile</span>
                 <span className="material-symbols-outlined text-sm">login</span>
               </Link>
             </div>

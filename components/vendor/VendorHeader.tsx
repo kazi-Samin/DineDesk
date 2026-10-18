@@ -229,6 +229,14 @@ export default function VendorHeader({
                     <span>Switch to Diner Account</span>
                   </Link>
                   <Link
+                    href="/dashboard/admin"
+                    onClick={() => setRoleMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">admin_panel_settings</span>
+                    <span>Governance Hub (Admin)</span>
+                  </Link>
+                  <Link
                     href="/"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"

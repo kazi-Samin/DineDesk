@@ -58,7 +58,7 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
 export default function Footer() {
   const pathname = usePathname();
   const ref = useRef<HTMLElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
