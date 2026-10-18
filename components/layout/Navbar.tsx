@@ -123,7 +123,7 @@ export default function Navbar() {
           {isAuthenticated && user && (
             <Link
               href={
-                user.role === "ADMIN"
+                user.role === "ADMIN" || user.role === "SUPERADMIN"
                   ? "/dashboard/admin"
                   : user.role === "VENDOR"
                     ? "/dashboard/vendor"
@@ -133,7 +133,7 @@ export default function Navbar() {
             >
               <span className="material-symbols-outlined text-sm">dashboard</span>
               <span>
-                {user.role === "ADMIN"
+                {user.role === "ADMIN" || user.role === "SUPERADMIN"
                   ? "Admin Console"
                   : user.role === "VENDOR"
                     ? "Partner Portal"
@@ -177,7 +177,7 @@ export default function Navbar() {
 
                     <Link
                       href={
-                        user.role === "ADMIN"
+                        user.role === "ADMIN" || user.role === "SUPERADMIN"
                           ? "/dashboard/admin"
                           : user.role === "VENDOR"
                             ? "/dashboard/vendor"

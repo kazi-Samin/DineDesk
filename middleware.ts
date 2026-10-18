@@ -14,7 +14,7 @@ export function middleware(request: NextRequest) {
 
   // Root /dashboard redirect
   if (pathname === "/dashboard" || pathname === "/dashboard/") {
-    if (role === "ADMIN") {
+    if (role === "ADMIN" || role === "SUPERADMIN") {
       return NextResponse.redirect(new URL("/dashboard/admin", request.url));
     }
     if (role === "VENDOR") {
@@ -28,18 +28,20 @@ export function middleware(request: NextRequest) {
 
   // If token and role exist in cookies, enforce edge boundaries
   if (token && role) {
-    if (pathname.startsWith("/dashboard/admin") && role !== "ADMIN") {
+    const isAdmin = role === "ADMIN" || role === "SUPERADMIN";
+
+    if (pathname.startsWith("/dashboard/admin") && !isAdmin) {
       const target = role === "VENDOR" ? "/dashboard/vendor" : "/dashboard/customer";
       return NextResponse.redirect(new URL(target, request.url));
     }
 
     if (pathname.startsWith("/dashboard/vendor") && role !== "VENDOR") {
-      const target = role === "ADMIN" ? "/dashboard/admin" : "/dashboard/customer";
+      const target = isAdmin ? "/dashboard/admin" : "/dashboard/customer";
       return NextResponse.redirect(new URL(target, request.url));
     }
 
     if (pathname.startsWith("/dashboard/customer") && role !== "USER") {
-      const target = role === "ADMIN" ? "/dashboard/admin" : "/dashboard/vendor";
+      const target = isAdmin ? "/dashboard/admin" : "/dashboard/vendor";
       return NextResponse.redirect(new URL(target, request.url));
     }
   }
