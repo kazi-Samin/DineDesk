@@ -31,12 +31,9 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const isVendor = pathname?.startsWith("/dashboard/vendor");
-  const isCustomerDashboard =
-    pathname?.startsWith("/dashboard/customer") ||
-    pathname?.startsWith("/dashboard/user");
+  const isDashboard = pathname?.startsWith("/dashboard");
 
-  if (isVendor || isCustomerDashboard) {
+  if (isDashboard) {
     return null;
   }
 

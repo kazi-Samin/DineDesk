@@ -79,10 +79,7 @@ export default function Footer() {
     return () => io.disconnect();
   }, [pathname]);
 
-  if (
-    pathname?.startsWith("/dashboard/vendor") ||
-    pathname?.startsWith("/dashboard/customer")
-  ) {
+  if (pathname?.startsWith("/dashboard")) {
     return null;
   }
 
