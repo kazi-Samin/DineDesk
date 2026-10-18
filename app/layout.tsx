@@ -9,6 +9,7 @@ import CartDrawer from "@/components/cart/CartDrawer";
 import ReserveTableModal from "@/components/reservations/ReserveTableModal";
 import { CartProvider } from "@/context/CartContext";
 import { ReservationProvider } from "@/context/ReservationContext";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,17 +45,19 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
-        <CartProvider>
-          <ReservationProvider>
-            <Navbar />
-            {children}
-            <CartDrawer />
-            <ReserveTableModal />
-            <CookieConsent />
-            <TableMateAIBadge />
-            <Footer />
-          </ReservationProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <ReservationProvider>
+              <Navbar />
+              {children}
+              <CartDrawer />
+              <ReserveTableModal />
+              <CookieConsent />
+              <TableMateAIBadge />
+              <Footer />
+            </ReservationProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

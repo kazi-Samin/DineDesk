@@ -5,12 +5,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignInPage() {
   const router = useRouter();
+  const { login, register } = useAuth();
 
   // Mode: "signin" | "signup"
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [signupRole, setSignupRole] = useState<"USER" | "VENDOR">("USER");
 
   // Form Fields
   const [fullName, setFullName] = useState("");
@@ -65,29 +68,69 @@ export default function SignInPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError("");
+    setSuccessToast("");
 
     if (!validateForm()) return;
 
     setIsLoading(true);
 
-    // Simulate authentic authentication verification
-    setTimeout(() => {
-      setIsLoading(false);
-
-      const normalizedEmail = email.toLowerCase().trim();
-
-      if (normalizedEmail.includes("admin")) {
-        router.push("/dashboard/admin");
-      } else if (
-        normalizedEmail.includes("vendor") ||
-        normalizedEmail.includes("merchant") ||
-        normalizedEmail.includes("owner")
-      ) {
-        router.push("/dashboard/vendor");
+    try {
+      if (authMode === "signin") {
+        const result = await login({ email, password });
+        if (result.success && result.data) {
+          const role = result.data.role;
+          if (role === "ADMIN") {
+            router.push("/dashboard/admin");
+          } else if (role === "VENDOR") {
+            router.push("/dashboard/vendor");
+          } else {
+            router.push("/dashboard/customer");
+          }
+        } else {
+          setGeneralError(
+            result.message || "Invalid email or password. Please verify your credentials or create an account."
+          );
+        }
       } else {
-        router.push("/dashboard/customer");
+        // Sign Up Mode
+        const regResult = await register({
+          name: fullName,
+          email,
+          password,
+          phone,
+          role: signupRole,
+        });
+
+        if (regResult.success) {
+          // Auto login upon successful registration
+          const loginRes = await login({ email, password });
+          if (loginRes.success && loginRes.data) {
+            const role = loginRes.data.role;
+            if (role === "ADMIN") {
+              router.push("/dashboard/admin");
+            } else if (role === "VENDOR") {
+              router.push("/dashboard/vendor");
+            } else {
+              router.push("/dashboard/customer");
+            }
+          } else {
+            setAuthMode("signin");
+            setSuccessToast("Registration successful! Please sign in with your credentials.");
+          }
+        } else {
+          const errorMsg =
+            regResult.errors && regResult.errors.length > 0
+              ? regResult.errors.map((err) => err.message).join(", ")
+              : regResult.message || "Registration failed. Please try again.";
+          setGeneralError(errorMsg);
+        }
       }
-    }, 700);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unable to reach the authentication server.";
+      setGeneralError(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Google Sign-In Simulation
@@ -108,8 +151,8 @@ export default function SignInPage() {
     setGeneralError("");
 
     if (role === "customer") {
-      setEmail("tahmid.rahman@example.com");
-      setPassword("TasteDhaka2025!");
+      setEmail("samin_test_1792345880620@dinedesk.com");
+      setPassword("Password123!");
     } else if (role === "vendor") {
       setEmail("vendor@sultansheritage.com");
       setPassword("HeritageVendor2025!");
@@ -330,6 +373,14 @@ export default function SignInPage() {
               </div>
             )}
 
+            {/* Success Notification Banner */}
+            {successToast && (
+              <div className="mb-6 p-3.5 rounded-2xl bg-primary-fixed border border-primary-fixed-dim text-on-primary-fixed text-xs flex items-center gap-2">
+                <span className="material-symbols-outlined text-base shrink-0">check_circle</span>
+                <span>{successToast}</span>
+              </div>
+            )}
+
             {/* Google Authentication Button */}
             <button
               type="button"
@@ -370,6 +421,41 @@ export default function SignInPage() {
 
             {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Account Type Selector (Sign Up Only) */}
+              {authMode === "signup" && (
+                <div>
+                  <label className="block text-xs font-semibold text-on-surface mb-1.5">
+                    Account Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSignupRole("USER")}
+                      className={`py-2.5 px-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        signupRole === "USER"
+                          ? "bg-primary text-on-primary border-primary shadow-sm"
+                          : "bg-surface text-on-surface-variant border-outline-variant hover:text-on-surface hover:bg-surface-container"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base">person</span>
+                      <span>Diner (Guest)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSignupRole("VENDOR")}
+                      className={`py-2.5 px-3 rounded-2xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        signupRole === "VENDOR"
+                          ? "bg-primary text-on-primary border-primary shadow-sm"
+                          : "bg-surface text-on-surface-variant border-outline-variant hover:text-on-surface hover:bg-surface-container"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-base">storefront</span>
+                      <span>Restaurant Partner</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Full Name Field (Sign Up Only) */}
               {authMode === "signup" && (
                 <div>
