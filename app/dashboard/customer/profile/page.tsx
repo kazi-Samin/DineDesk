@@ -21,6 +21,7 @@ import {
 } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
@@ -30,7 +31,7 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[]
 ];
 
 export default function CustomerProfilePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [savedSnapshot, setSavedSnapshot] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
@@ -241,7 +242,7 @@ export default function CustomerProfilePage() {
         userName={profile.fullName || "Tahmid Rahman"}
         userRole="Verified Foodie"
         avatarUrl={profile.avatarUrl}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
@@ -251,12 +252,13 @@ export default function CustomerProfilePage() {
           memberSince="Member since 2023"
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={closeSidebar}
+          onToggle={toggleSidebar}
           activeOrderCount={1}
           loyaltyPoints={1450}
         />
 
-        <main className="pl-0 lg:pl-72 flex-1 flex flex-col min-h-screen w-full">
+        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
           {/* Top Quick Stats */}
           <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant/30">
             <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">

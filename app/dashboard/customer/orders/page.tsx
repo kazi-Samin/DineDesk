@@ -12,12 +12,13 @@ import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { OrderConfirmation } from "@/types/order";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { useCart } from "@/context/CartContext";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 type OrderTabFilter = "all" | "active" | "delivered" | "cancelled";
 
 export default function CustomerOrdersPage() {
   const { addItem, openDrawer } = useCart();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +106,7 @@ export default function CustomerOrdersPage() {
         userRole={profile.roleBadge}
         avatarUrl={profile.avatarUrl}
         isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
 
       <div className="flex pt-16 flex-1">
@@ -114,12 +115,13 @@ export default function CustomerOrdersPage() {
           memberSince={profile.memberSince}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={closeSidebar}
+          onToggle={toggleSidebar}
           activeOrderCount={tabCounts.active}
           loyaltyPoints={profile.stats.loyaltyPoints}
         />
 
-        <main className="pl-0 lg:pl-72 flex-1 flex flex-col min-h-screen w-full">
+        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
           {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low border-b border-outline-variant/30">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">

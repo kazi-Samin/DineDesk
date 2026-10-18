@@ -9,6 +9,7 @@ interface CustomerSidebarProps {
   avatarUrl?: string;
   isOpen?: boolean;
   onClose?: () => void;
+  onToggle?: () => void;
   activeOrderCount?: number;
   loyaltyPoints?: number;
 }
@@ -17,8 +18,9 @@ export default function CustomerSidebar({
   userName = "Tahmid's Account",
   memberSince = "Member since 2023",
   avatarUrl = "/avatars/tahmid-avatar.svg",
-  isOpen = false,
+  isOpen = true,
   onClose,
+  onToggle,
   activeOrderCount = 1,
   loyaltyPoints = 1450,
 }: CustomerSidebarProps) {
@@ -113,6 +115,21 @@ export default function CustomerSidebar({
     },
   ];
 
+  const handleNavClick = () => {
+    // Only auto-close on mobile screens
+    if (typeof window !== "undefined" && window.innerWidth < 1024 && onClose) {
+      onClose();
+    }
+  };
+
+  const handleToggleClick = () => {
+    if (onToggle) {
+      onToggle();
+    } else if (isOpen && onClose) {
+      onClose();
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -123,12 +140,42 @@ export default function CustomerSidebar({
         />
       )}
 
+      {/* Floating Expand Arrow when sidebar is collapsed */}
+      {!isOpen && (
+        <button
+          type="button"
+          onClick={handleToggleClick}
+          className="fixed left-0 top-20 z-40 px-1 py-3 bg-surface-container-lowest border border-outline-variant border-l-0 rounded-r-lg shadow-sm hover:bg-surface-container hover:border-primary text-on-surface-variant hover:text-primary transition-all cursor-pointer flex items-center justify-center group"
+          title="Expand sidebar"
+          aria-label="Expand sidebar"
+        >
+          <span className="material-symbols-outlined text-base transition-transform group-hover:translate-x-0.5">
+            chevron_right
+          </span>
+        </button>
+      )}
+
       <aside
-        className={`fixed left-0 top-16 bottom-0 w-72 bg-surface-container-low z-40 flex flex-col justify-between shadow-[1px_0_8px_rgba(0,0,0,0.02)] border-r border-outline-variant/30 overflow-y-auto transition-transform duration-200 lg:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed left-0 top-16 bottom-0 w-72 bg-surface-container-low z-40 flex flex-col justify-between shadow-[1px_0_8px_rgba(0,0,0,0.02)] border-r border-outline-variant transition-transform duration-300 ease-in-out ${
+          isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
         }`}
       >
-        <div className="flex flex-col">
+        {/* Floating Collapse Arrow docked on sidebar's right border */}
+        {isOpen && (
+          <button
+            type="button"
+            onClick={handleToggleClick}
+            className="absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer group"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+          >
+            <span className="material-symbols-outlined text-base transition-transform group-hover:-translate-x-0.5">
+              chevron_left
+            </span>
+          </button>
+        )}
+
+        <div className="flex flex-col flex-1 overflow-y-auto">
           {/* Patron Summary Card */}
           <div className="p-space-lg flex items-center gap-space-md bg-surface-container-low border-b border-outline-variant/20">
             <img
@@ -160,7 +207,7 @@ export default function CustomerSidebar({
                 <Link
                   key={item.label}
                   href={item.href}
-                  onClick={() => onClose?.()}
+                  onClick={handleNavClick}
                   className={`flex items-center justify-between px-space-md py-2.5 rounded-lg font-label-md text-sm transition-all ${activeClass}`}
                 >
                   <div className="flex items-center gap-space-md">

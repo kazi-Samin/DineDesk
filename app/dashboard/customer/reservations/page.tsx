@@ -28,6 +28,7 @@ import {
 import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { useReservation } from "@/context/ReservationContext";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -35,8 +36,7 @@ export default function CustomerReservationsPage() {
   const router = useRouter();
   const { openReservationModal } = useReservation();
 
-  // Sidebar mobile toggle
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   // Profile data for header & stats
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
@@ -211,7 +211,7 @@ export default function CustomerReservationsPage() {
         userRole={profile.roleBadge}
         avatarUrl={profile.avatarUrl}
         isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
 
       {/* Fixed Left Customer Navigation Sidebar */}
@@ -220,13 +220,14 @@ export default function CustomerReservationsPage() {
         memberSince={profile.memberSince}
         avatarUrl={profile.avatarUrl}
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
         activeOrderCount={profile.stats.activeBookings}
         loyaltyPoints={profile.stats.loyaltyPoints}
       />
 
       {/* Main Content Area */}
-      <div className="pl-0 lg:pl-72 transition-all">
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
         <main className="w-full pt-16 bg-background min-h-screen">
           {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">

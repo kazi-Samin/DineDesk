@@ -20,9 +20,10 @@ import {
 } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 export default function CustomerAddressesPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [savedSpotsCount, setSavedSpotsCount] = useState(14);
 
@@ -122,7 +123,7 @@ export default function CustomerAddressesPage() {
         userName={profile.fullName || "Tahmid Rahman"}
         userRole="Verified Foodie"
         avatarUrl={profile.avatarUrl}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
@@ -132,12 +133,13 @@ export default function CustomerAddressesPage() {
           memberSince="Member since 2023"
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
+          onClose={closeSidebar}
+          onToggle={toggleSidebar}
           activeOrderCount={1}
           loyaltyPoints={1450}
         />
 
-        <main className="pl-0 lg:pl-72 flex-1 flex flex-col min-h-screen w-full">
+        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
           {/* Top Quick Stats */}
           <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant/30">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
