@@ -16,10 +16,10 @@ export default function FeaturedSection() {
               Popular Spots
             </span>
             <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-primary tracking-tight mt-1">
-              Featured Restaurants
+              Featured Menus
             </h2>
             <p className="text-sm text-on-surface-variant mt-2">
-              Top restaurants and popular places to eat this week in Dhaka.
+              Top restaurants and popular items to eat this week.
             </p>
           </div>
 
@@ -28,7 +28,7 @@ export default function FeaturedSection() {
               className="group inline-flex items-center gap-3 px-5 py-2.5 bg-surface-container-lowest hover:bg-primary text-primary hover:text-on-primary border border-outline-variant/80 hover:border-primary rounded-2xl text-xs sm:text-sm font-bold shadow-sm transition-all duration-300"
               href="/explore"
             >
-              <span>Explore all restaurants</span>
+              <span>Explore all menus</span>
               <span className="w-6 h-6 rounded-xl bg-surface-container group-hover:bg-white/20 flex items-center justify-center transition-colors">
                 <span className="material-symbols-outlined text-xs transform group-hover:translate-x-1 transition-transform">
                   arrow_forward
@@ -40,6 +40,9 @@ export default function FeaturedSection() {
 
         {/* 6 Card Grid (3 columns x 2 rows) with Framer Motion */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+          {/*  eikhane kaj korte hbe eitu por  */}
+
           {FEATURED_RESTAURANTS.map((restaurant, index) => (
             <motion.article
               key={restaurant.id}
