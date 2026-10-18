@@ -1,61 +1,73 @@
+"use client";
+
 import { CUSTOMER_REVIEWS } from "@/data/restaurants";
+import { motion } from "framer-motion";
 
 export default function TestimonialsSection() {
   return (
-    <section className="w-full py-space-xl bg-surface-container-low">
-      <div className="max-w-[1440px] mx-auto px-margin">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-space-md pb-space-lg mb-space-lg">
+    <section className="w-full py-20 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-8 mb-12 border-b border-outline-variant/60">
           <div>
-            <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+            <span className="text-xs text-secondary uppercase tracking-widest font-bold">
               Customer Reviews
             </span>
-            <h2 className="font-headline-lg text-headline-lg text-primary tracking-tight">
+            <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-primary tracking-tight mt-1">
               What Diners Say
             </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            <p className="text-sm text-on-surface-variant mt-2">
               Real feedback from food lovers and regular diners in Dhaka.
             </p>
           </div>
-          <div className="flex items-center gap-space-xs text-secondary font-label-md text-label-md font-semibold">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container border border-outline-variant/60 rounded-2xl text-secondary font-semibold text-xs shadow-2xs">
             <span className="material-symbols-outlined text-base">forum</span>
             <span>Over 14,000 reservations &amp; orders completed</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
-          {CUSTOMER_REVIEWS.map((review) => (
-            <article
+        {/* Animated Review Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {CUSTOMER_REVIEWS.map((review, index) => (
+            <motion.article
               key={review.id}
-              className="bg-surface-container-lowest p-space-xl rounded-xl border border-outline-variant shadow-xs flex flex-col justify-between"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.15 }}
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="bg-surface-container-lowest p-8 rounded-3xl border border-outline-variant shadow-lg flex flex-col justify-between transition-all group hover:border-primary/40 hover:shadow-xl"
             >
               <div>
-                <div className="flex items-center gap-1 text-secondary mb-space-md">
-                  <span className="material-symbols-outlined text-sm">star</span>
-                  <span className="material-symbols-outlined text-sm">star</span>
-                  <span className="material-symbols-outlined text-sm">star</span>
-                  <span className="material-symbols-outlined text-sm">star</span>
-                  <span className="material-symbols-outlined text-sm">star</span>
+                <div className="flex items-center gap-1 text-secondary mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className="material-symbols-outlined text-sm font-bold">
+                      star
+                    </span>
+                  ))}
                 </div>
-                <blockquote className="font-headline-sm italic text-primary leading-relaxed">
-                  {review.quote}
+                <blockquote className="font-serif italic text-primary text-base sm:text-lg leading-relaxed">
+                  &ldquo;{review.quote}&rdquo;
                 </blockquote>
               </div>
-              <div className="pt-space-lg mt-space-lg flex items-center gap-space-sm bg-surface-container/60 p-space-sm rounded-lg border border-outline-variant/40">
+
+              <div className="pt-6 mt-6 flex items-center gap-3.5 bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/40 group-hover:bg-surface-container transition-colors">
                 <div
-                  className={`w-10 h-10 rounded-full ${review.badgeColorClass} flex items-center justify-center font-bold ${review.textColorClass} text-sm`}
+                  className={`w-11 h-11 rounded-2xl ${review.badgeColorClass} flex items-center justify-center font-bold ${review.textColorClass} text-sm shadow-sm`}
                 >
                   {review.authorInitials}
                 </div>
                 <div>
-                  <p className="font-label-md text-label-md text-on-surface font-semibold">
+                  <p className="text-xs sm:text-sm text-on-surface font-bold">
                     {review.authorName}
                   </p>
-                  <p className="font-body-sm text-[12px] text-on-surface-variant">
+                  <p className="text-[11px] text-on-surface-variant font-medium">
                     {review.authorLocation}
                   </p>
                 </div>
               </div>
-            </article>
+            </motion.article>
           ))}
         </div>
       </div>

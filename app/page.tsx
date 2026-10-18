@@ -4,6 +4,7 @@ import TopRatedSection from "@/components/home/TopRatedSection";
 import CategoriesSection from "@/components/home/CategoriesSection";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import EditorialCtaSection from "@/components/home/EditorialCtaSection";
+import SponsorsSection from "@/components/home/SponsorsSection";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
         <TopRatedSection />
         <CategoriesSection />
         <TestimonialsSection />
+        <SponsorsSection></SponsorsSection>
         <EditorialCtaSection />
       </div>
     </main>
