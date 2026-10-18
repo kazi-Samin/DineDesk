@@ -9,9 +9,9 @@ import { motion, AnimatePresence } from "framer-motion";
 const HERO_SLIDES = [
   {
     id: 1,
-    tag: "Food Delivery & Table Bookings · Dhaka",
+    tag: "Food Delivery & Table Bookings · Michigan Avenue",
     title: "Delicious Food, Delivered Fast",
-    description: "Order from Dhaka's finest local restaurants or reserve a table for an unforgettable dining experience.",
+    description: "Order from Michigan's finest local restaurants or reserve a table for an unforgettable dining experience.",
     image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop",
     badgeTitle: "Verified Kitchens",
     badgeSub: "Real reviews, transparent pricing & fast dispatch.",
@@ -19,7 +19,7 @@ const HERO_SLIDES = [
   },
   {
     id: 2,
-    tag: "Exclusive Dining · Gulshan & Banani",
+    tag: "Exclusive Dining · Broadway & Bourbon",
     title: "Handcrafted Table Reservations",
     description: "Secure VIP seating at prime dining spots instantly with live floor planning and concierge assistance.",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop",
@@ -52,7 +52,7 @@ const HERO_SLIDES = [
 export default function HeroSection() {
   const router = useRouter();
   const { openReservationModal } = useReservation();
-  const [neighborhood, setNeighborhood] = useState("gulshan");
+  const [neighborhood, setNeighborhood] = useState("wenceslas");
   const [dishQuery, setDishQuery] = useState("");
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -154,12 +154,12 @@ export default function HeroSection() {
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
                   >
-                    <option value="gulshan">Gulshan 1 &amp; 2</option>
-                    <option value="banani">Banani Avenue</option>
-                    <option value="dhanmondi">Dhanmondi Satmasjid Rd</option>
-                    <option value="uttara">Uttara Sectors</option>
-                    <option value="gec">GEC Circle</option>
-                    <option value="agrabad">Agrabad</option>
+                    <option value="wenceslas">Wenceslas Square</option>
+                    <option value="bakerStreet">Baker Street 1 &amp; 2</option>
+                    <option value="carnaby">Carnaby Street</option>
+                    <option value="unterDenLinden">Unter den Linden</option>
+                    <option value="fifthAvenue">Fifth Avenue</option>
+                    <option value="madisonAvenue">Madison Avenue</option>
                   </select>
                 </div>
               </div>
@@ -205,7 +205,7 @@ export default function HeroSection() {
                 className="px-5 py-3.5 bg-primary text-on-primary rounded-2xl font-semibold text-xs sm:text-sm hover:bg-primary/90 transition-all inline-flex items-center gap-2 shadow-md"
                 href="/explore"
               >
-                <span>Browse Restaurants</span>
+                <span>Browse Menu</span>
                 <span className="material-symbols-outlined text-base">restaurant</span>
               </Link>
 

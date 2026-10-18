@@ -49,7 +49,7 @@ export default function NavLinks({
 
             <Link href="/explore" onClick={onItemClick} className={linkClass(isExplore)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">restaurant_menu</span>}
-                Browse Restaurants
+                Browse Menu
             </Link>
 
             <button

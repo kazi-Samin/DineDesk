@@ -18,11 +18,12 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("Diner");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   // Dynamic scroll listener for liquid glass effect
   useEffect(() => {
     const handleScroll = () => {
@@ -45,15 +46,6 @@ export default function Navbar() {
       router.push(`/explore?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
       router.push(`/explore`);
-    }
-  };
-
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
     }
   };
 
@@ -127,20 +119,6 @@ export default function Navbar() {
             )}
           </motion.button>
 
-          {/* Theme Switcher */}
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            aria-label="Toggle theme"
-            onClick={toggleDarkMode}
-            className="p-3 text-on-surface-variant hover:text-primary rounded-2xl bg-surface-container/50 hover:bg-surface-container border border-outline-variant/40 transition-colors cursor-pointer shadow-2xs"
-            type="button"
-          >
-            <span className="material-symbols-outlined text-lg">
-              {isDarkMode ? "dark_mode" : "light_mode"}
-            </span>
-          </motion.button>
-
           {/* Direct Role Dashboard Shortcut Button when Authenticated */}
           {isAuthenticated && user && (
             <Link
@@ -148,8 +126,8 @@ export default function Navbar() {
                 user.role === "ADMIN"
                   ? "/dashboard/admin"
                   : user.role === "VENDOR"
-                  ? "/dashboard/vendor"
-                  : "/dashboard/customer"
+                    ? "/dashboard/vendor"
+                    : "/dashboard/customer"
               }
               className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-all shadow-xs"
             >
@@ -158,8 +136,8 @@ export default function Navbar() {
                 {user.role === "ADMIN"
                   ? "Admin Console"
                   : user.role === "VENDOR"
-                  ? "Partner Portal"
-                  : "My Dashboard"}
+                    ? "Partner Portal"
+                    : "My Dashboard"}
               </span>
             </Link>
           )}
@@ -202,8 +180,8 @@ export default function Navbar() {
                         user.role === "ADMIN"
                           ? "/dashboard/admin"
                           : user.role === "VENDOR"
-                          ? "/dashboard/vendor"
-                          : "/dashboard/customer"
+                            ? "/dashboard/vendor"
+                            : "/dashboard/customer"
                       }
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-on-surface hover:bg-surface-container transition-colors"
@@ -313,8 +291,8 @@ export default function Navbar() {
                       user.role === "ADMIN"
                         ? "/dashboard/admin"
                         : user.role === "VENDOR"
-                        ? "/dashboard/vendor"
-                        : "/dashboard/customer"
+                          ? "/dashboard/vendor"
+                          : "/dashboard/customer"
                     }
                     onClick={() => setMobileMenuOpen(false)}
                     className="w-full py-2.5 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
