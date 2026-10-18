@@ -10,5 +10,5 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleGuard allowedRoles={["ADMIN"]}>{children}</RoleGuard>;
+  return <RoleGuard allowedRoles={["ADMIN", "SUPERADMIN"]}>{children}</RoleGuard>;
 }
