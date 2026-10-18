@@ -7,19 +7,44 @@ export { MOCK_COURIER };
 
 const SEED_ORDERS: OrderConfirmation[] = VENDOR_SEED_ORDERS;
 
+function getAuthUser(): { id?: string; role?: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("dinedesk_auth_user");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function getOrdersStorageKey(): string {
+  const user = getAuthUser();
+  if (user?.role === "USER" && user?.id) {
+    return `dinedesk_orders_${user.id}`;
+  }
+  return STORAGE_KEY;
+}
+
 // Helper to safely load orders from storage
 export function getMockOrders(): OrderConfirmation[] {
-  if (typeof window === "undefined") return SEED_ORDERS;
+  if (typeof window === "undefined") return [];
+  const user = getAuthUser();
+  const key = getOrdersStorageKey();
+  
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_ORDERS));
+      if (user?.role === "USER") {
+        return [];
+      }
+      localStorage.setItem(key, JSON.stringify(SEED_ORDERS));
       return SEED_ORDERS;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_ORDERS;
+    return Array.isArray(parsed) ? parsed : (user?.role === "USER" ? [] : SEED_ORDERS);
   } catch {
-    return SEED_ORDERS;
+    return user?.role === "USER" ? [] : SEED_ORDERS;
   }
 }
 
@@ -27,7 +52,8 @@ export function getMockOrders(): OrderConfirmation[] {
 function saveOrders(orders: OrderConfirmation[]) {
   if (typeof window !== "undefined") {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+      const key = getOrdersStorageKey();
+      localStorage.setItem(key, JSON.stringify(orders));
     } catch {
       // storage unavailable
     }

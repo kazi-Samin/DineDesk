@@ -1,8 +1,5 @@
 import { CustomerProfileData, CustomerAddress } from "@/types/customerProfile";
-import {
-  INITIAL_CUSTOMER_PROFILE,
-  INITIAL_CUSTOMER_ADDRESSES,
-} from "@/data/mockCustomerProfile";
+import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 
 const PROFILE_STORAGE_KEY = "dinedesk_customer_profile";
 const ADDRESSES_STORAGE_KEY = "dinedesk_customer_addresses";
@@ -11,25 +8,97 @@ function isClient(): boolean {
   return typeof window !== "undefined";
 }
 
+function getAuthUser(): {
+  id?: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  avatarUrl?: string;
+  loyaltyPoints?: number;
+  createdAt?: string;
+} | null {
+  if (!isClient()) return null;
+  try {
+    const authRaw = localStorage.getItem("dinedesk_auth_user");
+    if (!authRaw) return null;
+    return JSON.parse(authRaw);
+  } catch {
+    return null;
+  }
+}
+
 export function getCustomerProfile(): CustomerProfileData {
   if (!isClient()) return INITIAL_CUSTOMER_PROFILE;
   try {
+    const authUser = getAuthUser();
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    let parsed: CustomerProfileData;
+
+    const baseProfile: CustomerProfileData = {
+      fullName: authUser?.name || "DineDesk Patron",
+      email: authUser?.email || "patron@dinedesk.com",
+      phone: authUser?.phone || "",
+      language: "en",
+      dietaryPreferences: ["halal_only"],
+      avatarUrl: authUser?.avatarUrl || "/avatars/tahmid-avatar.svg",
+      isEmailVerified: true,
+      isPhoneVerified: Boolean(authUser?.phone),
+      roleBadge:
+        authUser?.role === "ADMIN"
+          ? "Super Admin"
+          : authUser?.role === "VENDOR"
+          ? "Restaurant Partner"
+          : "Verified Foodie",
+      memberSince: authUser?.createdAt
+        ? `Member since ${new Date(authUser.createdAt).getFullYear()}`
+        : "Patron since 2026",
+      passwordLastChangedDays: 14,
+      twoFactorPhone: authUser?.phone || "",
+      stats: {
+        totalOrders: 0,
+        activeBookings: 0,
+        savedSpots: 0,
+        loyaltyPoints: authUser?.loyaltyPoints ?? 0,
+      },
+    };
+
     if (!raw) {
-      localStorage.setItem(
-        PROFILE_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_PROFILE)
-      );
-      return INITIAL_CUSTOMER_PROFILE;
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(baseProfile));
+      return baseProfile;
     }
-    const parsed = JSON.parse(raw);
+
+    parsed = JSON.parse(raw);
     if (!parsed || !parsed.fullName) {
-      localStorage.setItem(
-        PROFILE_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_PROFILE)
-      );
-      return INITIAL_CUSTOMER_PROFILE;
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(baseProfile));
+      return baseProfile;
     }
+
+    // Always keep name, email, phone, role, and loyalty synchronized with the currently authenticated user
+    if (authUser && authUser.name) {
+      parsed.fullName = authUser.name;
+      if (authUser.email) parsed.email = authUser.email;
+      if (authUser.phone !== undefined) parsed.phone = authUser.phone;
+      if (authUser.role) {
+        parsed.roleBadge =
+          authUser.role === "ADMIN"
+            ? "Super Admin"
+            : authUser.role === "VENDOR"
+            ? "Restaurant Partner"
+            : "Verified Foodie";
+      }
+      if (authUser.createdAt) {
+        parsed.memberSince = `Member since ${new Date(authUser.createdAt).getFullYear()}`;
+      }
+      if (authUser.loyaltyPoints !== undefined) {
+        parsed.stats = {
+          ...parsed.stats,
+          loyaltyPoints: authUser.loyaltyPoints,
+        };
+      }
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed));
+    }
+
     // Auto-migrate broken external avatar URL if previously cached in localStorage
     if (
       !parsed.avatarUrl ||
@@ -65,35 +134,32 @@ export function saveCustomerProfile(
 }
 
 export function getCustomerAddresses(): CustomerAddress[] {
-  if (!isClient()) return INITIAL_CUSTOMER_ADDRESSES;
+  if (!isClient()) return [];
   try {
-    const raw = localStorage.getItem(ADDRESSES_STORAGE_KEY);
+    const authUser = getAuthUser();
+    const key = authUser?.id
+      ? `dinedesk_addresses_${authUser.id}`
+      : ADDRESSES_STORAGE_KEY;
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(
-        ADDRESSES_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_ADDRESSES)
-      );
-      return INITIAL_CUSTOMER_ADDRESSES;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      localStorage.setItem(
-        ADDRESSES_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_ADDRESSES)
-      );
-      return INITIAL_CUSTOMER_ADDRESSES;
-    }
-    return parsed;
+    return Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.error("Error reading addresses from localStorage:", err);
-    return INITIAL_CUSTOMER_ADDRESSES;
+    return [];
   }
 }
 
 export function saveCustomerAddresses(addresses: CustomerAddress[]): void {
   if (isClient()) {
     try {
-      localStorage.setItem(ADDRESSES_STORAGE_KEY, JSON.stringify(addresses));
+      const authUser = getAuthUser();
+      const key = authUser?.id
+        ? `dinedesk_addresses_${authUser.id}`
+        : ADDRESSES_STORAGE_KEY;
+      localStorage.setItem(key, JSON.stringify(addresses));
     } catch (err) {
       console.error("Error saving addresses to localStorage:", err);
     }
@@ -158,42 +224,37 @@ export function upsertCustomerAddress(
   return updated;
 }
 
-/**
- * Format and download CSV address ledger
- */
-export function exportAddressesToCSV(addresses: CustomerAddress[]): boolean {
-  if (!addresses || addresses.length === 0) return false;
+export function exportAddressesToCSV(addresses: CustomerAddress[]): void {
+  if (!isClient() || addresses.length === 0) return;
 
   const headers = [
-    "Address Identifier",
+    "ID",
+    "Label",
+    "Category",
     "Recipient Name",
     "Contact Number",
-    "House / Building",
-    "Area / Road",
-    "Apartment / Suite",
+    "Building",
+    "Road",
+    "Apartment",
     "City",
     "Postal Code",
-    "Rider Delivery Directives",
-    "Default Status",
+    "Is Default",
+    "Delivery Instructions",
   ];
 
-  const escapeCSV = (val: string | undefined | null) => {
-    if (val === undefined || val === null) return '""';
-    const clean = String(val).replace(/"/g, '""');
-    return `"${clean}"`;
-  };
-
-  const rows = addresses.map((addr) => [
-    escapeCSV(addr.label),
-    escapeCSV(addr.recipientName),
-    escapeCSV(addr.contactNumber),
-    escapeCSV(addr.building),
-    escapeCSV(addr.road),
-    escapeCSV(addr.apartment || "N/A"),
-    escapeCSV(addr.city),
-    escapeCSV(addr.postalCode),
-    escapeCSV(addr.deliveryInstructions || "None"),
-    escapeCSV(addr.isDefault ? "Primary Default" : "Secondary"),
+  const rows = addresses.map((a) => [
+    `"${a.id}"`,
+    `"${a.label.replace(/"/g, '""')}"`,
+    `"${a.category}"`,
+    `"${a.recipientName.replace(/"/g, '""')}"`,
+    `"${a.contactNumber}"`,
+    `"${a.building.replace(/"/g, '""')}"`,
+    `"${a.road.replace(/"/g, '""')}"`,
+    `"${(a.apartment || "").replace(/"/g, '""')}"`,
+    `"${a.city}"`,
+    `"${a.postalCode}"`,
+    a.isDefault ? "Yes" : "No",
+    `"${(a.deliveryInstructions || "").replace(/"/g, '""')}"`,
   ]);
 
   const csvContent =
@@ -203,10 +264,8 @@ export function exportAddressesToCSV(addresses: CustomerAddress[]): boolean {
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute("download", `dinedesk_address_ledger_${Date.now()}.csv`);
+  link.setAttribute("download", `dinedesk_addresses_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
-  return true;
 }

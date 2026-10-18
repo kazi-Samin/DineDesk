@@ -18,9 +18,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("Diner");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -91,7 +89,7 @@ export default function Navbar() {
             </motion.div>
           </Link>
 
-          <NavLinks openReservationModal={openReservationModal} selectedRole={selectedRole} />
+          <NavLinks openReservationModal={openReservationModal} />
         </div>
 
         {/* Floating Search Bar */}
@@ -143,89 +141,28 @@ export default function Navbar() {
             </span>
           </motion.button>
 
-          {/* Role Switcher Pill */}
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-outline-variant/60 bg-surface-container/70 hover:bg-surface-container text-xs font-semibold text-on-surface transition-all cursor-pointer shadow-2xs"
+          {/* Direct Role Dashboard Shortcut Button when Authenticated */}
+          {isAuthenticated && user && (
+            <Link
+              href={
+                user.role === "ADMIN"
+                  ? "/dashboard/admin"
+                  : user.role === "VENDOR"
+                  ? "/dashboard/vendor"
+                  : "/dashboard/customer"
+              }
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-all shadow-xs"
             >
-              <span className="w-2 h-2 rounded-full bg-secondary animate-ping" />
-              <span className="hidden sm:inline text-on-surface-variant font-medium">Role:</span>
-              <span className="text-primary font-bold">{selectedRole}</span>
-              <span className="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
-            </motion.button>
-
-            <AnimatePresence>
-              {roleSwitcherOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 12, scale: 0.94 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  className="absolute right-0 top-full mt-3 w-64 bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-2xl py-3 z-50 overflow-hidden backdrop-blur-xl"
-                >
-                  <div className="px-4 py-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    Switch Access Portal
-                  </div>
-                  <div className="my-1.5 border-t border-outline-variant/60" />
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("Diner");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/orders");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "Diner" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">🍽️ Customer (Diner)</span>
-                      <span className="text-[10px] text-on-surface-variant">Track orders & bookings</span>
-                    </div>
-                    {selectedRole === "Diner" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("Restaurant Owner");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/vendor/orders");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "Restaurant Owner" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">🏪 Restaurant Owner</span>
-                      <span className="text-[10px] text-on-surface-variant">Manage kitchen queue</span>
-                    </div>
-                    {selectedRole === "Restaurant Owner" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("System Admin");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/admin");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "System Admin" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">⚙️ System Admin</span>
-                      <span className="text-[10px] text-on-surface-variant">Platform wide governance</span>
-                    </div>
-                    {selectedRole === "System Admin" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+              <span className="material-symbols-outlined text-sm">dashboard</span>
+              <span>
+                {user.role === "ADMIN"
+                  ? "Admin Console"
+                  : user.role === "VENDOR"
+                  ? "Partner Portal"
+                  : "My Dashboard"}
+              </span>
+            </Link>
+          )}
 
           {/* Authentication CTA or User Profile Menu */}
           {isAuthenticated && user ? (
@@ -334,7 +271,6 @@ export default function Navbar() {
               isMobile={true}
               onItemClick={() => setMobileMenuOpen(false)}
               openReservationModal={openReservationModal}
-              selectedRole={selectedRole}
             />
 
             {/* Mobile Search Box */}

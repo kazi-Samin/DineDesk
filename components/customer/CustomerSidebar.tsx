@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 interface CustomerSidebarProps {
   isOpen?: boolean;
@@ -20,7 +21,7 @@ export default function CustomerSidebar({
   isOpen = true,
   onClose,
   onToggle,
-  userName = "Tahmid Rahman",
+  userName = "Diner",
   memberSince = "Patron since Jan 2024",
   avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
   activeOrderCount,
@@ -29,6 +30,14 @@ export default function CustomerSidebar({
   loyaltyPoints = 1250,
 }: CustomerSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const resolvedName = user?.name
+    ? `${user.name.split(" ")[0]}'s Account`
+    : userName && userName !== "Tahmid Rahman"
+    ? userName
+    : "Diner's Account";
 
   const isOverviewActive = pathname === "/dashboard/customer";
   const isOrdersActive = pathname === "/dashboard/customer/orders";
@@ -159,7 +168,7 @@ export default function CustomerSidebar({
           {isOpen ? (
             <div className="p-space-lg flex items-center gap-space-md bg-surface-container-low border-b border-outline-variant/20">
               <img
-                alt={userName}
+                alt={resolvedName}
                 className="w-10 h-10 rounded-full object-cover shadow-xs ring-1 ring-primary/10 bg-surface-container"
                 src={avatarUrl}
                 onError={(e) => {
@@ -167,8 +176,8 @@ export default function CustomerSidebar({
                 }}
               />
               <div className="flex flex-col">
-                <span className="font-headline-sm text-body-lg text-on-surface font-medium">
-                  {userName}
+                <span className="font-headline-sm text-body-lg text-on-surface font-medium truncate max-w-[170px]">
+                  {resolvedName}
                 </span>
                 <span className="font-label-sm text-label-sm text-on-surface-variant">
                   {memberSince}
@@ -178,10 +187,10 @@ export default function CustomerSidebar({
           ) : (
             <div className="p-3 flex items-center justify-center border-b border-outline-variant/20">
               <img
-                alt={userName}
+                alt={resolvedName}
                 className="w-9 h-9 rounded-full object-cover shadow-xs ring-1 ring-primary/10 bg-surface-container"
                 src={avatarUrl}
-                title={`${userName} (${memberSince})`}
+                title={`${resolvedName} (${memberSince})`}
                 onError={(e) => {
                   e.currentTarget.src = "/avatars/tahmid-avatar.svg";
                 }}
@@ -221,16 +230,20 @@ export default function CustomerSidebar({
 
         {/* Bottom Sign Out */}
         <div className={`border-t border-outline-variant/20 ${isOpen ? "p-space-md" : "p-2"}`}>
-          <Link
-            className={`flex items-center ${
+          <button
+            type="button"
+            onClick={async () => {
+              await logout();
+              router.push("/sign-in");
+            }}
+            className={`w-full flex items-center ${
               isOpen ? "gap-space-md px-space-md py-2.5" : "justify-center px-2 py-2.5"
-            } rounded-lg font-label-md text-sm text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-all`}
-            href="/"
+            } rounded-lg font-label-md text-sm text-on-surface-variant hover:bg-error-container hover:text-on-error-container transition-all cursor-pointer`}
             title="Sign Out"
           >
             <span className="material-symbols-outlined text-xl">logout</span>
             {isOpen && <span>Sign Out</span>}
-          </Link>
+          </button>
         </div>
       </aside>
     </>

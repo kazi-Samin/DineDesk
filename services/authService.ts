@@ -23,6 +23,7 @@ export const clearStoredAuth = (): void => {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
+  document.cookie = "role=; path=/; max-age=0; SameSite=Lax";
 };
 
 export const getStoredUser = (): AuthUser | null => {
@@ -39,6 +40,7 @@ export const getStoredUser = (): AuthUser | null => {
 export const setStoredUser = (user: AuthUser): void => {
   if (typeof window === "undefined") return;
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  document.cookie = `role=${user.role}; path=/; max-age=604800; SameSite=Lax`;
 };
 
 export async function loginApi(credentials: LoginCredentials): Promise<AuthResponse> {

@@ -25,16 +25,19 @@ import {
   rateCustomerReservation,
   exportReservationsToCSV,
 } from "@/services/mockCustomerReservationService";
+import { fetchCustomerReservations } from "@/services/customerDataService";
 import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { useReservation } from "@/context/ReservationContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 5;
 
 export default function CustomerReservationsPage() {
   const router = useRouter();
   const { openReservationModal } = useReservation();
+  const { user } = useAuth();
 
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
@@ -76,14 +79,41 @@ export default function CustomerReservationsPage() {
     }, 3800);
   };
 
-  // Load from local storage
+  // Load from backend / storage
   useEffect(() => {
-    const loadedProfile = getCustomerProfile();
-    const loadedReservations = getCustomerReservations();
-    setProfile(loadedProfile);
-    setReservations(loadedReservations);
-    setIsLoaded(true);
-  }, []);
+    let isMounted = true;
+
+    async function loadReservations() {
+      const loadedProfile = getCustomerProfile();
+      if (user && user.name) {
+        loadedProfile.fullName = user.name;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+      }
+      setProfile(loadedProfile);
+
+      try {
+        const realRes = await fetchCustomerReservations(user?.id);
+        if (isMounted) {
+          setReservations(realRes);
+        }
+      } catch {
+        if (isMounted) {
+          setReservations([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoaded(true);
+        }
+      }
+    }
+
+    loadReservations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   // Compute upcoming featured reservation
   const featuredReservation = useMemo(() => {

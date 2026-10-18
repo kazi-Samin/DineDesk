@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CustomerAddress, AddressCategory } from "@/types/customerProfile";
+import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 
 interface AddressFormDrawerProps {
   isOpen: boolean;
@@ -53,10 +54,11 @@ export default function AddressFormDrawer({
       setDeliveryInstructions(editingAddress.deliveryInstructions || "");
       setIsDefault(editingAddress.isDefault);
     } else {
+      const currentProfile = getCustomerProfile();
       setLabel("");
       setCategory("home");
-      setRecipientName("Tahmid Rahman");
-      setContactNumber("+880 1711-234567");
+      setRecipientName(currentProfile.fullName || "");
+      setContactNumber(currentProfile.phone || "");
       setBuilding("");
       setRoad("");
       setApartment("");

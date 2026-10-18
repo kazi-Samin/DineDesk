@@ -1,16 +1,16 @@
 import { CustomerProfileData, CustomerAddress } from "@/types/customerProfile";
 
 export const INITIAL_CUSTOMER_PROFILE: CustomerProfileData = {
-  fullName: "Tahmid Rahman",
-  email: "tahmid.rahman@example.com",
-  phone: "+880 1712-345678",
+  fullName: "DineDesk Patron",
+  email: "patron@dinedesk.com",
+  phone: "+880 1700-000000",
   language: "en",
-  dietaryPreferences: ["halal_only", "nut_allergy"],
+  dietaryPreferences: ["halal_only"],
   avatarUrl: "/avatars/tahmid-avatar.svg",
   isEmailVerified: true,
   isPhoneVerified: true,
-  roleBadge: "Verified Foodie",
-  memberSince: "Patron since 2023",
+  roleBadge: "Verified Diner",
+  memberSince: "Patron since 2026",
   passwordLastChangedDays: 42,
   twoFactorPhone: "+880 1712-345678",
   stats: {

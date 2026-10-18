@@ -22,6 +22,7 @@ import {
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
@@ -32,12 +33,13 @@ const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[]
 
 export default function CustomerProfilePage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
+  const { user } = useAuth();
 
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [savedSnapshot, setSavedSnapshot] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [addressCount, setAddressCount] = useState(2);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
+  const [addressCount, setAddressCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -91,15 +93,20 @@ export default function CustomerProfilePage() {
 
   useEffect(() => {
     const loadedProfile = getCustomerProfile();
+    if (user && user.name) {
+      loadedProfile.fullName = user.name;
+      loadedProfile.email = user.email || loadedProfile.email;
+      if (user.phone) loadedProfile.phone = user.phone;
+    }
     const loadedAddresses = getCustomerAddresses();
     const savedRest = getSavedRestaurants();
     const savedDish = getSavedDishes();
 
     syncFormWithProfile(loadedProfile);
     setAddressCount(loadedAddresses.length);
-    setSavedSpotsCount(savedRest.length + savedDish.length || 14);
+    setSavedSpotsCount(savedRest.length + savedDish.length);
     setIsLoaded(true);
-  }, []);
+  }, [user]);
 
   const hasUnsavedProfileChanges = useMemo(() => {
     if (!isLoaded) return false;
@@ -239,7 +246,7 @@ export default function CustomerProfilePage() {
   return (
     <div className="bg-background min-h-screen text-on-surface flex flex-col font-body-md antialiased">
       <CustomerHeader
-        userName={profile.fullName || "Tahmid Rahman"}
+        userName={profile.fullName || "Diner"}
         userRole="Verified Foodie"
         avatarUrl={profile.avatarUrl}
         onToggleSidebar={toggleSidebar}
@@ -264,7 +271,7 @@ export default function CustomerProfilePage() {
             <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-on-surface">
-                  Welcome back, {profile.fullName.split(" ")[0] || "Tahmid"}
+                  Welcome back, {profile.fullName.split(" ")[0] || "Diner"}
                 </h2>
                 <p className="text-xs text-on-surface-variant mt-0.5">
                   {profile.email} • {profile.phone}

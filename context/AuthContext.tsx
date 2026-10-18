@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const meResult = await getMeApi();
           if (meResult.success && meResult.data) {
             setUser(meResult.data);
+            setStoredUser(meResult.data);
           } else if (!storedUser) {
             // Token invalid or expired
             clearStoredAuth();

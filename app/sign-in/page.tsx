@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -78,7 +79,26 @@ export default function SignInPage() {
       if (authMode === "signin") {
         const result = await login({ email, password });
         if (result.success && result.data) {
-          const role = result.data.role;
+          const authUser = result.data;
+          try {
+            const existingProfile = getCustomerProfile();
+            saveCustomerProfile({
+              ...existingProfile,
+              fullName: authUser.name || "Diner",
+              email: authUser.email || existingProfile.email,
+              phone: authUser.phone || existingProfile.phone || "+880 1700-000000",
+              roleBadge:
+                authUser.role === "ADMIN"
+                  ? "Super Admin"
+                  : authUser.role === "VENDOR"
+                  ? "Restaurant Partner"
+                  : "Verified Foodie",
+            });
+          } catch (e) {
+            console.error("Error synchronizing profile:", e);
+          }
+
+          const role = authUser.role;
           if (role === "ADMIN") {
             router.push("/dashboard/admin");
           } else if (role === "VENDOR") {
@@ -105,7 +125,26 @@ export default function SignInPage() {
           // Auto login upon successful registration
           const loginRes = await login({ email, password });
           if (loginRes.success && loginRes.data) {
-            const role = loginRes.data.role;
+            const authUser = loginRes.data;
+            try {
+              const existingProfile = getCustomerProfile();
+              saveCustomerProfile({
+                ...existingProfile,
+                fullName: authUser.name || fullName,
+                email: authUser.email || email,
+                phone: authUser.phone || phone || "+880 1700-000000",
+                roleBadge:
+                  authUser.role === "ADMIN"
+                    ? "Super Admin"
+                    : authUser.role === "VENDOR"
+                    ? "Restaurant Partner"
+                    : "Verified Foodie",
+              });
+            } catch (e) {
+              console.error("Error synchronizing profile:", e);
+            }
+
+            const role = authUser.role;
             if (role === "ADMIN") {
               router.push("/dashboard/admin");
             } else if (role === "VENDOR") {
