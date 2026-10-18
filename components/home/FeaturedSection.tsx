@@ -43,7 +43,7 @@ export default function FeaturedSection() {
           {FEATURED_RESTAURANTS.map((restaurant, index) => (
             <motion.article
               key={restaurant.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
@@ -51,7 +51,10 @@ export default function FeaturedSection() {
               className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-outline-variant shadow-lg flex flex-col group h-full justify-between transition-all hover:border-primary/40 hover:shadow-xl"
             >
               {/* Image Banner */}
-              <div className="relative aspect-[16/10] w-full overflow-hidden bg-surface-container">
+              <Link
+                href={`/explore?q=${encodeURIComponent(restaurant.name)}`}
+                className="relative aspect-[16/10] w-full overflow-hidden bg-surface-container block cursor-pointer"
+              >
                 <img
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   alt={restaurant.imageAlt}
@@ -67,7 +70,7 @@ export default function FeaturedSection() {
                   <span className="material-symbols-outlined text-xs text-secondary-fixed">star</span>
                   <span>{restaurant.rating.toFixed(1)}</span>
                 </div>
-              </div>
+              </Link>
 
               {/* Card Body */}
               <div className="p-6 flex-1 flex flex-col justify-between">

@@ -101,7 +101,7 @@ export default function SponsorsSection() {
                     {SPONSORS.map((sponsor, index) => (
                         <motion.div
                             key={sponsor.name}
-                            initial={{ opacity: 0, y: 15 }}
+                            initial={false}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.3, delay: index * 0.05 }}

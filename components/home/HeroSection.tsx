@@ -88,7 +88,7 @@ export default function HeroSection() {
             {/* Tag & Animated Panda Mascot */}
             <div className="flex items-center gap-3 flex-wrap">
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 key={slide.id}
                 className="inline-flex items-center gap-2 px-4 py-1.5 bg-surface-container-lowest border border-outline-variant/60 rounded-full shadow-2xs"
@@ -100,21 +100,24 @@ export default function HeroSection() {
               </motion.div>
 
               {/* Compact Panda Chef's Pick Badge */}
-              <motion.div
-                animate={{ y: [0, -3, 0] }}
-                transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-xs font-bold border border-primary/20 shadow-2xs"
-              >
-                <span className="text-sm">🐼</span>
-                <span>Panda Chef&apos;s Pick</span>
-              </motion.div>
+              <Link href="/explore">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  animate={{ y: [0, -3, 0] }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-xs font-bold border border-primary/20 shadow-2xs cursor-pointer hover:bg-primary-fixed-dim transition-colors"
+                >
+                  <span className="text-sm">🐼</span>
+                  <span>Panda Chef&apos;s Pick</span>
+                </motion.div>
+              </Link>
             </div>
 
             {/* Dynamic Sliding Headings */}
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={slide.id}
-                initial={{ opacity: 0, x: -20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
@@ -131,7 +134,7 @@ export default function HeroSection() {
 
             {/* Quick Discovery Search Widget */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
               className="bg-surface-container-lowest p-4 sm:p-5 rounded-3xl border border-outline-variant shadow-xl flex flex-col sm:flex-row gap-3 items-stretch backdrop-blur-xl"
@@ -241,10 +244,10 @@ export default function HeroSection() {
 
           {/* Asymmetrical Hero Visual Mosaic with Slide Animation & Compact Stats Cards */}
           <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={slide.id}
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={false}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.05 }}
                 transition={{ duration: 0.5 }}
@@ -280,34 +283,40 @@ export default function HeroSection() {
             </AnimatePresence>
 
             {/* Floating Panda Feast Status Card (Compact & Animated) */}
-            <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
-              className="absolute -top-5 right-2 bg-surface-container-lowest px-3.5 py-2.5 rounded-2xl border border-outline-variant shadow-xl flex items-center gap-2.5 backdrop-blur-xl z-20"
-            >
-              <div className="w-8 h-8 rounded-xl bg-primary-fixed border border-primary/20 flex items-center justify-center text-lg shadow-inner">
-                🐼
-              </div>
-              <div className="leading-tight pr-1">
-                <p className="font-bold text-[11px] text-primary">Panda&apos;s Feast</p>
-                <p className="text-[10px] text-on-surface-variant">Ordering live!</p>
-              </div>
-            </motion.div>
+            <Link href="/explore">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                animate={{ y: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+                className="absolute -top-5 right-2 bg-surface-container-lowest px-3.5 py-2.5 rounded-2xl border border-outline-variant shadow-xl flex items-center gap-2.5 backdrop-blur-xl z-20 cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-primary-fixed border border-primary/20 flex items-center justify-center text-lg shadow-inner">
+                  🐼
+                </div>
+                <div className="leading-tight pr-1">
+                  <p className="font-bold text-[11px] text-primary">Panda&apos;s Feast</p>
+                  <p className="text-[10px] text-on-surface-variant">Ordering live!</p>
+                </div>
+              </motion.div>
+            </Link>
 
             {/* Floating Fast Dispatch Status Card (Compact & Animated) */}
-            <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
-              className="absolute -top-5 left-2 bg-surface-container-lowest px-3.5 py-2.5 rounded-2xl border border-outline-variant shadow-xl flex items-center gap-2.5 backdrop-blur-xl z-20"
-            >
-              <div className="w-8 h-8 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary">
-                <span className="material-symbols-outlined text-base">timer</span>
-              </div>
-              <div className="leading-tight pr-1">
-                <p className="font-bold text-[11px] text-on-surface">Fast Dispatch</p>
-                <p className="text-[10px] text-on-surface-variant">25–35 mins</p>
-              </div>
-            </motion.div>
+            <Link href="/explore">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                animate={{ y: [0, -5, 0] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
+                className="absolute -top-5 left-2 bg-surface-container-lowest px-3.5 py-2.5 rounded-2xl border border-outline-variant shadow-xl flex items-center gap-2.5 backdrop-blur-xl z-20 cursor-pointer hover:border-primary/50 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-secondary/15 flex items-center justify-center text-secondary">
+                  <span className="material-symbols-outlined text-base">timer</span>
+                </div>
+                <div className="leading-tight pr-1">
+                  <p className="font-bold text-[11px] text-on-surface">Fast Dispatch</p>
+                  <p className="text-[10px] text-on-surface-variant">25–35 mins</p>
+                </div>
+              </motion.div>
+            </Link>
 
           </div>
         </div>

@@ -13,13 +13,13 @@ function ExploreContent() {
 
   // Interactive Filter States
   const [search, setSearch] = useState(initialQuery);
-  const [openKitchensOnly, setOpenKitchensOnly] = useState(true);
+  const [openKitchensOnly, setOpenKitchensOnly] = useState(false);
   const [serviceMode, setServiceMode] = useState<"delivery" | "dine-in">("delivery");
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>(
-    initialCuisine ? [initialCuisine] : ["desi"]
+    initialCuisine ? [initialCuisine] : []
   );
-  const [selectedPriceTiers, setSelectedPriceTiers] = useState<string[]>(["৳৳"]);
-  const [minRating, setMinRating] = useState<number>(4.5);
+  const [selectedPriceTiers, setSelectedPriceTiers] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number>(0);
   const [dietaryFilters, setDietaryFilters] = useState<{
     halal: boolean;
     vegetarian: boolean;

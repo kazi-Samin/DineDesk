@@ -32,7 +32,7 @@ export default function TestimonialsSection() {
           {CUSTOMER_REVIEWS.map((review, index) => (
             <motion.article
               key={review.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={false}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.15 }}

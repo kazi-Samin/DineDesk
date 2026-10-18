@@ -8,7 +8,7 @@ export default function EditorialCtaSection() {
     <section className="w-full py-16">
       <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}

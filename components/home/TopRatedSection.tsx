@@ -29,16 +29,19 @@ export default function TopRatedSection() {
         <div className="flex flex-col gap-space-lg">
           {/* Standout 1: Izumi Japanese Kitchen */}
           <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden">
+            <Link
+              href="/explore?q=Izumi"
+              className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden block cursor-pointer group"
+            >
               <img
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt="Zen Japanese courtyard dining room at dusk with bonsai garden views, candle-lit wooden dining tables, and delicate ceramic dinnerware in a serene luxury atmosphere."
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwR7Fo5YJjNmW_NKP5D14s88pIB4JQ_I6MoJ8lb1oqr9vwIybya15y0go_w-i_PHTqmVe8JthIaSmw66qGh6UUvWaq8JKAj37X60PhTz2VABbcymBNMUPjcVuDDwNnugDPshPIMmqJFZqltz4ESdIrx1eMTOnLpKF-QFlrXL2HsRRbzzI2AYJ-ZylkMcgdWbSW_WtjHvIcMKiOUsAuVLCFpFgmbcccsIMa1JzxXTaAoR-XvxrKOoMtFg"
               />
               <div className="absolute top-space-md left-space-md bg-primary/90 backdrop-blur-xs text-on-primary px-2.5 py-1 rounded-sm font-medium text-xs">
                 #1 Fine Dining 2025
               </div>
-            </div>
+            </Link>
             <div className="lg:col-span-6 p-space-xl flex flex-col justify-between">
               <div className="flex flex-col gap-space-sm">
                 <div className="flex items-center justify-between">
@@ -49,9 +52,11 @@ export default function TopRatedSection() {
                     ৳৳৳৳ · Fine Dining
                   </span>
                 </div>
-                <h3 className="font-headline-lg text-headline-lg text-primary">
-                  Izumi Courtyard &amp; Robata Grill
-                </h3>
+                <Link href="/explore?q=Izumi">
+                  <h3 className="font-headline-lg text-headline-lg text-primary hover:text-secondary transition-colors cursor-pointer">
+                    Izumi Courtyard &amp; Robata Grill
+                  </h3>
+                </Link>
                 <p className="font-body-md text-body-md text-on-surface-variant">
                   Master Chef Hiroshi’s seasonal omakase, binchotan charcoal robatayaki skewers, and Dhaka’s cleanest hamachi nigiri imports.
                 </p>
@@ -99,16 +104,19 @@ export default function TopRatedSection() {
 
           {/* Standout 2: Star Kabab & Biryani Heritage */}
           <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden lg:order-2">
+            <Link
+              href="/explore?q=Star+Kabab"
+              className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden lg:order-2 block cursor-pointer group"
+            >
               <img
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 alt="Generous platter of authentic spicy mutton leg roast, flaky parathas, aromatic korma gravy, and steaming rumali roti served in a vibrant traditional South Asian banquet setting."
                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5FN-_BR45jsuDhvdSshnAr2pEit2Tq4aRrAllopeGVmfAjAn3ud92R-chU6Oj40F_OS4mJ1TnT5RG4-HI11E3lkDAilyXDyC1hVL1M-_vovopzH9D80s9ovcsRn4Kl5yCwSfPtoKxPoHGIqe3k2YG1YKzn5buabgqd7h4uCcIcYgwX5MtT9lqEYK5SkwDwJM21-_5NJGe8aHaynuY2QgSLHI24sdREqRAxaDfTI6JPQuV36RfP8RNSQ"
               />
               <div className="absolute top-space-md right-space-md bg-secondary text-on-primary px-2.5 py-1 rounded-sm font-medium text-xs">
                 Heritage Legend · Est. 1971
               </div>
-            </div>
+            </Link>
             <div className="lg:col-span-6 p-space-xl flex flex-col justify-between lg:order-1">
               <div className="flex flex-col gap-space-sm">
                 <div className="flex items-center justify-between">
@@ -119,9 +127,11 @@ export default function TopRatedSection() {
                     ৳৳ · Authentic Bengali
                   </span>
                 </div>
-                <h3 className="font-headline-lg text-headline-lg text-primary">
-                  Star Kabab &amp; Heritage Biryani
-                </h3>
+                <Link href="/explore?q=Star+Kabab">
+                  <h3 className="font-headline-lg text-headline-lg text-primary hover:text-secondary transition-colors cursor-pointer">
+                    Star Kabab &amp; Heritage Biryani
+                  </h3>
+                </Link>
                 <p className="font-body-md text-body-md text-on-surface-variant">
                   Uncompromising century-old recipes: spiced mutton leg roast, fall-off-the-bone khasi kacchi, and freshly spun lassi jugs.
                 </p>
