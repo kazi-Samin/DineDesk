@@ -1,11 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function CookieConsent() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(true);
 
-  if (!isVisible) return null;
+  if (
+    !isVisible ||
+    pathname?.startsWith("/dashboard") ||
+    pathname === "/sign-in" ||
+    pathname === "/login"
+  ) {
+    return null;
+  }
 
   return (
     <aside className="fixed bottom-space-lg left-space-lg z-40 max-w-sm bg-surface-container-lowest border border-outline-variant rounded p-space-md shadow-[0_8px_24px_rgba(30,27,22,0.08)] flex flex-col gap-space-sm">

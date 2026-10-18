@@ -3,9 +3,11 @@
 import { useState } from "react";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminHeader from "@/components/admin/AdminHeader";
-import AdminStatCard from "@/components/admin/AdminStatCard";
 import AnalyticsFilterBar from "@/components/admin/analytics/AnalyticsFilterBar";
-import RevenueOrdersTrendChart from "@/components/admin/analytics/RevenueOrdersTrendChart";
+import ExecutiveGmvHeroCard from "@/components/admin/analytics/ExecutiveGmvHeroCard";
+import GmvGrowthTrajectoryChart from "@/components/admin/analytics/GmvGrowthTrajectoryChart";
+import NetworkDensityRetentionChart from "@/components/admin/analytics/NetworkDensityRetentionChart";
+import TopPerformingRestaurantsTable from "@/components/admin/analytics/TopPerformingRestaurantsTable";
 import OrderStatusDistribution from "@/components/admin/analytics/OrderStatusDistribution";
 import TopCuisinesRanking from "@/components/admin/analytics/TopCuisinesRanking";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
@@ -18,9 +20,10 @@ import {
 export default function AdminAnalyticsPage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_admin_sidebar");
 
-  const [timeRange, setTimeRange] = useState<AdminTimeRange>("30d");
+  const [timeRange, setTimeRange] = useState<AdminTimeRange>("ytd");
+  const [showBaseline, setShowBaseline] = useState<boolean>(true);
   const [customDates, setCustomDates] = useState<{ start: string; end: string }>({
-    start: "2025-10-01",
+    start: "2025-01-01",
     end: "2025-10-31",
   });
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -41,7 +44,14 @@ export default function AdminAnalyticsPage() {
   };
 
   const handleExportCsv = () => {
-    const headers = ["Time Interval", "Date", "Gross Revenue (BDT)", "Orders", "Reservations", "New Registered Users"];
+    const headers = [
+      "Time Interval",
+      "Date",
+      "Gross Revenue (BDT)",
+      "Orders",
+      "Reservations",
+      "New Registered Users",
+    ];
     const rows = analytics.trend.map((pt) => [
       pt.label,
       pt.date,
@@ -78,128 +88,110 @@ export default function AdminAnalyticsPage() {
       />
 
       {/* 3. Main Analytics Workspace */}
-      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+      <div
+        className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${
+          isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+        }`}
+      >
         <main className="relative flex-1 bg-background">
-          <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-7 max-w-7xl mx-auto w-full">
-            {/* Top Date Range Filter Bar */}
+          <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 max-w-7xl mx-auto w-full">
+            {/* 1. Top Header, Baseline Toggle & Filter Bar */}
             <AnalyticsFilterBar
               timeRange={timeRange}
               dateRangeLabel={analytics.dateRangeLabel}
+              showBaseline={showBaseline}
               onTimeRangeChange={(r) => {
                 setTimeRange(r);
                 showToast(`Switched analytics view to ${r.toUpperCase()}`);
+              }}
+              onToggleBaseline={(val) => {
+                setShowBaseline(val);
+                showToast(val ? "2024 Baseline trajectory overlay enabled." : "2024 Baseline overlay hidden.");
               }}
               onCustomDateChange={handleCustomDateChange}
               onExportCsv={handleExportCsv}
               onGenerateReport={handleGenerateReport}
             />
 
-            {/* 4 Summary Stat Cards for Selected Window */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              <AdminStatCard
-                title="Period Gross Revenue"
-                value={`৳${analytics.summary.totalRevenue.toLocaleString()}`}
-                changeText={`+${analytics.summary.revenueGrowthPct}%`}
-                changeNote="YoY run rate"
-                isPositive={true}
-                progressPct={88}
-                icon="payments"
-                accent="primary"
-              />
+            {/* 2. Executive GMV Hero Card with 4-Metric Grid */}
+            <ExecutiveGmvHeroCard analytics={analytics} />
 
-              <AdminStatCard
-                title="Fulfilled Orders"
-                value={analytics.summary.totalOrders.toLocaleString()}
-                changeText={`+${analytics.summary.ordersGrowthPct}%`}
-                changeNote="volume velocity"
-                isPositive={true}
-                progressPct={92}
-                icon="receipt_long"
-                accent="primary"
-              />
-
-              <AdminStatCard
-                title="Average Ticket Value"
-                value={`৳${analytics.summary.avgOrderValue}`}
-                changeText="+৳42 delta"
-                changeNote="basket size"
-                isPositive={true}
-                progressPct={74}
-                icon="shopping_basket"
-                accent="secondary"
-              />
-
-              <AdminStatCard
-                title="Dining Reservations"
-                value={analytics.summary.totalReservations.toLocaleString()}
-                changeText="+18.4%"
-                changeNote="table seatings"
-                isPositive={true}
-                progressPct={82}
-                icon="table_restaurant"
-                accent="primary"
-              />
+            {/* 3. Dual Macro Charts: GMV Growth Trajectory (60%) & Network Density (40%) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-7 flex flex-col">
+                <GmvGrowthTrajectoryChart
+                  trend={analytics.trend}
+                  showBaseline={showBaseline}
+                />
+              </div>
+              <div className="lg:col-span-5 flex flex-col">
+                <NetworkDensityRetentionChart />
+              </div>
             </div>
 
-            {/* Dual Metric Time-Series Trend Line/Area Chart */}
-            <RevenueOrdersTrendChart trend={analytics.trend} />
+            {/* 4. Top Performing Culinary Hubs (Tier-1 Merchants) */}
+            <TopPerformingRestaurantsTable vendors={analytics.topVendors} />
 
-            {/* Order Status Distribution */}
-            <OrderStatusDistribution distribution={analytics.orderStatusDistribution} />
+            {/* 5. Supporting Operations: Order Status & Cuisine Rankings */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-5 flex flex-col">
+                <OrderStatusDistribution distribution={analytics.orderStatusDistribution} />
+              </div>
+              <div className="lg:col-span-7 flex flex-col">
+                <TopCuisinesRanking
+                  cuisines={analytics.topCuisines}
+                  vendors={analytics.topVendors}
+                />
+              </div>
+            </div>
 
-            {/* Top Cuisines & Top Merchant Ranking */}
-            <TopCuisinesRanking
-              cuisines={analytics.topCuisines}
-              vendors={analytics.topVendors}
-            />
-
-            {/* Platform Growth & Unit Economics Comparison Cards */}
+            {/* 6. Platform Growth & Unit Economics Summary Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-outline-variant shadow-2xs">
-                <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
+              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-2xs">
+                <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider block">
                   New Patron Signups
                 </span>
                 <span className="font-headline-sm text-xl font-bold text-primary block mt-1">
                   +{analytics.summary.newPatrons.toLocaleString()}
                 </span>
-                <span className="text-xs text-on-surface-variant mt-1 block">
-                  34% converted to first order within 48h
+                <span className="text-xs text-on-surface-variant mt-1.5 block">
+                  34% converted to first reservation or delivery in 48h
                 </span>
               </div>
 
-              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-outline-variant shadow-2xs">
-                <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
+              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-2xs">
+                <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider block">
                   Merchant Retention Rate
                 </span>
                 <span className="font-headline-sm text-xl font-bold text-primary block mt-1">
                   98.2%
                 </span>
-                <span className="text-xs text-on-surface-variant mt-1 block">
-                  Only 2 churned outlets in past 180 days
+                <span className="text-xs text-on-surface-variant mt-1.5 block">
+                  Only 2 churned outlets in past 180 operating days
                 </span>
               </div>
 
-              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-outline-variant shadow-2xs">
-                <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
+              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-2xs">
+                <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider block">
                   Repeat Order Rate
                 </span>
-                <span className="font-headline-sm text-xl font-bold text-primary block mt-1">
+                <span className="font-headline-sm text-xl font-bold text-secondary block mt-1">
                   68.4%
                 </span>
-                <span className="text-xs text-on-surface-variant mt-1 block">
-                  Industry benchmark: 52.0%
+                <span className="text-xs text-on-surface-variant mt-1.5 block">
+                  16.4% above national dining benchmark (52.0%)
                 </span>
               </div>
 
-              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-outline-variant shadow-2xs">
-                <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
+              <div className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant shadow-2xs">
+                <span className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider block">
                   Dine-In vs Delivery Ratio
                 </span>
                 <span className="font-headline-sm text-xl font-bold text-primary block mt-1">
                   31% / 69%
                 </span>
-                <span className="text-xs text-on-surface-variant mt-1 block">
-                  Table bookings trending upward for dinner service
+                <span className="text-xs text-on-surface-variant mt-1.5 block">
+                  Table bookings surging across weekend dinner service
                 </span>
               </div>
             </div>

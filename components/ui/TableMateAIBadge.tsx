@@ -1,9 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function TableMateAIBadge() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+
+  if (
+    pathname?.startsWith("/dashboard") ||
+    pathname === "/sign-in" ||
+    pathname === "/login"
+  ) {
+    return null;
+  }
 
   return (
     <div className="fixed bottom-space-lg right-space-lg z-40">

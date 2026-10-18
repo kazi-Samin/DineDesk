@@ -204,7 +204,7 @@ export default function AdminUsersPage() {
 
       <div
         className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${
-          isSidebarOpen ? "lg:pl-72" : "pl-0"
+          isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
         }`}
       >
         <main className="relative flex-1 bg-background">

@@ -369,7 +369,7 @@ export default function RestaurantProfilePage() {
       />
 
       {/* Main Content Area */}
-      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
         <main className="relative bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="w-full max-w-7xl mx-auto px-margin py-space-lg space-y-space-xl">

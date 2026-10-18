@@ -46,7 +46,8 @@ export default function VendorHeader({
           {/* DineDesk Brand Logo (Matching Main Page) */}
           <Link
             className="flex items-center gap-2 group transition-transform duration-300 hover:scale-105"
-            href="/dashboard/vendor"
+            href="/"
+            title="DineDesk Home"
           >
             <div className="h-8 sm:h-9 w-auto flex items-center justify-center">
               <Image

@@ -136,7 +136,7 @@ export default function CustomerReviewsPage() {
           loyaltyPoints={profile.stats?.loyaltyPoints ?? 1450}
         />
 
-        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
           {/* Top Quick Stats */}
           <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">

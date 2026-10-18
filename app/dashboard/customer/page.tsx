@@ -79,7 +79,7 @@ export default function CustomerDashboardOverviewPage() {
         />
 
         {/* Main Content Area */}
-        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
           {/* Section 1: Patron Welcome Banner & Live Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low border-b border-outline-variant/30">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">

@@ -76,7 +76,7 @@ export default function AdminOverviewPage() {
       />
 
       {/* 3. Main Operational Content Workspace */}
-      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
         <main className="relative flex-1 bg-background">
           <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-7 max-w-7xl mx-auto w-full">
             {/* Header Section with Date Range & Export Actions */}

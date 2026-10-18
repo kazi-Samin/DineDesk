@@ -32,8 +32,9 @@ export default function Navbar() {
   }, []);
 
   const isDashboard = pathname?.startsWith("/dashboard");
+  const isAuth = pathname === "/sign-in" || pathname === "/login";
 
-  if (isDashboard) {
+  if (isDashboard || isAuth) {
     return null;
   }
 
@@ -226,7 +227,7 @@ export default function Navbar() {
           {/* Authentication CTA */}
           <Link
             className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
-            href="/dashboard/customer/profile"
+            href="/sign-in"
           >
             Sign In
           </Link>
@@ -288,11 +289,11 @@ export default function Navbar() {
             {/* Mobile Authentication Button */}
             <div className="pt-2">
               <Link
-                href="/dashboard/customer/profile"
+                href="/sign-in"
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
-                <span>Sign In / Profile</span>
+                <span>Sign In / Register</span>
                 <span className="material-symbols-outlined text-sm">login</span>
               </Link>
             </div>

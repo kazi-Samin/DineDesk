@@ -227,7 +227,7 @@ export default function CustomerReservationsPage() {
       />
 
       {/* Main Content Area */}
-      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
         <main className="w-full pt-16 bg-background min-h-screen">
           {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">
