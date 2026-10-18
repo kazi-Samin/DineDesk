@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface CustomerHeaderProps {
   userName?: string;
@@ -22,6 +23,7 @@ export default function CustomerHeader({
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,50 +33,44 @@ export default function CustomerHeader({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)] border-b border-outline-variant/30">
-      <div className="h-16 w-full px-space-lg flex items-center justify-between">
-        {/* Left: Brand + Desktop Navigation */}
-        <div className="flex items-center gap-space-lg">
-          {/* Mobile Menu Toggle Button */}
-          {onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="lg:hidden p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container rounded-lg transition-colors"
-              aria-label="Toggle Navigation Sidebar"
-            >
-              <span className="material-symbols-outlined text-2xl">
-                {isSidebarOpen ? "close" : "menu"}
-              </span>
-            </button>
-          )}
+    <header className="fixed top-0 left-0 right-0 h-16 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant shadow-2xs">
+      <div className="h-full w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        {/* Left: Brand Logo + Nav Links */}
+        <div className="flex items-center gap-4 sm:gap-6">
 
-          <Link className="flex items-center gap-space-sm" href="/">
-            <img
-              alt="DineDesk"
-              className="h-8 w-auto object-contain"
-              src="/logo.png"
-            />
-            <span className="font-headline-sm text-headline-sm text-primary font-medium tracking-tight">
-              DineDesk
-            </span>
+          {/* DineDesk Brand Logo */}
+          <Link
+            className="flex items-center gap-2 group transition-transform duration-300 hover:scale-105 shrink-0"
+            href="/"
+          >
+            <div className="h-8 sm:h-9 w-auto flex items-center justify-center">
+              <Image
+                alt="DineDesk Logo"
+                className="h-full w-auto object-contain"
+                src="/assets/DineDesk Monogram.png"
+                width={150}
+                height={36}
+                priority
+              />
+            </div>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-space-lg ml-space-md">
+          {/* Quick Public Navigation Links */}
+          <nav className="hidden xl:flex items-center gap-6 ml-2">
             <Link
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors"
+              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
               href="/"
             >
               Home
             </Link>
             <Link
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors"
+              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
               href="/explore"
             >
               Browse Restaurants
             </Link>
             <Link
-              className="font-label-lg text-label-lg text-on-surface-variant hover:text-on-surface transition-colors"
+              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
               href="/explore"
             >
               Reserve a Table
@@ -82,16 +78,16 @@ export default function CustomerHeader({
           </nav>
         </div>
 
-        {/* Right: Search, Notifications, Profile */}
-        <div className="flex items-center gap-space-md">
+        {/* Right: Search, Notifications, Profile Pill */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Global Search Field */}
-          <form onSubmit={handleSearch} className="relative hidden sm:block">
-            <span className="material-symbols-outlined absolute left-space-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-base">
+          <form onSubmit={handleSearch} className="relative hidden md:block max-w-xs w-56 lg:w-64">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">
               search
             </span>
             <input
-              className="w-60 pl-8 pr-space-md py-1.5 bg-surface-container-lowest font-body-sm text-body-sm text-on-surface rounded-md placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container shadow-xs border border-outline-variant"
-              placeholder="Search restaurants, cuisines..."
+              className="w-full pl-9 pr-3 py-2 bg-surface-container-low font-body-sm text-body-sm text-on-surface rounded-xl placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest focus:border-primary border border-outline-variant/70 shadow-inner transition-all"
+              placeholder="Search dishes, restaurants..."
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -102,34 +98,32 @@ export default function CustomerHeader({
           <div className="relative">
             <button
               aria-label="Notifications"
-              className="p-2 text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors rounded-lg relative"
+              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors rounded-xl relative cursor-pointer"
               type="button"
               onClick={() => setNotificationsOpen(!notificationsOpen)}
             >
-              <span className="material-symbols-outlined text-xl">
-                notifications
-              </span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary rounded-full" />
+              <span className="material-symbols-outlined text-2xl">notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary rounded-full animate-pulse" />
             </button>
 
             {/* Notifications Dropdown Preview */}
             {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-md p-space-md z-50">
-                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/20">
+              <div className="absolute right-0 top-full mt-2 w-72 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-1">
+                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/40">
                   <span className="font-label-md text-label-md font-semibold text-primary">
-                    Activity Notifications
+                    Activity Alerts
                   </span>
-                  <span className="font-label-sm text-[11px] text-secondary">
+                  <span className="font-label-sm text-[11px] text-secondary font-bold">
                     1 New
                   </span>
                 </div>
-                <div className="flex flex-col gap-2 pt-2">
-                  <div className="p-2 bg-surface-container-low rounded-lg text-left">
-                    <span className="font-label-sm text-[12px] text-primary font-medium block">
-                      Order Placed Successfully
+                <div className="pt-2">
+                  <div className="p-2.5 bg-surface-container-low rounded-lg text-left">
+                    <span className="font-label-sm text-xs text-primary font-semibold block">
+                      Kitchen Preparing Order
                     </span>
-                    <span className="font-body-sm text-[11px] text-on-surface-variant">
-                      Nando&apos;s Dhaka is preparing your meal.
+                    <span className="font-body-sm text-[11px] text-on-surface-variant mt-0.5 block">
+                      Sultan&apos;s Heritage Kitchen has confirmed your order #DD-23698.
                     </span>
                   </div>
                 </div>
@@ -137,28 +131,76 @@ export default function CustomerHeader({
             )}
           </div>
 
-          {/* User Profile Info */}
-          <Link
-            href="/dashboard/customer/profile"
-            className="flex items-center gap-space-sm pl-space-sm hover:opacity-90 transition-opacity"
-          >
-            <img
-              alt={userName}
-              className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40 bg-surface-container"
-              src={avatarUrl}
-              onError={(e) => {
-                e.currentTarget.src = "/avatars/tahmid-avatar.svg";
-              }}
-            />
-            <div className="hidden md:flex flex-col text-left">
-              <span className="font-label-md text-label-md text-on-surface font-medium leading-tight">
-                {userName}
+          <div className="h-6 w-px bg-outline-variant hidden sm:block" />
+
+          {/* User Profile Pill & Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors cursor-pointer"
+            >
+              <img
+                alt={userName}
+                className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/60 bg-surface-container shrink-0"
+                src={avatarUrl}
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "/avatars/tahmid-avatar.svg";
+                }}
+              />
+              <div className="hidden sm:flex flex-col text-left">
+                <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
+                  {userName}
+                </span>
+                <span className="font-label-sm text-[11px] text-secondary font-medium leading-tight">
+                  {userRole}
+                </span>
+              </div>
+              <span className="material-symbols-outlined text-base text-on-surface-variant hidden sm:block">
+                expand_more
               </span>
-              <span className="font-label-sm text-label-sm text-secondary font-semibold">
-                {userRole}
-              </span>
-            </div>
-          </Link>
+            </button>
+
+            {/* Profile Dropdown */}
+            {profileDropdownOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-2 z-50 animate-in fade-in slide-in-from-top-1">
+                <div className="px-3 py-2 border-b border-outline-variant/40">
+                  <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
+                    Account
+                  </span>
+                  <span className="text-xs font-bold text-primary block mt-0.5">
+                    {userName}
+                  </span>
+                </div>
+                <div className="py-1">
+                  <Link
+                    href="/dashboard/customer/profile"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">person</span>
+                    <span>My Profile &amp; Settings</span>
+                  </Link>
+                  <Link
+                    href="/dashboard/vendor"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-secondary">storefront</span>
+                    <span>Switch to Restaurant Owner</span>
+                  </Link>
+                  <Link
+                    href="/"
+                    onClick={() => setProfileDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-on-surface-variant">home</span>
+                    <span>Return to Public Homepage</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

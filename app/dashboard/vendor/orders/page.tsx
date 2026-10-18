@@ -16,9 +16,10 @@ import {
   simulateNewOrder,
 } from "@/services/mockOrderService";
 import { OrderConfirmation, OrderStatus, FulfillmentMode } from "@/types/order";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 export default function VendorIncomingOrdersPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_vendor_sidebar");
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>("DD-84920");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -226,21 +227,22 @@ export default function VendorIncomingOrdersPage() {
       <VendorSidebar
         pendingCount={stats.newOrders}
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
       />
 
       {/* 2. Top Header with Outlet Switcher and Online Toggle */}
-      <div className="lg:pl-72">
-        <VendorHeader
-          restaurantName="Sultan's Heritage Kitchen"
-          pendingCount={stats.newOrders}
-          onRefresh={loadOrders}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+      <VendorHeader
+        restaurantName="Sultan's Heritage Kitchen"
+        pendingCount={stats.newOrders}
+        onRefresh={loadOrders}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={toggleSidebar}
+      />
 
-        {/* 3. Main Console Workspace */}
-        <main className="relative pt-16 bg-background min-h-screen">
+      {/* 3. Main Console Workspace */}
+      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className="relative bg-background min-h-screen">
           <div className="flex flex-col w-full px-space-md sm:px-space-lg lg:px-space-xl py-space-lg max-w-[1440px] mx-auto gap-space-lg">
             {/* Header & Controls Strip */}
             <div className="flex flex-col gap-space-md">

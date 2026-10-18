@@ -25,14 +25,14 @@ import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { useCart } from "@/context/CartContext";
 import { useReservation } from "@/context/ReservationContext";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 export default function CustomerFavoritesPage() {
   const router = useRouter();
   const { addItem, openDrawer } = useCart();
   const { openReservationModal } = useReservation();
 
-  // Sidebar responsive drawer state
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   // Profile data
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
@@ -170,7 +170,7 @@ export default function CustomerFavoritesPage() {
         userRole={profile.roleBadge}
         avatarUrl={profile.avatarUrl}
         isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        onToggleSidebar={toggleSidebar}
       />
 
       {/* Fixed Left Customer Navigation Sidebar */}
@@ -179,13 +179,14 @@ export default function CustomerFavoritesPage() {
         memberSince={profile.memberSince}
         avatarUrl={profile.avatarUrl}
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
         activeOrderCount={profile.stats.activeBookings}
         loyaltyPoints={profile.stats.loyaltyPoints}
       />
 
       {/* Main Content Area */}
-      <div className="pl-0 lg:pl-72 transition-all">
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
         <main className="w-full pt-16 bg-background min-h-screen">
           {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">

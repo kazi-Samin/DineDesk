@@ -13,8 +13,10 @@ import { VendorReservation, TableEntity } from "@/types/reservation";
 import { MenuItem } from "@/types/menu";
 import { RestaurantProfile } from "@/types/profile";
 
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+
 export default function VendorExecutiveDashboardPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_vendor_sidebar");
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [reservations, setReservations] = useState<VendorReservation[]>([]);
   const [tables, setTables] = useState<TableEntity[]>([]);
@@ -65,21 +67,22 @@ export default function VendorExecutiveDashboardPage() {
       <VendorSidebar
         pendingCount={orderStats.newOrders}
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
       />
 
       {/* 2. Top Header with Outlet Switcher and Online Toggle */}
-      <div className="lg:pl-72 flex-1 flex flex-col">
-        <VendorHeader
-          restaurantName={profile?.name || "Sultan's Heritage Kitchen"}
-          pendingCount={orderStats.newOrders}
-          onRefresh={loadData}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
+      <VendorHeader
+        restaurantName={profile?.name || "Sultan's Heritage Kitchen"}
+        pendingCount={orderStats.newOrders}
+        onRefresh={loadData}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={toggleSidebar}
+      />
 
-        {/* 3. Main Console Workspace */}
-        <main className="relative pt-16 flex-1 bg-background">
+      {/* 3. Main Console Workspace */}
+      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className="relative flex-1 bg-background">
           {/* Top Quick Status Strip */}
           <section className="w-full px-4 sm:px-6 lg:px-8 py-5 bg-surface-container-low border-b border-outline-variant">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">

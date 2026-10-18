@@ -23,6 +23,7 @@ import {
   resetMenuData,
   getMenuSummaryStats,
 } from "@/services/mockMenuService";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 interface ToastMessage {
   id: string;
@@ -34,7 +35,7 @@ interface ToastMessage {
 const PAGE_SIZE = 8;
 
 export default function ManageMenuPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_vendor_sidebar");
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isClientLoaded, setIsClientLoaded] = useState(false);
 
@@ -194,20 +195,21 @@ export default function ManageMenuPage() {
       {/* Vendor Shared Sidebar */}
       <VendorSidebar
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
+      />
+
+      {/* Vendor Top Header */}
+      <VendorHeader
+        restaurantName="Sultan's Heritage Kitchen"
+        onRefresh={handleRefresh}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={toggleSidebar}
       />
 
       {/* Main Content Area */}
-      <div className="pl-0 lg:pl-72 transition-all duration-300">
-        {/* Vendor Top Header */}
-        <VendorHeader
-          restaurantName="Sultan's Heritage Kitchen"
-          onRefresh={handleRefresh}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
-
-        <main className="relative pt-16 bg-background min-h-screen">
+      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className="relative bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="p-space-lg max-w-7xl mx-auto w-full space-y-space-lg">
               {/* Heading & Bulk Actions Bar */}

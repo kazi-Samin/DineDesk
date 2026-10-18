@@ -31,9 +31,10 @@ import {
   calculateCompleteness,
 } from "@/services/mockProfileService";
 import { INITIAL_RESTAURANT_PROFILE } from "@/data/mockRestaurantProfile";
+import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
 export default function RestaurantProfilePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_vendor_sidebar");
   const [profile, setProfile] = useState<RestaurantProfile>(
     INITIAL_RESTAURANT_PROFILE
   );
@@ -356,19 +357,20 @@ export default function RestaurantProfilePage() {
       {/* Shared Vendor Sidebar */}
       <VendorSidebar
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={closeSidebar}
+        onToggle={toggleSidebar}
+      />
+
+      {/* Vendor Top Header */}
+      <VendorHeader
+        restaurantName={profile.name}
+        isSidebarOpen={isSidebarOpen}
+        onToggleSidebar={toggleSidebar}
       />
 
       {/* Main Content Area */}
-      <div className="pl-0 lg:pl-72 transition-all duration-300">
-        {/* Vendor Top Header */}
-        <VendorHeader
-          restaurantName={profile.name}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
-
-        <main className="relative pt-16 bg-background min-h-screen">
+      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+        <main className="relative bg-background min-h-screen">
           <div className="flex flex-col w-full">
             <div className="w-full max-w-7xl mx-auto px-margin py-space-lg space-y-space-xl">
               {/* Top Bar: Header, Verification Badge & Live Status */}
