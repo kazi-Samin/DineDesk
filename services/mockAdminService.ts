@@ -11,6 +11,10 @@ import {
   OrderStatusBreakdown,
   CuisinePerformance,
   VendorPerformance,
+  PlatformAdminUser,
+  AdminGovernanceMetrics,
+  FeaturedRestaurantItem,
+  PlatformGlobalSettings,
 } from "@/types/admin";
 
 export const MOCK_ADMIN_KPIS: AdminOverviewKpis = {
@@ -227,7 +231,44 @@ export function getAdminAnalytics(
   let dateRangeLabel = "Last 30 Days (Oct 1 – Oct 31, 2025)";
   let trend: AnalyticsTrendPoint[] = [];
 
-  if (timeRange === "7d") {
+  if (timeRange === "ytd") {
+    dateRangeLabel = "Year to Date (Jan 1 – Oct 31, 2025)";
+    trend = [
+      { label: "Jan", date: "2025-01-31", revenue: 8200000, orders: 10400, reservations: 2900, newUsers: 3400 },
+      { label: "Feb", date: "2025-02-28", revenue: 9800000, orders: 12200, reservations: 3350, newUsers: 3900 },
+      { label: "Mar", date: "2025-03-31", revenue: 11100000, orders: 13800, reservations: 3780, newUsers: 4250 },
+      { label: "Apr", date: "2025-04-30", revenue: 12500000, orders: 15600, reservations: 4100, newUsers: 4800 },
+      { label: "May", date: "2025-05-31", revenue: 13800000, orders: 17100, reservations: 4450, newUsers: 5100 },
+      { label: "Jun", date: "2025-06-30", revenue: 15200000, orders: 18900, reservations: 4850, newUsers: 5450 },
+      { label: "Jul", date: "2025-07-31", revenue: 16400000, orders: 20400, reservations: 5200, newUsers: 5700 },
+      { label: "Aug", date: "2025-08-31", revenue: 17100000, orders: 21300, reservations: 5390, newUsers: 5900 },
+      { label: "Sep", date: "2025-09-30", revenue: 17800000, orders: 22100, reservations: 5700, newUsers: 6200 },
+      { label: "Oct", date: "2025-10-31", revenue: 18450200, orders: 23100, reservations: 6400, newUsers: 6590 },
+    ];
+  } else if (timeRange === "q3") {
+    dateRangeLabel = "Q3 Cumulative (Jul 1 – Sep 30, 2025)";
+    trend = [
+      { label: "Jul", date: "2025-07-31", revenue: 16400000, orders: 20400, reservations: 5200, newUsers: 5700 },
+      { label: "Aug", date: "2025-08-31", revenue: 17100000, orders: 21300, reservations: 5390, newUsers: 5900 },
+      { label: "Sep", date: "2025-09-30", revenue: 17800000, orders: 22100, reservations: 5700, newUsers: 6200 },
+    ];
+  } else if (timeRange === "12m") {
+    dateRangeLabel = "Trailing 12 Months (Nov 2024 – Oct 2025)";
+    trend = [
+      { label: "Nov '24", date: "2024-11-30", revenue: 7600000, orders: 9500, reservations: 2500, newUsers: 2900 },
+      { label: "Dec '24", date: "2024-12-31", revenue: 8100000, orders: 10100, reservations: 2750, newUsers: 3100 },
+      { label: "Jan", date: "2025-01-31", revenue: 8200000, orders: 10400, reservations: 2900, newUsers: 3400 },
+      { label: "Feb", date: "2025-02-28", revenue: 9800000, orders: 12200, reservations: 3350, newUsers: 3900 },
+      { label: "Mar", date: "2025-03-31", revenue: 11100000, orders: 13800, reservations: 3780, newUsers: 4250 },
+      { label: "Apr", date: "2025-04-30", revenue: 12500000, orders: 15600, reservations: 4100, newUsers: 4800 },
+      { label: "May", date: "2025-05-31", revenue: 13800000, orders: 17100, reservations: 4450, newUsers: 5100 },
+      { label: "Jun", date: "2025-06-30", revenue: 15200000, orders: 18900, reservations: 4850, newUsers: 5450 },
+      { label: "Jul", date: "2025-07-31", revenue: 16400000, orders: 20400, reservations: 5200, newUsers: 5700 },
+      { label: "Aug", date: "2025-08-31", revenue: 17100000, orders: 21300, reservations: 5390, newUsers: 5900 },
+      { label: "Sep", date: "2025-09-30", revenue: 17800000, orders: 22100, reservations: 5700, newUsers: 6200 },
+      { label: "Oct", date: "2025-10-31", revenue: 18450200, orders: 23100, reservations: 6400, newUsers: 6590 },
+    ];
+  } else if (timeRange === "7d") {
     dateRangeLabel = "Last 7 Days (Oct 25 – Oct 31, 2025)";
     trend = [
       { label: "Fri, Oct 25", date: "2025-10-25", revenue: 420000, orders: 480, reservations: 110, newUsers: 140 },
@@ -274,11 +315,12 @@ export function getAdminAnalytics(
     ];
   }
 
-  const totalRevenue = trend.reduce((acc, curr) => acc + curr.revenue, 0);
-  const totalOrders = trend.reduce((acc, curr) => acc + curr.orders, 0);
-  const totalReservations = trend.reduce((acc, curr) => acc + curr.reservations, 0);
+  const calculatedRevenue = trend.reduce((acc, curr) => acc + curr.revenue, 0);
+  const totalRevenue = timeRange === "ytd" ? 148450200 : calculatedRevenue;
+  const totalOrders = timeRange === "ytd" ? 184200 : trend.reduce((acc, curr) => acc + curr.orders, 0);
+  const totalReservations = timeRange === "ytd" ? 46120 : trend.reduce((acc, curr) => acc + curr.reservations, 0);
   const newPatrons = trend.reduce((acc, curr) => acc + curr.newUsers, 0);
-  const avgOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+  const avgOrderValue = timeRange === "ytd" ? 805 : (totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0);
 
   const orderStatusDistribution: OrderStatusBreakdown[] = [
     { status: "delivered", label: "Completed & Delivered", count: 17230, percentage: 93.4, badgeColor: "bg-primary-container text-on-primary" },
@@ -296,11 +338,81 @@ export function getAdminAnalytics(
   ];
 
   const topVendors: VendorPerformance[] = [
-    { id: "v-1", name: "Sultan's Heritage Kitchen", area: "Banani 11", revenue: 2480000, orders: 2840, rating: 4.9, fulfillmentRate: 99.4, badge: "Master Merchant" },
-    { id: "v-2", name: "Gulshan Bistro Heritage", area: "Gulshan 2", revenue: 1820000, orders: 2190, rating: 4.85, fulfillmentRate: 98.9, badge: "VIP Dining" },
-    { id: "v-3", name: "The Brass Spoon", area: "Banani Road 8", revenue: 1560000, orders: 1870, rating: 4.8, fulfillmentRate: 99.1, badge: "Fastest Prep" },
-    { id: "v-4", name: "SmashCraft Burger Studio", area: "Dhanmondi 27", revenue: 1340000, orders: 1720, rating: 4.75, fulfillmentRate: 98.4, badge: "Top Rated Foodie" },
-    { id: "v-5", name: "Artisan Kitchen Lounge", area: "Uttara Sector 3", revenue: 1120000, orders: 1460, rating: 4.7, fulfillmentRate: 97.8, badge: "Rising Star" },
+    {
+      id: "v-1",
+      name: "Sultan's Heritage Kitchen",
+      area: "Banani, Block E",
+      revenue: 3840000,
+      orders: 3420,
+      rating: 4.90,
+      reviewCount: 640,
+      fulfillmentRate: 99.2,
+      badge: "Tier 1 Merchant",
+      coversLabel: "Dine-in & Courier",
+      targetComparison: "+18.2% vs target",
+      auditBadge: "Exemplary",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB4pZ0x34538kKTh8sPtlnf6J0FFA6lwJmwP1Q8-MKN_yYTFNh02k0we8HChSMVsAsqR0jF_b0zUAfEgALNZlVUUT8ZMQwU26nEeAdS073bYQW5DANstV1vKmLVhtpFdIn99-7lOrkapWcwNDS61CTJC6sU4vJpnHZ0uhUoARy8VkhP8aRPtQyJIPNeJnZcYOxIf0JyFV3P_53-JQy_ZrIbnLH3ymTPwDtBkI4QCIZQlp0Eyb6GyYV1wg",
+    },
+    {
+      id: "v-2",
+      name: "SmashCraft Studio",
+      area: "Dhanmondi 9/A",
+      revenue: 2910000,
+      orders: 2980,
+      rating: 4.70,
+      reviewCount: 480,
+      fulfillmentRate: 98.7,
+      badge: "Express Takeaway",
+      coversLabel: "Express Takeaway",
+      targetComparison: "+14.6% vs target",
+      auditBadge: "Standard",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBFnWjKxjkwbgI3aG-Uip0Ff318GnWmG1Os3sWkW6IJ87ID5un6kmoXK7L20mf25WfX5Uvci6ulJsEv3fjvwcRLwuBPBGXcMCEkst-SDl9QIpHaI_d-KrL1SnMbZOfYXGCst8W_fw1LYMggyHDsoycTAoVxGCfFdn4senVjLUoN5YVh-ocCsBs9ukUMPs1SgYLV0yf3RzX2GGgNkGIGwqsZgBZjBgSHoerDweMP3Ui4ckrske4vo5jIiw",
+    },
+    {
+      id: "v-3",
+      name: "Izumi Courtyard",
+      area: "Gulshan 2",
+      revenue: 2450000,
+      orders: 1840,
+      rating: 4.95,
+      reviewCount: 312,
+      fulfillmentRate: 100.0,
+      badge: "Omakase Reserve",
+      coversLabel: "Omakase & Table Seats",
+      targetComparison: "High AOV (৳1,330)",
+      auditBadge: "Exemplary",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuB9lbLtrQOSqX-9Zmz94YpaUD_pDfs0LG8NbovY34RNw38eugh0pDIpU4wDc2qGxcdxg28vMgOvx1Gkfqg4yEX4L4U6qA1RWWy3jI08YimD7gkbIOMtgkp5R-7BqvXQ3llCVrP0yKAL6nHaWgBDbeybOdxL0qhJ-f57fJGfUvDSERt-Thy4ThmrJPJwTWW7nLFwKjJsdrRmjo45GwooSLKaK5YYCZ4ylhuZKy0Mj8NINxmrK-jPR9w4sA",
+    },
+    {
+      id: "v-4",
+      name: "Dacca Tehari Ghar",
+      area: "Puran Dhaka (Nazira Bazar)",
+      revenue: 2120000,
+      orders: 4110,
+      rating: 4.80,
+      reviewCount: 890,
+      fulfillmentRate: 97.9,
+      badge: "High Volume",
+      coversLabel: "High-Volume Delivery",
+      targetComparison: "Standard AOV (৳515)",
+      auditBadge: "Standard",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCfN4dIMSu_evO2oGzmWmHyJCPevvNs2ie1GTKbaWocwIwmh1FYqWGLLRWJco1b-oP79keqU6YkQRLEZqWtBDYHQYqS-SPf6YICACB-4x3J9zI0Rdb0GCVw03aC6ItJGQPeMAv6qjDjZOsCFXf_EYcr_P0HxuNKaDsbcon7q3jP7pcuqtem0zAJROXC8LmY3Yz_GwwPdB66Q5_kV8iCJB_5I17X1cvo-9AuNEXOv29G1CX-iH3oNLz61Q",
+    },
+    {
+      id: "v-5",
+      name: "Le Sourdough Bistro",
+      area: "Banani, Road 11",
+      revenue: 1880000,
+      orders: 1620,
+      rating: 4.91,
+      reviewCount: 220,
+      fulfillmentRate: 99.5,
+      badge: "Artisanal Bakery",
+      coversLabel: "Artisanal Bakery & Brunch",
+      targetComparison: "+22.1% growth",
+      auditBadge: "Exemplary",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBzX3oDqW2Txw-v-07UEW9S9f15KxIgA4r4tecdy--vST6ftMvm7x-3-GW9Ll9i6JCInZyf1QI6c7ssuVKSZfc6pwhO5nrh6-X-8eavhhVQ1mM3JxT9RNZQbKFjSBYY5M9M9geTnRLvzFv-g4Trttt4R1T6TjvZQmiCCVSxOu20_IRbr0EVQefr0E293H9x3bD_BCfkpmAUl22n0IvAYXbAPtr_5cUqVMuYXUZc1P63oAb89HLeEbi17g",
+    },
   ];
 
   return {
@@ -335,3 +447,392 @@ export function downloadAdminCsv(filename: string, rows: string[][]) {
   link.click();
   document.body.removeChild(link);
 }
+
+// ============================================================================
+// SUPER ADMIN: PLATFORM ADMINISTRATORS & RBAC GOVERNANCE
+// ============================================================================
+
+export const MOCK_ADMIN_GOVERNANCE_METRICS: AdminGovernanceMetrics = {
+  activeAdmins: 12,
+  totalSeats: 15,
+  elevatedBypassCount: 5,
+  twoFactorCompliancePct: 100,
+  twoFactorNote: "Strict Hardware Token / App",
+  idleTimeoutMinutes: 15,
+  idleTimeoutNote: "Automatic cryptokey revocation",
+  dualSignoffThresholdBdt: 420000,
+  dualSignoffNote: "Super Admin co-signature mandatory",
+};
+
+export const MOCK_PLATFORM_ADMINS: PlatformAdminUser[] = [
+  {
+    id: "adm-1",
+    name: "Tahmid Rahman",
+    email: "tahmid.super@dinedesk.corp",
+    uid: "DD-SA-001",
+    role: "Super Admin",
+    territory: "Full System Access",
+    subScope: "Dhaka, Chittagong, Sylhet Node clusters",
+    status: "Active",
+    twoFactorStatus: "Enforced (YubiKey)",
+    twoFactorType: "hardware",
+    lastSession: "Active Now",
+    isActiveNow: true,
+    avatarUrl:
+      "https://lh3.googleusercontent.com/aida/AEtjO1Xvc2MrKyLPPwPKRHPvGiuGzzv3Vl3xudUMnfKmM_OejgtKJObOFHcqNPF4XgM99yJVO2vd5xVNy1ialfL7MMAf-mTYsbOekfDFOQeP3J_05sjjK_dG1-TowYtfmniCeQ5oWP3YUL0mOpQ_Kd_4gnUIQvBpdLJfX7FS7iKDGaNDFcEeOV3fOJ7c2-_IHK7W8BGBNX8pIPLWpzKWXacemtS8HMQtfBJOmvihWXCsfl9OXjXlGaVf6vC98QUC",
+    isRootOwner: true,
+    canBeRevoked: false,
+    dateAdded: "2024-01-15",
+    permissions: [
+      "system:all",
+      "rbac:manage",
+      "finance:override",
+      "merchants:delist",
+      "audit:read_write",
+    ],
+    phone: "+880 1711-000001",
+  },
+  {
+    id: "adm-2",
+    name: "Farhan Chowdhury",
+    email: "farhan.ops@dinedesk.corp",
+    uid: "DD-OP-014",
+    role: "Operations Admin",
+    territory: "Banani & Gulshan Zone",
+    subScope: "Table inventory, floorplans, onboarding",
+    status: "Active",
+    twoFactorStatus: "Enforced",
+    twoFactorType: "app",
+    lastSession: "14 mins ago",
+    isActiveNow: false,
+    avatarUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAhtJQi0WcGI2IHmu2wAXnGFQOcDbkvSxGWX-12AsrNdh2A6CK58oB4biEC_xxTyuDw0CPfMMcAqP-Oi_2DFf8F6tXvRXpWGhop7qZgmqIxR3Rit29kq-o8nP9iiEGhDPlcxOv--y6DxSGlkg5cu2z7LRr1IbvMtpYPDLDhZ98hP2fOM1bs3FTmcaHGQCcxuVDS6tw759k9ZMU3Y-RsQCev-p4aksop5IUe4f8hV3bqX_b4N6pG-cKepA",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-03-10",
+    permissions: [
+      "merchants:onboard",
+      "tables:manage",
+      "dispatch:supervise",
+      "support:escalate",
+    ],
+    phone: "+880 1819-234567",
+  },
+  {
+    id: "adm-3",
+    name: "Nazia Tabassum",
+    email: "nazia.finance@dinedesk.corp",
+    uid: "DD-FN-008",
+    role: "Finance & Treasury Admin",
+    territory: "Settlements, Refunds, Stripe",
+    subScope: "bKash/Nagad Payout Batches (Dual Auth)",
+    status: "Active",
+    twoFactorStatus: "Enforced",
+    twoFactorType: "hardware",
+    lastSession: "1 hour ago",
+    isActiveNow: false,
+    avatarUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuBxfCr47Lf0sC_IhYd_PUkK4eeTZm_zOsWDv3BsQ2wauT4y2FVdW8cA0sbzppINbIEyw1JmEtsZBXJpt9NeioL1VNvyV543kI1_-TfAnBNvTcREwFR-Ny4-A946tfQ9I13lNlMfpz4GlpzSzmhNVxOhO16dTDpDIVBlkXVw258PrlL-t__TTt9VnxYvGdxJF8UnDtjg9DP62rjvZJFWBU3uII0kz8VsfTpKfEdzKPL31UOcUBpBKdmA9w",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-04-01",
+    permissions: [
+      "payouts:initiate",
+      "refunds:approve",
+      "disputes:arbitrate",
+      "ledger:read",
+    ],
+    phone: "+880 1912-345678",
+  },
+  {
+    id: "adm-4",
+    name: "Kazi Rezwan",
+    email: "rezwan.audit@dinedesk.corp",
+    uid: "DD-CA-003",
+    role: "Compliance & Audit Admin",
+    territory: "Restaurant Verifications & Hygiene",
+    subScope: "Trade license validity, Halal certifications",
+    status: "Active",
+    twoFactorStatus: "2FA Active",
+    twoFactorType: "app",
+    lastSession: "Yesterday, 19:42",
+    isActiveNow: false,
+    avatarUrl:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuDRkKE_evbfZvrJhHiaOwv_6W7GCX89tS79au9r_lb7nUx9arKhHH4JeOalxWX0BHHkCaAPCYrD5O9rjgZsxL97fgMKlUqT7q37UrDSL-6mCZJfQK25cMLy4rL6m_4DjV7lypZmBxwGOe7jBEKPGOPi4hCJalDjDsG7Sqe00o8uLqKt5AGbqZzrZBtySoct5irs3BmPH-VqUa_wC_sOr6TP1LTQqIYSORsdyy-dk65IWuMoAY9K813CTg",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-02-18",
+    permissions: [
+      "compliance:verify",
+      "licenses:audit",
+      "audit:read",
+      "safety:flag",
+    ],
+    phone: "+880 1713-987654",
+  },
+  {
+    id: "adm-5",
+    name: "Mahir Faisal",
+    email: "mahir.support@dinedesk.corp",
+    uid: "DD-CS-022",
+    role: "Customer Support Lead",
+    territory: "Inquiries & Order Cancellations",
+    subScope: "Direct patron booking dispute triage",
+    status: "Active",
+    twoFactorStatus: "2FA Active",
+    twoFactorType: "app",
+    lastSession: "3 hours ago",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-05-12",
+    permissions: [
+      "support:manage",
+      "bookings:modify",
+      "orders:triage",
+      "users:contact",
+    ],
+    phone: "+880 1611-456789",
+  },
+  {
+    id: "adm-6",
+    name: "Samin Kazi",
+    email: "samin.kazi@dinedesk.corp",
+    uid: "DD-SA-002",
+    role: "Super Admin",
+    territory: "Platform Governance & Infra",
+    subScope: "Cloud Cluster EU-1 & Microservices",
+    status: "Active",
+    twoFactorStatus: "Enforced (YubiKey)",
+    twoFactorType: "hardware",
+    lastSession: "2 hours ago",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-01-20",
+    permissions: [
+      "system:all",
+      "infra:manage",
+      "security:keys",
+      "rbac:manage",
+    ],
+    phone: "+880 1715-112233",
+  },
+  {
+    id: "adm-7",
+    name: "Ananya Sen",
+    email: "ananya.ops@dinedesk.corp",
+    uid: "DD-OP-019",
+    role: "Operations Admin",
+    territory: "Dhanmondi & Lalmatia Zone",
+    subScope: "Merchant kitchen load & rider dispatch",
+    status: "Active",
+    twoFactorStatus: "Enforced",
+    twoFactorType: "app",
+    lastSession: "5 hours ago",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-06-08",
+    permissions: ["merchants:onboard", "tables:manage", "dispatch:supervise"],
+    phone: "+880 1817-665544",
+  },
+  {
+    id: "adm-8",
+    name: "Zeeshan Mirza",
+    email: "zeeshan.finance@dinedesk.corp",
+    uid: "DD-FN-012",
+    role: "Finance & Treasury Admin",
+    territory: "Merchant Tax & Withholding",
+    subScope: "Monthly NBR reconciliation & invoicing",
+    status: "Active",
+    twoFactorStatus: "Enforced",
+    twoFactorType: "hardware",
+    lastSession: "Yesterday, 16:10",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-06-15",
+    permissions: ["payouts:initiate", "ledger:read", "tax:reconcile"],
+    phone: "+880 1914-889900",
+  },
+  {
+    id: "adm-9",
+    name: "Tanvir Ahmed",
+    email: "tanvir.audit@dinedesk.corp",
+    uid: "DD-CA-005",
+    role: "Compliance & Audit Admin",
+    territory: "Chittagong Hub Verification",
+    subScope: "Port city restaurant audits & sanitation",
+    status: "Active",
+    twoFactorStatus: "2FA Active",
+    twoFactorType: "app",
+    lastSession: "Oct 29, 14:20",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-07-01",
+    permissions: ["compliance:verify", "licenses:audit", "audit:read"],
+    phone: "+880 1718-443322",
+  },
+  {
+    id: "adm-10",
+    name: "Nusrat Jahan",
+    email: "nusrat.support@dinedesk.corp",
+    uid: "DD-CS-025",
+    role: "Customer Support Lead",
+    territory: "VIP & Corporate Concierge",
+    subScope: "High-ticket dining reservations & complaints",
+    status: "Active",
+    twoFactorStatus: "2FA Active",
+    twoFactorType: "app",
+    lastSession: "Oct 30, 11:45",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-07-20",
+    permissions: ["support:manage", "bookings:modify", "users:contact"],
+    phone: "+880 1612-998877",
+  },
+  {
+    id: "adm-11",
+    name: "Sabrina Haque",
+    email: "sabrina.ops@dinedesk.corp",
+    uid: "DD-OP-021",
+    role: "Operations Admin",
+    territory: "Uttara & Airport Sector",
+    subScope: "Express delivery hub and takeout staging",
+    status: "Active",
+    twoFactorStatus: "Enforced",
+    twoFactorType: "app",
+    lastSession: "Oct 31, 09:15",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-08-10",
+    permissions: ["merchants:onboard", "tables:manage", "dispatch:supervise"],
+    phone: "+880 1813-774411",
+  },
+  {
+    id: "adm-12",
+    name: "Asif Iqbal",
+    email: "asif.admin@dinedesk.corp",
+    uid: "DD-SA-004",
+    role: "Super Admin",
+    territory: "Security Incident Response",
+    subScope: "Threat detection, IP whitelist & WAF rules",
+    status: "Active",
+    twoFactorStatus: "Enforced (YubiKey)",
+    twoFactorType: "hardware",
+    lastSession: "Oct 31, 13:05",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-04-15",
+    permissions: ["system:all", "security:keys", "audit:read_write"],
+    phone: "+880 1719-556677",
+  },
+  {
+    id: "adm-13",
+    name: "Samiul Alom",
+    email: "samiul.ops@dinedesk.corp",
+    uid: "DD-OP-029",
+    role: "Operations Admin",
+    territory: "Mirpur & Pallabi Zone",
+    subScope: "Table allocation & courier staging",
+    status: "Pending",
+    twoFactorStatus: "Pending Setup",
+    twoFactorType: "none",
+    lastSession: "Never logged in",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-10-25",
+    permissions: ["merchants:onboard", "tables:manage"],
+    phone: "+880 1811-223344",
+  },
+  {
+    id: "adm-14",
+    name: "Rashedul Islam",
+    email: "rashed.audit@dinedesk.corp",
+    uid: "DD-CA-009",
+    role: "Compliance & Audit Admin",
+    territory: "Old Dhaka Historical Outlets",
+    subScope: "Legacy vendor registration inspection",
+    status: "Suspended",
+    twoFactorStatus: "2FA Active",
+    twoFactorType: "app",
+    lastSession: "Sep 12, 11:20",
+    isActiveNow: false,
+    avatarUrl: "",
+    isRootOwner: false,
+    canBeRevoked: true,
+    dateAdded: "2024-03-22",
+    permissions: ["compliance:verify"],
+    phone: "+880 1916-332211",
+  },
+];
+
+export function getPlatformAdmins(): PlatformAdminUser[] {
+  return MOCK_PLATFORM_ADMINS;
+}
+
+export function getAdminGovernanceMetrics(): AdminGovernanceMetrics {
+  return MOCK_ADMIN_GOVERNANCE_METRICS;
+}
+
+// ============================================================================
+// SUPER ADMIN: PLATFORM GLOBAL SETTINGS & FEATURED CURATION
+// ============================================================================
+
+export const DEFAULT_PLATFORM_SETTINGS: PlatformGlobalSettings = {
+  commissionRate: 12.5,
+  reservationDepositFee: 250,
+  enforcePartyRule: true,
+  payoutSchedule: "Automated Daily Settlement (T+1 at midnight BDT)",
+  featuredRestaurants: [
+    { id: "feat-1", name: "Sultan's Heritage Kitchen", area: "Banani" },
+    { id: "feat-2", name: "The Copper Chimney", area: "Banani 11" },
+    { id: "feat-3", name: "SmashCraft Burgers", area: "Dhanmondi" },
+    { id: "feat-4", name: "Mori Artisan Sushi", area: "Gulshan 1" },
+    { id: "feat-5", name: "Dacca Tehari Ghar", area: "Old Dhaka" },
+    { id: "feat-6", name: "Cafe De Flore & Bakery", area: "Uttara" },
+  ],
+  rotationInterval: "Weekly Dynamic Rotation",
+  includeHeroVideo: true,
+  maintenanceMode: false,
+  maintenanceMessage:
+    "DineDesk is currently undergoing scheduled platform upgrades. We will be back online shortly!",
+  lastModifiedBy: "Tahmid Rahman (Super Admin)",
+  lastModifiedAt: "Oct 22, 2025 at 16:45 BDT",
+};
+
+export const ELIGIBLE_RESTAURANTS_POOL: FeaturedRestaurantItem[] = [
+  { id: "pool-1", name: "Izumi Courtyard", area: "Gulshan 2", cuisine: "Japanese Omakase", rating: 4.95 },
+  { id: "pool-2", name: "Le Sourdough Bistro", area: "Banani 11", cuisine: "Artisanal Bakery & Brunch", rating: 4.91 },
+  { id: "pool-3", name: "Kagura Japanese Grill", area: "Gulshan 2", cuisine: "Yakitori & Sake", rating: 4.88 },
+  { id: "pool-4", name: "Star Kabab & Restaurant", area: "Dhanmondi 2", cuisine: "Charcoal Kebabs", rating: 4.79 },
+  { id: "pool-5", name: "Spice Route Thai", area: "Banani 12", cuisine: "Royal Thai", rating: 4.84 },
+  { id: "pool-6", name: "Nando's Peri-Peri", area: "Gulshan 1", cuisine: "Flame-Grilled Chicken", rating: 4.65 },
+  { id: "pool-7", name: "Madchef Artisanal", area: "Dhanmondi 9/A", cuisine: "Gourmet Burgers", rating: 4.72 },
+  { id: "pool-8", name: "Gloria Jean's Coffees", area: "Gulshan 1", cuisine: "Specialty Coffee", rating: 4.60 },
+];
+
+export function getPlatformGlobalSettings(): PlatformGlobalSettings {
+  return DEFAULT_PLATFORM_SETTINGS;
+}
+
+export function getEligibleFeaturedRestaurants(): FeaturedRestaurantItem[] {
+  return ELIGIBLE_RESTAURANTS_POOL;
+}
+
+

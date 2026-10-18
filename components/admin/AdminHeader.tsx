@@ -49,7 +49,8 @@ export default function AdminHeader({
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           <Link
             className="flex items-center gap-2 group transition-transform duration-300 hover:scale-105"
-            href="/dashboard/admin"
+            href="/"
+            title="DineDesk Home"
           >
             <div className="h-8 sm:h-9 w-auto flex items-center justify-center">
               <Image

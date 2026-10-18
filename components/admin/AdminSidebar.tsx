@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 interface AdminSidebarProps {
@@ -44,7 +43,9 @@ export default function AdminSidebar({
   };
 
   const linkClass = (active: boolean) =>
-    `flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+    `flex items-center ${
+      isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
+    } rounded-xl text-xs font-medium transition-all ${
       active
         ? "bg-primary-container text-on-primary font-bold shadow-2xs"
         : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
@@ -61,187 +62,222 @@ export default function AdminSidebar({
         />
       )}
 
-      {/* Floating Expand Arrow when sidebar is collapsed */}
-      {!isOpen && (
+      {/* Main Sidebar Container */}
+      <aside
+        className={`fixed left-0 top-16 bottom-0 bg-surface-container-low z-30 flex flex-col justify-between border-r border-outline-variant shadow-[1px_0_8px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
+          isOpen
+            ? "translate-x-0 w-72"
+            : "-translate-x-full lg:translate-x-0 lg:w-20"
+        }`}
+      >
+        {/* Floating Collapse / Expand Arrow docked on sidebar's right border */}
         <button
           type="button"
           onClick={handleToggleClick}
-          className="fixed left-0 top-20 z-40 px-1 py-3 bg-surface-container-lowest border border-outline-variant border-l-0 rounded-r-lg shadow-sm hover:bg-surface-container hover:border-primary text-on-surface-variant hover:text-primary transition-all cursor-pointer flex items-center justify-center group"
-          title="Expand admin sidebar"
-          aria-label="Expand admin sidebar"
+          className="absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer group"
+          title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
-          <span className="material-symbols-outlined text-base transition-transform group-hover:translate-x-0.5">
-            chevron_right
+          <span className="material-symbols-outlined text-base transition-transform group-hover:scale-110">
+            {isOpen ? "chevron_left" : "chevron_right"}
           </span>
         </button>
-      )}
-
-      <aside
-        className={`fixed left-0 top-16 bottom-0 w-72 bg-surface-container-low z-30 flex flex-col justify-between border-r border-outline-variant shadow-[1px_0_8px_rgba(0,0,0,0.02)] transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
-        }`}
-      >
-        {/* Floating Collapse Arrow docked on sidebar's right border */}
-        {isOpen && (
-          <button
-            type="button"
-            onClick={handleToggleClick}
-            className="absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer group"
-            title="Collapse sidebar"
-            aria-label="Collapse sidebar"
-          >
-            <span className="material-symbols-outlined text-base transition-transform group-hover:-translate-x-0.5">
-              chevron_left
-            </span>
-          </button>
-        )}
 
         {/* Scrollable Navigation Sections */}
-        <div className="flex flex-col flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        <div className={`flex flex-col flex-1 overflow-y-auto ${isOpen ? "px-4 py-4 space-y-5" : "px-2 py-4 space-y-4"}`}>
           {/* Brand Sub-header in Sidebar */}
-          <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-xl">shield_person</span>
-              <div className="flex flex-col">
-                <span className="font-headline-sm text-xs font-bold text-primary leading-tight">
-                  Governance Hub
-                </span>
-                <span className="font-label-sm text-[10px] text-on-surface-variant">
-                  Platform Telemetry
-                </span>
+          {isOpen ? (
+            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">shield_person</span>
+                <div className="flex flex-col">
+                  <span className="font-headline-sm text-xs font-bold text-primary leading-tight">
+                    Governance Hub
+                  </span>
+                  <span className="font-label-sm text-[10px] text-on-surface-variant">
+                    Platform Telemetry
+                  </span>
+                </div>
               </div>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                Live
+              </span>
             </div>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              Live
-            </span>
-          </div>
+          ) : (
+            <div
+              className="bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-center relative"
+              title="Governance Hub • Live"
+            >
+              <span className="material-symbols-outlined text-primary text-xl">shield_person</span>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+            </div>
+          )}
 
           {/* 1. Administration Section */}
           <div className="space-y-1">
-            <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
-              Administration
-            </span>
+            {isOpen ? (
+              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+                Administration
+              </span>
+            ) : (
+              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+            )}
 
+            {/* Overview */}
             <Link
               href="/dashboard/admin"
               onClick={handleNavClick}
               className={linkClass(isOverview)}
+              title="Overview"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">dashboard</span>
-                <span>Overview</span>
+                <span className="material-symbols-outlined text-xl">dashboard</span>
+                {isOpen && <span>Overview</span>}
               </div>
             </Link>
 
+            {/* System Analytics */}
             <Link
               href="/dashboard/admin/analytics"
               onClick={handleNavClick}
               className={linkClass(isAnalytics)}
+              title="System Analytics"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">monitoring</span>
-                <span>System Analytics</span>
+                <span className="material-symbols-outlined text-xl">monitoring</span>
+                {isOpen && <span>System Analytics</span>}
               </div>
-              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-secondary-fixed text-on-secondary-fixed">
-                Trends
-              </span>
+              {isOpen && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-secondary-fixed text-on-secondary-fixed">
+                  Trends
+                </span>
+              )}
             </Link>
 
+            {/* Manage Users */}
             <Link
               href="/dashboard/admin/users"
               onClick={handleNavClick}
               className={linkClass(isUsers)}
+              title="Manage Users"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">group</span>
-                <span>Manage Users</span>
+                <span className="material-symbols-outlined text-xl">group</span>
+                {isOpen && <span>Manage Users</span>}
               </div>
-              <span className="text-[11px] text-on-surface-variant font-mono">48.2k</span>
+              {isOpen && (
+                <span className="text-[11px] text-on-surface-variant font-mono">48.2k</span>
+              )}
             </Link>
 
+            {/* Manage Restaurants */}
             <Link
               href="/dashboard/admin/restaurants"
               onClick={handleNavClick}
               className={linkClass(isRestaurants)}
+              title="Manage Restaurants"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">storefront</span>
-                <span>Manage Restaurants</span>
+              <div className="flex items-center gap-2.5 relative">
+                <span className="material-symbols-outlined text-xl">storefront</span>
+                {!isOpen && pendingApprovalsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-secondary" />
+                )}
+                {isOpen && <span>Manage Restaurants</span>}
               </div>
-              {pendingApprovalsCount > 0 && (
+              {isOpen && pendingApprovalsCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full font-label-sm text-[10px] font-bold bg-secondary text-on-secondary">
                   +{pendingApprovalsCount}
                 </span>
               )}
             </Link>
 
+            {/* All Transactions */}
             <Link
               href="/dashboard/admin/transactions"
               onClick={handleNavClick}
               className={linkClass(isTransactions)}
+              title="All Transactions"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">receipt_long</span>
-                <span>All Transactions</span>
+                <span className="material-symbols-outlined text-xl">receipt_long</span>
+                {isOpen && <span>All Transactions</span>}
               </div>
             </Link>
           </div>
 
           {/* 2. Super Admin Governance Section */}
           <div className="space-y-1 pt-2 border-t border-outline-variant/60">
-            <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
-              Super Admin
-            </span>
+            {isOpen ? (
+              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+                Super Admin
+              </span>
+            ) : (
+              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+            )}
 
+            {/* Manage Admins */}
             <Link
               href="/dashboard/admin/admins"
               onClick={handleNavClick}
               className={linkClass(isAdmins)}
+              title="Manage Admins"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
-                <span>Manage Admins</span>
+                <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
+                {isOpen && <span>Manage Admins</span>}
               </div>
             </Link>
 
+            {/* Platform Settings */}
             <Link
               href="/dashboard/admin/settings"
               onClick={handleNavClick}
               className={linkClass(isSettings)}
+              title="Platform Settings"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">tune</span>
-                <span>Platform Settings</span>
+                <span className="material-symbols-outlined text-xl">tune</span>
+                {isOpen && <span>Platform Settings</span>}
               </div>
             </Link>
           </div>
 
           {/* 3. System & Support Section */}
           <div className="space-y-1 pt-2 border-t border-outline-variant/60">
-            <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
-              System &amp; Support
-            </span>
+            {isOpen ? (
+              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+                System &amp; Support
+              </span>
+            ) : (
+              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+            )}
 
+            {/* Audit Logs */}
             <Link
               href="/dashboard/admin/audit-logs"
               onClick={handleNavClick}
               className={linkClass(isAuditLogs)}
+              title="Audit Logs"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">history</span>
-                <span>Audit Logs</span>
+                <span className="material-symbols-outlined text-xl">history</span>
+                {isOpen && <span>Audit Logs</span>}
               </div>
             </Link>
 
+            {/* Back to Marketplace */}
             <Link
               href="/"
               onClick={handleNavClick}
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all"
+              className={`flex items-center ${
+                isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
+              } rounded-xl text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all`}
+              title="Back to Marketplace"
             >
               <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-lg">open_in_new</span>
-                <span>Back to Marketplace</span>
+                <span className="material-symbols-outlined text-xl">open_in_new</span>
+                {isOpen && <span>Back to Marketplace</span>}
               </div>
             </Link>
           </div>
@@ -249,15 +285,24 @@ export default function AdminSidebar({
 
         {/* Bottom Cluster Status Bar */}
         <div className="p-3 border-t border-outline-variant bg-surface-container-low">
-          <div className="bg-surface-container p-2.5 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span className="font-label-sm text-[11px] text-on-surface font-semibold">
-                Cluster DHK-1
-              </span>
+          {isOpen ? (
+            <div className="bg-surface-container p-2.5 rounded-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                <span className="font-label-sm text-[11px] text-on-surface font-semibold">
+                  Cluster DHK-1
+                </span>
+              </div>
+              <span className="font-mono text-[11px] text-on-surface-variant">v2.14.0</span>
             </div>
-            <span className="font-mono text-[11px] text-on-surface-variant">v2.14.0</span>
-          </div>
+          ) : (
+            <div
+              className="bg-surface-container p-2 rounded-lg flex items-center justify-center"
+              title="Cluster DHK-1 • v2.14.0"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
+            </div>
+          )}
         </div>
       </aside>
     </>

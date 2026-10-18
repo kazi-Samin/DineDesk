@@ -6,7 +6,9 @@ import { AdminTimeRange } from "@/types/admin";
 interface AnalyticsFilterBarProps {
   timeRange: AdminTimeRange;
   dateRangeLabel: string;
+  showBaseline: boolean;
   onTimeRangeChange: (range: AdminTimeRange) => void;
+  onToggleBaseline: (val: boolean) => void;
   onCustomDateChange?: (start: string, end: string) => void;
   onExportCsv?: () => void;
   onGenerateReport?: () => void;
@@ -15,7 +17,9 @@ interface AnalyticsFilterBarProps {
 export default function AnalyticsFilterBar({
   timeRange,
   dateRangeLabel,
+  showBaseline,
   onTimeRangeChange,
+  onToggleBaseline,
   onCustomDateChange,
   onExportCsv,
   onGenerateReport,
@@ -32,66 +36,104 @@ export default function AnalyticsFilterBar({
     setCustomModalOpen(false);
   };
 
+  const timeRangeOptions: { id: AdminTimeRange; label: string }[] = [
+    { id: "ytd", label: "Year to Date (2025)" },
+    { id: "q3", label: "Q3 Cumulative" },
+    { id: "12m", label: "Trailing 12M" },
+    { id: "30d", label: "Last 30 Days" },
+  ];
+
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-2 border-b border-outline-variant/50">
-      {/* Title & Status */}
-      <div className="flex flex-col">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">
-            Platform Telemetry
-          </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-          <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-            Real-Time Analytics
-          </span>
+    <div className="flex flex-col gap-5 pb-2">
+      {/* Top Header Row with Kicker and Actions */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        {/* Title & Hierarchy */}
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="font-label-sm text-[11px] font-bold uppercase tracking-widest text-secondary">
+              Platform Telemetry
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-surface-tint animate-pulse" />
+            <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
+              Real-Time Engine
+            </span>
+          </div>
+          <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
+            System-Wide Performance
+          </h1>
+          <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1 max-w-2xl">
+            Consolidated GMV, network throughput, and merchant economics across all active culinary hubs.
+          </p>
         </div>
-        <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-          System-Wide Analytics
-        </h1>
-        <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-0.5">
-          Deep telemetry trends across customer demand, merchant operations, and dining reservations.
-        </p>
+
+        {/* Top Right Actions */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Baseline Toggle Switch */}
+          <label className="flex items-center gap-2.5 bg-surface-container-lowest px-3 py-2 rounded-xl border border-outline-variant shadow-2xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showBaseline}
+              onChange={(e) => onToggleBaseline(e.target.checked)}
+              className="sr-only"
+            />
+            <div
+              className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 ${
+                showBaseline ? "bg-primary-container" : "bg-surface-container-high"
+              }`}
+            >
+              <div
+                className={`w-4 h-4 rounded-full bg-surface-container-lowest shadow-xs transform transition-transform ${
+                  showBaseline ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </div>
+            <span className="text-xs font-semibold text-on-surface">vs 2024 Baseline</span>
+          </label>
+
+          {/* Ledger Export CSV */}
+          {onExportCsv && (
+            <button
+              type="button"
+              onClick={onExportCsv}
+              className="flex items-center gap-1.5 bg-surface-container-lowest hover:bg-surface-container text-on-surface px-3.5 py-2 rounded-xl text-xs font-semibold border border-outline-variant shadow-2xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base text-primary">file_download</span>
+              <span>Ledger Export</span>
+            </button>
+          )}
+
+          {/* Generate Executive Dossier */}
+          {onGenerateReport && (
+            <button
+              type="button"
+              onClick={onGenerateReport}
+              className="flex items-center gap-1.5 bg-primary-container text-on-primary hover:opacity-95 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">print</span>
+              <span>Executive Brief</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Controls: Date Range Filters & Exports */}
-      <div className="flex flex-wrap items-center gap-2.5">
-        {/* Time Range Pills */}
-        <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/70 text-xs">
-          <button
-            type="button"
-            onClick={() => onTimeRangeChange("7d")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-              timeRange === "7d"
-                ? "bg-primary-container text-on-primary shadow-2xs"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            7 Days
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTimeRangeChange("30d")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-              timeRange === "30d"
-                ? "bg-primary-container text-on-primary shadow-2xs"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            30 Days
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onTimeRangeChange("90d")}
-            className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-              timeRange === "90d"
-                ? "bg-primary-container text-on-primary shadow-2xs"
-                : "text-on-surface-variant hover:text-on-surface"
-            }`}
-          >
-            90 Days
-          </button>
+      {/* Filter Tabs & Period Display */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-outline-variant/60">
+        {/* Time Preset Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-surface-container-lowest p-1 rounded-xl border border-outline-variant text-xs">
+          {timeRangeOptions.map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => onTimeRangeChange(opt.id)}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                timeRange === opt.id
+                  ? "bg-primary-container text-on-primary shadow-2xs"
+                  : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
 
           <button
             type="button"
@@ -99,42 +141,18 @@ export default function AnalyticsFilterBar({
             className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
               timeRange === "custom"
                 ? "bg-primary-container text-on-primary shadow-2xs"
-                : "text-on-surface-variant hover:text-on-surface"
+                : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container"
             }`}
           >
             Custom
           </button>
         </div>
 
-        {/* Date Label Indicator */}
-        <div className="hidden xl:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl border border-outline-variant/60 text-xs text-on-surface-variant">
-          <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+        {/* Active Range Indicator */}
+        <div className="flex items-center gap-2 text-xs text-on-surface-variant px-1">
+          <span className="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
           <span className="font-medium text-on-surface">{dateRangeLabel}</span>
         </div>
-
-        {/* Export CSV Button */}
-        {onExportCsv && (
-          <button
-            type="button"
-            onClick={onExportCsv}
-            className="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container text-on-surface px-3 py-2 rounded-xl text-xs font-semibold border border-outline-variant/70 transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">file_download</span>
-            <span>Export CSV</span>
-          </button>
-        )}
-
-        {/* Generate Report Button */}
-        {onGenerateReport && (
-          <button
-            type="button"
-            onClick={onGenerateReport}
-            className="flex items-center gap-1.5 bg-primary-container text-on-primary hover:bg-primary px-3.5 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-base">insights</span>
-            <span>Generate Report</span>
-          </button>
-        )}
       </div>
 
       {/* Custom Date Range Modal */}
@@ -148,53 +166,50 @@ export default function AnalyticsFilterBar({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between pb-2 border-b border-outline-variant/50">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">date_range</span>
-                <span className="font-bold text-sm text-primary">Custom Analytics Window</span>
-              </div>
+              <h3 className="text-sm font-bold text-primary font-headline-sm">Custom Date Window</h3>
               <button
                 type="button"
                 onClick={() => setCustomModalOpen(false)}
-                className="text-on-surface-variant hover:text-on-surface text-base"
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg"
               >
-                ✕
+                <span className="material-symbols-outlined text-lg">close</span>
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="block text-on-surface-variant mb-1 font-semibold">Start Date:</label>
+                <label className="block font-semibold text-on-surface mb-1">Start Date</label>
                 <input
                   type="date"
                   value={customStart}
                   onChange={(e) => setCustomStart(e.target.value)}
-                  className="w-full bg-surface-container-low p-2 rounded-lg border border-outline-variant focus:border-primary outline-none text-xs"
+                  className="w-full bg-surface-container px-3 py-2 rounded-xl border border-outline-variant text-on-surface focus:outline-primary"
                 />
               </div>
 
               <div>
-                <label className="block text-on-surface-variant mb-1 font-semibold">End Date:</label>
+                <label className="block font-semibold text-on-surface mb-1">End Date</label>
                 <input
                   type="date"
                   value={customEnd}
                   onChange={(e) => setCustomEnd(e.target.value)}
-                  className="w-full bg-surface-container-low p-2 rounded-lg border border-outline-variant focus:border-primary outline-none text-xs"
+                  className="w-full bg-surface-container px-3 py-2 rounded-xl border border-outline-variant text-on-surface focus:outline-primary"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-outline-variant/50">
               <button
                 type="button"
                 onClick={() => setCustomModalOpen(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-on-surface-variant hover:bg-surface-container"
+                className="px-3 py-1.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface-variant hover:bg-surface-container cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleApplyCustom}
-                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-primary-container text-on-primary hover:bg-primary transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 rounded-xl bg-primary-container text-on-primary text-xs font-semibold hover:opacity-95 cursor-pointer"
               >
                 Apply Range
               </button>

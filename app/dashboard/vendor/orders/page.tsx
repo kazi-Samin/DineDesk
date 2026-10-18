@@ -241,7 +241,7 @@ export default function VendorIncomingOrdersPage() {
       />
 
       {/* 3. Main Console Workspace */}
-      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "pl-0"}`}>
+      <div className={`pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
         <main className="relative bg-background min-h-screen">
           <div className="flex flex-col w-full px-space-md sm:px-space-lg lg:px-space-xl py-space-lg max-w-[1440px] mx-auto gap-space-lg">
             {/* Header & Controls Strip */}
