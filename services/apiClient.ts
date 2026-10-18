@@ -1,7 +1,6 @@
-import { getStoredToken } from "./authService";
+import { getStoredToken, normalizeApiUrl } from "./authService";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://dine-desk-backend.vercel.app/api/v1";
+const API_BASE_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | boolean>;

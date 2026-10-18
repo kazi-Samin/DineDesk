@@ -1,7 +1,26 @@
 import { AuthResponse, AuthUser, LoginCredentials, RegisterCredentials } from "@/types/auth";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://dine-desk-backend.vercel.app/api/v1";
+export const normalizeApiUrl = (rawUrl?: string): string => {
+  let url = (rawUrl || "https://dine-desk-backend.vercel.app/api/v1").trim();
+  url = url.replace(/\/+$/, "");
+  if (!url.endsWith("/api/v1")) {
+    url = `${url}/api/v1`;
+  }
+  return url;
+};
+
+const API_BASE_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `Backend returned unexpected response (${response.status}). Please verify API URL.`
+    );
+  }
+}
 
 const TOKEN_KEY = "dinedesk_auth_token";
 const USER_KEY = "dinedesk_auth_user";
@@ -53,7 +72,7 @@ export async function loginApi(credentials: LoginCredentials): Promise<AuthRespo
     body: JSON.stringify(credentials),
   });
 
-  const data = await response.json();
+  const data = await parseJsonResponse<AuthResponse>(response);
 
   if (response.ok && data.success && data.token) {
     setStoredToken(data.token);
@@ -83,7 +102,7 @@ export async function registerApi(credentials: RegisterCredentials): Promise<Aut
     body: JSON.stringify(payload),
   });
 
-  const data = await response.json();
+  const data = await parseJsonResponse<AuthResponse>(response);
   return data;
 }
 
@@ -102,7 +121,7 @@ export async function getMeApi(): Promise<{ success: boolean; data?: AuthUser; m
     credentials: "include",
   });
 
-  const data = await response.json();
+  const data = await parseJsonResponse<{ success: boolean; data?: AuthUser; message?: string }>(response);
   if (response.ok && data.success && data.data) {
     setStoredUser(data.data);
   }
