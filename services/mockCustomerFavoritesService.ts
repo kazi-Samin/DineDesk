@@ -2,40 +2,56 @@ import {
   FavoriteRestaurant,
   FavoriteDish,
 } from "@/types/customerFavorites";
-import {
-  INITIAL_FAVORITE_RESTAURANTS,
-  INITIAL_FAVORITE_DISHES,
-} from "@/data/mockCustomerFavorites";
 
-const RESTAURANTS_KEY = "dinedesk_saved_restaurants";
-const DISHES_KEY = "dinedesk_saved_dishes";
+const DEFAULT_RESTAURANTS_KEY = "dinedesk_saved_restaurants";
+const DEFAULT_DISHES_KEY = "dinedesk_saved_dishes";
 
 function isClient(): boolean {
   return typeof window !== "undefined";
 }
 
-export function getSavedRestaurants(): FavoriteRestaurant[] {
-  if (!isClient()) return INITIAL_FAVORITE_RESTAURANTS;
+function getAuthUserId(): string | null {
+  if (!isClient()) return null;
   try {
-    const raw = localStorage.getItem(RESTAURANTS_KEY);
+    const raw = localStorage.getItem("dinedesk_auth_user");
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+function getRestaurantsKey(): string {
+  const uid = getAuthUserId();
+  return uid ? `dinedesk_saved_restaurants_${uid}` : DEFAULT_RESTAURANTS_KEY;
+}
+
+function getDishesKey(): string {
+  const uid = getAuthUserId();
+  return uid ? `dinedesk_saved_dishes_${uid}` : DEFAULT_DISHES_KEY;
+}
+
+export function getSavedRestaurants(): FavoriteRestaurant[] {
+  if (!isClient()) return [];
+  try {
+    const key = getRestaurantsKey();
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(
-        RESTAURANTS_KEY,
-        JSON.stringify(INITIAL_FAVORITE_RESTAURANTS)
-      );
-      return INITIAL_FAVORITE_RESTAURANTS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_FAVORITE_RESTAURANTS;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_FAVORITE_RESTAURANTS;
+    return [];
   }
 }
 
 export function saveRestaurants(restaurants: FavoriteRestaurant[]): void {
   if (isClient()) {
     try {
-      localStorage.setItem(RESTAURANTS_KEY, JSON.stringify(restaurants));
+      const key = getRestaurantsKey();
+      localStorage.setItem(key, JSON.stringify(restaurants));
     } catch {
       // ignore
     }
@@ -43,27 +59,25 @@ export function saveRestaurants(restaurants: FavoriteRestaurant[]): void {
 }
 
 export function getSavedDishes(): FavoriteDish[] {
-  if (!isClient()) return INITIAL_FAVORITE_DISHES;
+  if (!isClient()) return [];
   try {
-    const raw = localStorage.getItem(DISHES_KEY);
+    const key = getDishesKey();
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(
-        DISHES_KEY,
-        JSON.stringify(INITIAL_FAVORITE_DISHES)
-      );
-      return INITIAL_FAVORITE_DISHES;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : INITIAL_FAVORITE_DISHES;
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return INITIAL_FAVORITE_DISHES;
+    return [];
   }
 }
 
 export function saveDishes(dishes: FavoriteDish[]): void {
   if (isClient()) {
     try {
-      localStorage.setItem(DISHES_KEY, JSON.stringify(dishes));
+      const key = getDishesKey();
+      localStorage.setItem(key, JSON.stringify(dishes));
     } catch {
       // ignore
     }

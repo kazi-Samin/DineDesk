@@ -26,11 +26,13 @@ import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { useCart } from "@/context/CartContext";
 import { useReservation } from "@/context/ReservationContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CustomerFavoritesPage() {
   const router = useRouter();
   const { addItem, openDrawer } = useCart();
   const { openReservationModal } = useReservation();
+  const { user } = useAuth();
 
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
@@ -64,9 +66,14 @@ export default function CustomerFavoritesPage() {
     }, 2800);
   };
 
-  // Load favorites and profile on client mount
+  // Load favorites and profile on client mount or user change
   useEffect(() => {
     const loadedProfile = getCustomerProfile();
+    if (user && user.name) {
+      loadedProfile.fullName = user.name;
+      loadedProfile.email = user.email || loadedProfile.email;
+      if (user.phone) loadedProfile.phone = user.phone;
+    }
     const loadedRestaurants = getSavedRestaurants();
     const loadedDishes = getSavedDishes();
 
@@ -74,7 +81,7 @@ export default function CustomerFavoritesPage() {
     setRestaurants(loadedRestaurants);
     setDishes(loadedDishes);
     setIsLoaded(true);
-  }, []);
+  }, [user]);
 
   // Remove actions
   const handleRemoveRestaurant = (id: string, name: string) => {

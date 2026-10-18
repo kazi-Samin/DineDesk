@@ -2,23 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 interface NavLinksProps {
     onItemClick?: () => void;
     isMobile?: boolean;
     openReservationModal: () => void;
-    selectedRole: string;
+    selectedRole?: string;
 }
 
 export default function NavLinks({
     onItemClick,
     isMobile = false,
     openReservationModal,
-    selectedRole,
 }: NavLinksProps) {
     const pathname = usePathname();
+    const { user, isAuthenticated } = useAuth();
     const isHome = pathname === "/";
     const isExplore = pathname === "/explore";
+
+    const dashboardHref = !isAuthenticated || !user
+        ? "/dashboard"
+        : user.role === "ADMIN"
+        ? "/dashboard/admin"
+        : user.role === "VENDOR"
+        ? "/dashboard/vendor"
+        : "/dashboard/customer";
 
     const linkClass = (active: boolean) =>
         isMobile
@@ -56,7 +65,7 @@ export default function NavLinks({
             </button>
 
             <Link
-                href={selectedRole === "Restaurant Owner" ? "/dashboard/vendor/orders" : "/dashboard/orders"}
+                href={dashboardHref}
                 onClick={onItemClick}
                 className={linkClass(pathname?.includes("/dashboard"))}
             >

@@ -6,18 +6,20 @@ import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import ProfileToast from "@/components/customer/profile/ProfileToast";
-import { getMockOrders } from "@/services/mockOrderService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { OrderConfirmation } from "@/types/order";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { useCart } from "@/context/CartContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
 
 type OrderTabFilter = "all" | "active" | "delivered" | "cancelled";
 
 export default function CustomerOrdersPage() {
   const { addItem, openDrawer } = useCart();
+  const { user } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
@@ -39,12 +41,40 @@ export default function CustomerOrdersPage() {
   };
 
   useEffect(() => {
-    const p = getCustomerProfile();
-    const o = getMockOrders();
-    setProfile(p);
-    setOrders(o);
-    setLoading(false);
-  }, []);
+    let isMounted = true;
+
+    async function loadOrders() {
+      setLoading(true);
+      const p = getCustomerProfile();
+      if (user && user.name) {
+        p.fullName = user.name;
+        p.email = user.email || p.email;
+        if (user.phone) p.phone = user.phone;
+      }
+      setProfile(p);
+
+      try {
+        const realOrders = await fetchCustomerOrders(user?.id);
+        if (isMounted) {
+          setOrders(realOrders);
+        }
+      } catch {
+        if (isMounted) {
+          setOrders([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadOrders();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const tabCounts = useMemo(() => {
     const all = orders.length;
@@ -244,6 +274,24 @@ export default function CustomerOrdersPage() {
                 <span className="material-symbols-outlined text-3xl animate-spin text-primary">
                   progress_activity
                 </span>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="bg-surface-container-lowest p-12 rounded-xl text-center border border-outline-variant shadow-xs flex flex-col items-center">
+                <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-2">
+                  receipt_long
+                </span>
+                <h3 className="font-headline-sm text-base font-bold text-primary">
+                  No Orders Placed Yet
+                </h3>
+                <p className="text-body-sm text-xs text-on-surface-variant mt-1 max-w-sm">
+                  You haven&apos;t placed any orders yet. Discover curated culinary dishes and enjoy seamless delivery or pickup.
+                </p>
+                <Link
+                  href="/explore"
+                  className="mt-4 px-4 py-2 bg-primary-container text-on-primary rounded-lg text-xs font-semibold hover:bg-primary transition-colors shadow-xs"
+                >
+                  Explore Restaurants
+                </Link>
               </div>
             ) : filteredOrders.length === 0 ? (
               <div className="bg-surface-container-lowest p-12 rounded-xl text-center border border-outline-variant shadow-xs flex flex-col items-center">

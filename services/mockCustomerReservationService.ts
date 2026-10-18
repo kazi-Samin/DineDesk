@@ -1,5 +1,4 @@
 import { CustomerReservation } from "@/types/customerReservation";
-import { INITIAL_CUSTOMER_RESERVATIONS } from "@/data/mockCustomerReservations";
 
 const RESERVATIONS_STORAGE_KEY = "dinedesk_customer_reservations";
 
@@ -7,29 +6,39 @@ function isClient(): boolean {
   return typeof window !== "undefined";
 }
 
-export function getCustomerReservations(): CustomerReservation[] {
-  if (!isClient()) return INITIAL_CUSTOMER_RESERVATIONS;
+function getAuthUserId(): string | null {
+  if (!isClient()) return null;
   try {
-    const raw = localStorage.getItem(RESERVATIONS_STORAGE_KEY);
+    const raw = localStorage.getItem("dinedesk_auth_user");
+    if (!raw) return null;
+    const user = JSON.parse(raw);
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
+function getReservationsKey(): string {
+  const uid = getAuthUserId();
+  return uid ? `dinedesk_reservations_${uid}` : RESERVATIONS_STORAGE_KEY;
+}
+
+export function getCustomerReservations(): CustomerReservation[] {
+  if (!isClient()) return [];
+  try {
+    const key = getReservationsKey();
+    const raw = localStorage.getItem(key);
     if (!raw) {
-      localStorage.setItem(
-        RESERVATIONS_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_RESERVATIONS)
-      );
-      return INITIAL_CUSTOMER_RESERVATIONS;
+      return [];
     }
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-      localStorage.setItem(
-        RESERVATIONS_STORAGE_KEY,
-        JSON.stringify(INITIAL_CUSTOMER_RESERVATIONS)
-      );
-      return INITIAL_CUSTOMER_RESERVATIONS;
+    if (!Array.isArray(parsed)) {
+      return [];
     }
     return parsed;
   } catch (err) {
     console.error("Error reading reservations from storage:", err);
-    return INITIAL_CUSTOMER_RESERVATIONS;
+    return [];
   }
 }
 
@@ -38,8 +47,9 @@ export function saveCustomerReservations(
 ): void {
   if (isClient()) {
     try {
+      const key = getReservationsKey();
       localStorage.setItem(
-        RESERVATIONS_STORAGE_KEY,
+        key,
         JSON.stringify(reservations)
       );
     } catch (err) {
@@ -99,36 +109,28 @@ export function rateCustomerReservation(
 export function exportReservationsToCSV(
   reservations: CustomerReservation[]
 ): boolean {
-  if (!reservations || reservations.length === 0) return false;
+  if (!isClient() || reservations.length === 0) return false;
 
   const headers = [
-    "Reservation Reference",
-    "Restaurant Name",
-    "Neighborhood & Location",
-    "Reservation Date",
-    "Reservation Time",
+    "ID",
+    "Restaurant",
+    "Date",
+    "Time",
     "Party Size",
-    "Seating Area",
-    "Special Instructions",
-    "Reservation Status",
+    "Area",
+    "Status",
+    "Special Notes",
   ];
 
-  const escapeCSV = (val: string | number | undefined | null) => {
-    if (val === undefined || val === null) return '""';
-    const clean = String(val).replace(/"/g, '""').replace(/[\r\n]+/g, " ");
-    return `"${clean}"`;
-  };
-
-  const rows = reservations.map((res) => [
-    escapeCSV(`#${res.id}`),
-    escapeCSV(res.restaurantName),
-    escapeCSV(res.neighborhood),
-    escapeCSV(res.displayDate),
-    escapeCSV(res.time),
-    escapeCSV(`${res.partySize} Guests`),
-    escapeCSV(res.seatingArea),
-    escapeCSV(res.specialNotes || "None"),
-    escapeCSV(res.statusDisplay),
+  const rows = reservations.map((r) => [
+    `"${r.id}"`,
+    `"${r.restaurantName.replace(/"/g, '""')}"`,
+    `"${r.displayDate}"`,
+    `"${r.time}"`,
+    r.partySize,
+    `"${r.seatingArea}"`,
+    `"${r.statusDisplay}"`,
+    `"${(r.specialNotes || "").replace(/"/g, '""')}"`,
   ]);
 
   const csvContent =
@@ -138,13 +140,9 @@ export function exportReservationsToCSV(
   const encodedUri = encodeURI(csvContent);
   const link = document.createElement("a");
   link.setAttribute("href", encodedUri);
-  link.setAttribute(
-    "download",
-    `dinedesk-reservations_${Date.now()}.csv`
-  );
+  link.setAttribute("download", `dinedesk_reservations_${Date.now()}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-
   return true;
 }

@@ -117,7 +117,7 @@ export default function CustomerReviewsPage() {
   return (
     <div className="bg-background min-h-screen text-on-surface flex flex-col font-body-md antialiased">
       <CustomerHeader
-        userName={profile.fullName || "Tahmid Rahman"}
+        userName={profile.fullName || "Diner"}
         userRole="Verified Foodie"
         avatarUrl={profile.avatarUrl}
         onToggleSidebar={toggleSidebar}
@@ -142,7 +142,7 @@ export default function CustomerReviewsPage() {
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-on-surface">
-                  Welcome back, {profile.fullName.split(" ")[0] || "Tahmid"}
+                  Welcome back, {profile.fullName.split(" ")[0] || "Diner"}
                 </h2>
                 <p className="text-xs text-on-surface-variant mt-0.5">
                   {profile.email} • {profile.phone}

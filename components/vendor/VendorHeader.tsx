@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 interface VendorHeaderProps {
   restaurantName?: string;
@@ -20,6 +21,7 @@ export default function VendorHeader({
   isSidebarOpen = false,
   onToggleSidebar,
 }: VendorHeaderProps) {
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const [isAccepting, setIsAccepting] = useState(true);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
@@ -173,27 +175,22 @@ export default function VendorHeader({
 
           <div className="h-6 w-px bg-outline-variant hidden sm:block" />
 
-          {/* Chef / Owner Profile Pill with Quick Mode Switch */}
+          {/* Chef / Owner Profile Pill with Dropdown */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setRoleMenuOpen(!roleMenuOpen)}
               className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors cursor-pointer"
             >
-              <img
-                alt="Chef Kabir Ahmed"
-                className="w-8 h-8 rounded-full object-cover border border-outline-variant bg-surface-container shrink-0"
-                src="/avatars/chef-kabir.svg"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/avatars/default-avatar.svg";
-                }}
-              />
+              <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">
+                {user?.name ? user.name[0].toUpperCase() : "P"}
+              </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
-                  Chef Kabir
+                <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight truncate max-w-[120px]">
+                  {user?.name || "Restaurant Partner"}
                 </span>
                 <span className="font-label-sm text-[11px] text-secondary font-medium leading-tight">
-                  Restaurant Owner
+                  Restaurant Partner
                 </span>
               </div>
               <span className="material-symbols-outlined text-base text-on-surface-variant hidden sm:block">
@@ -201,15 +198,18 @@ export default function VendorHeader({
               </span>
             </button>
 
-            {/* Role Switcher Menu */}
+            {/* Profile & Console Menu */}
             {roleMenuOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-2 z-50 animate-in fade-in slide-in-from-top-1">
                 <div className="px-3 py-2 border-b border-outline-variant/40">
                   <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-                    Active Console
+                    Signed in as
                   </span>
-                  <span className="text-xs font-bold text-primary block mt-0.5">
-                    Restaurant Owner Console
+                  <span className="text-xs font-bold text-primary block mt-0.5 truncate">
+                    {user?.name || "Restaurant Partner"}
+                  </span>
+                  <span className="text-[10px] text-on-surface-variant block truncate">
+                    {user?.email || "owner@dinedesk.com"}
                   </span>
                 </div>
                 <div className="py-1">
@@ -222,20 +222,20 @@ export default function VendorHeader({
                     <span>Restaurant Profile &amp; Settings</span>
                   </Link>
                   <Link
-                    href="/dashboard/orders"
+                    href="/dashboard/vendor/orders"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-secondary">person</span>
-                    <span>Switch to Diner Account</span>
+                    <span className="material-symbols-outlined text-base text-primary">receipt_long</span>
+                    <span>Live Kitchen Orders</span>
                   </Link>
                   <Link
-                    href="/dashboard/admin"
+                    href="/dashboard/vendor/reservations"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-primary">admin_panel_settings</span>
-                    <span>Governance Hub (Admin)</span>
+                    <span className="material-symbols-outlined text-base text-primary">table_restaurant</span>
+                    <span>Reservations &amp; Tables</span>
                   </Link>
                   <Link
                     href="/"
@@ -243,8 +243,19 @@ export default function VendorHeader({
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
                     <span className="material-symbols-outlined text-base text-on-surface-variant">home</span>
-                    <span>Return to Public Homepage</span>
+                    <span>Return to Marketplace</span>
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRoleMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-error hover:bg-error-container/20 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}

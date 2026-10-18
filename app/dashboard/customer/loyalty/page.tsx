@@ -10,6 +10,7 @@ import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
 
 interface RewardPerk {
   id: string;
@@ -73,48 +74,13 @@ interface PointLedgerItem {
   type: "earned" | "redeemed";
 }
 
-const INITIAL_LEDGER: PointLedgerItem[] = [
-  {
-    id: "led-1",
-    activity: "Table Seating at Sultan's Heritage Kitchen",
-    date: "Oct 18, 2025",
-    points: 200,
-    type: "earned",
-  },
-  {
-    id: "led-2",
-    activity: "Detailed Verified Foodie Review for SmashCraft Studio",
-    date: "Oct 10, 2025",
-    points: 100,
-    type: "earned",
-  },
-  {
-    id: "led-3",
-    activity: "Delivery Order #ORD-8429 from Sultan's Dine",
-    date: "Sep 28, 2025",
-    points: 150,
-    type: "earned",
-  },
-  {
-    id: "led-4",
-    activity: "Friend Referral Bonus (Shafiq Joined)",
-    date: "Sep 15, 2025",
-    points: 500,
-    type: "earned",
-  },
-  {
-    id: "led-5",
-    activity: "Welcome to DineDesk Foodie Circle",
-    date: "Jan 12, 2024",
-    points: 500,
-    type: "earned",
-  },
-];
+const INITIAL_LEDGER: PointLedgerItem[] = [];
 
 export default function CustomerLoyaltyPage() {
+  const { user } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
-  const [points, setPoints] = useState(1450);
+  const [points, setPoints] = useState(0);
   const [claimedPerks, setClaimedPerks] = useState<string[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -132,9 +98,16 @@ export default function CustomerLoyaltyPage() {
 
   useEffect(() => {
     const p = getCustomerProfile();
+    if (user && user.name) {
+      p.fullName = user.name;
+      p.email = user.email || p.email;
+      if (user.phone) p.phone = user.phone;
+    }
+    const userPts = user?.loyaltyPoints ?? p.stats.loyaltyPoints ?? 0;
+    p.stats.loyaltyPoints = userPts;
     setProfile(p);
-    setPoints(p.stats.loyaltyPoints || 1450);
-  }, []);
+    setPoints(userPts);
+  }, [user]);
 
   const handleClaimPerk = (perk: RewardPerk) => {
     if (claimedPerks.includes(perk.id)) {
@@ -151,11 +124,13 @@ export default function CustomerLoyaltyPage() {
     showToast(`Claimed "${perk.title}"! Voucher code: ${perk.code}`);
   };
 
+  const referralCode = `${(profile.fullName || "DINE").split(" ")[0].toUpperCase()}-DINE`;
+
   const handleCopyReferral = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText("TAHMID-DINE");
-      setCopiedCode("TAHMID-DINE");
-      showToast("Referral code TAHMID-DINE copied to clipboard!");
+      navigator.clipboard.writeText(referralCode);
+      setCopiedCode(referralCode);
+      showToast(`Referral code ${referralCode} copied to clipboard!`);
       setTimeout(() => setCopiedCode(null), 2500);
     }
   };
@@ -380,32 +355,44 @@ export default function CustomerLoyaltyPage() {
                 </h2>
 
                 <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs divide-y divide-outline-variant/30 overflow-hidden">
-                  {INITIAL_LEDGER.map((item) => (
-                    <div
-                      key={item.id}
-                      className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-surface-container-low transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-md bg-surface-container-low text-primary flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-base">
-                            {item.type === "earned" ? "arrow_downward" : "arrow_upward"}
-                          </span>
+                  {INITIAL_LEDGER.length > 0 ? (
+                    INITIAL_LEDGER.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-3.5 flex items-center justify-between gap-3 text-xs hover:bg-surface-container-low transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-md bg-surface-container-low text-primary flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-base">
+                              {item.type === "earned" ? "arrow_downward" : "arrow_upward"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-on-surface block leading-tight">
+                              {item.activity}
+                            </span>
+                            <span className="text-[11px] text-on-surface-variant">
+                              {item.date}
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <span className="font-medium text-on-surface block leading-tight">
-                            {item.activity}
-                          </span>
-                          <span className="text-[11px] text-on-surface-variant">
-                            {item.date}
-                          </span>
-                        </div>
-                      </div>
 
-                      <span className="font-bold text-primary text-xs shrink-0">
-                        +{item.points} pts
+                        <span className="font-bold text-primary text-xs shrink-0">
+                          +{item.points} pts
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">
+                        history
                       </span>
+                      <p className="font-headline-sm text-sm font-semibold text-primary">No Points Activity Yet</p>
+                      <p className="font-body-sm text-xs text-on-surface-variant max-w-sm">
+                        Place meal orders or reserve tables at partner restaurants to start earning loyalty rewards.
+                      </p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -436,7 +423,7 @@ export default function CustomerLoyaltyPage() {
                     </label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 px-3 py-2 bg-surface-container-low rounded-lg border border-outline-variant text-xs font-mono font-bold text-primary">
-                        TAHMID-DINE
+                        {referralCode}
                       </div>
                       <button
                         type="button"

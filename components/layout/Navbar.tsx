@@ -8,16 +8,17 @@ import { useReservation } from "@/context/ReservationContext";
 import { motion, AnimatePresence } from "framer-motion";
 import NavLinks from "../NavLinks";
 import Image from "next/image";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { toggleDrawer, totalItemCount } = useCart();
   const { openReservationModal } = useReservation();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("Diner");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -88,7 +89,7 @@ export default function Navbar() {
             </motion.div>
           </Link>
 
-          <NavLinks openReservationModal={openReservationModal} selectedRole={selectedRole} />
+          <NavLinks openReservationModal={openReservationModal} />
         </div>
 
         {/* Floating Search Bar */}
@@ -140,97 +141,100 @@ export default function Navbar() {
             </span>
           </motion.button>
 
-          {/* Role Switcher Pill */}
-          <div className="relative">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-outline-variant/60 bg-surface-container/70 hover:bg-surface-container text-xs font-semibold text-on-surface transition-all cursor-pointer shadow-2xs"
+          {/* Direct Role Dashboard Shortcut Button when Authenticated */}
+          {isAuthenticated && user && (
+            <Link
+              href={
+                user.role === "ADMIN"
+                  ? "/dashboard/admin"
+                  : user.role === "VENDOR"
+                  ? "/dashboard/vendor"
+                  : "/dashboard/customer"
+              }
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-all shadow-xs"
             >
-              <span className="w-2 h-2 rounded-full bg-secondary animate-ping" />
-              <span className="hidden sm:inline text-on-surface-variant font-medium">Role:</span>
-              <span className="text-primary font-bold">{selectedRole}</span>
-              <span className="material-symbols-outlined text-sm text-on-surface-variant">expand_more</span>
-            </motion.button>
+              <span className="material-symbols-outlined text-sm">dashboard</span>
+              <span>
+                {user.role === "ADMIN"
+                  ? "Admin Console"
+                  : user.role === "VENDOR"
+                  ? "Partner Portal"
+                  : "My Dashboard"}
+              </span>
+            </Link>
+          )}
 
-            <AnimatePresence>
-              {roleSwitcherOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 12, scale: 0.94 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 12, scale: 0.94 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                  className="absolute right-0 top-full mt-3 w-64 bg-surface-container-lowest border border-outline-variant rounded-3xl shadow-2xl py-3 z-50 overflow-hidden backdrop-blur-xl"
-                >
-                  <div className="px-4 py-1.5 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
-                    Switch Access Portal
-                  </div>
-                  <div className="my-1.5 border-t border-outline-variant/60" />
+          {/* Authentication CTA or User Profile Menu */}
+          {isAuthenticated && user ? (
+            <div className="relative hidden md:block">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 bg-surface-container hover:bg-surface-container-high border border-outline-variant rounded-2xl text-xs font-semibold text-on-surface transition-all shadow-xs cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-[11px]">
+                  {user.name ? user.name[0].toUpperCase() : "U"}
+                </div>
+                <span className="max-w-[100px] truncate">{user.name || "Diner"}</span>
+                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed">
+                  {user.role}
+                </span>
+                <span className="material-symbols-outlined text-sm">
+                  {userMenuOpen ? "expand_less" : "expand_more"}
+                </span>
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("Diner");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/orders");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "Diner" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
                   >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">🍽️ Customer (Diner)</span>
-                      <span className="text-[10px] text-on-surface-variant">Track orders & bookings</span>
+                    <div className="px-4 py-2 border-b border-outline-variant">
+                      <p className="text-xs font-bold text-on-surface truncate">{user.name}</p>
+                      <p className="text-[11px] text-on-surface-variant truncate">{user.email}</p>
                     </div>
-                    {selectedRole === "Diner" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("Restaurant Owner");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/vendor/orders");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "Restaurant Owner" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">🏪 Restaurant Owner</span>
-                      <span className="text-[10px] text-on-surface-variant">Manage kitchen queue</span>
-                    </div>
-                    {selectedRole === "Restaurant Owner" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
+                    <Link
+                      href={
+                        user.role === "ADMIN"
+                          ? "/dashboard/admin"
+                          : user.role === "VENDOR"
+                          ? "/dashboard/vendor"
+                          : "/dashboard/customer"
+                      }
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-on-surface hover:bg-surface-container transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-base text-primary">dashboard</span>
+                      <span>Go to Dashboard</span>
+                    </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedRole("System Admin");
-                      setRoleSwitcherOpen(false);
-                      router.push("/dashboard/admin");
-                    }}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-xs font-medium transition-colors text-left ${selectedRole === "System Admin" ? "bg-primary/10 text-primary font-bold" : "text-on-surface hover:bg-surface-container-low"
-                      }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-semibold">⚙️ System Admin</span>
-                      <span className="text-[10px] text-on-surface-variant">Platform wide governance</span>
-                    </div>
-                    {selectedRole === "System Admin" && <span className="material-symbols-outlined text-sm text-primary">check_circle</span>}
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Authentication CTA */}
-          <Link
-            className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
-            href="/sign-in"
-          >
-            Sign In
-          </Link>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-error hover:bg-error-container/20 transition-colors text-left cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-base">logout</span>
+                      <span>Sign Out</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link
+              className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
+              href="/sign-in"
+            >
+              Sign In
+            </Link>
+          )}
 
           {/* Mobile Menu Trigger */}
           <motion.button
@@ -267,7 +271,6 @@ export default function Navbar() {
               isMobile={true}
               onItemClick={() => setMobileMenuOpen(false)}
               openReservationModal={openReservationModal}
-              selectedRole={selectedRole}
             />
 
             {/* Mobile Search Box */}
@@ -288,14 +291,60 @@ export default function Navbar() {
 
             {/* Mobile Authentication Button */}
             <div className="pt-2">
-              <Link
-                href="/sign-in"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
-              >
-                <span>Sign In / Register</span>
-                <span className="material-symbols-outlined text-sm">login</span>
-              </Link>
+              {isAuthenticated && user ? (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-container border border-outline-variant">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
+                        {user.name ? user.name[0].toUpperCase() : "U"}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-xs text-on-surface">{user.name}</span>
+                        <span className="text-[10px] text-on-surface-variant">{user.email}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed">
+                      {user.role}
+                    </span>
+                  </div>
+
+                  <Link
+                    href={
+                      user.role === "ADMIN"
+                        ? "/dashboard/admin"
+                        : user.role === "VENDOR"
+                        ? "/dashboard/vendor"
+                        : "/dashboard/customer"
+                    }
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="w-full py-2.5 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <span>Open Dashboard</span>
+                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full py-2 border border-outline-variant text-error rounded-2xl font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-error-container/20 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">logout</span>
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/sign-in"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                >
+                  <span>Sign In / Register</span>
+                  <span className="material-symbols-outlined text-sm">login</span>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { getAdminAlerts } from "@/services/mockAdminService";
+import { useAuth } from "@/context/AuthContext";
 
 interface AdminHeaderProps {
   isSidebarOpen?: boolean;
@@ -17,6 +18,7 @@ export default function AdminHeader({
   onToggleSidebar,
   onSearch,
 }: AdminHeaderProps) {
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -178,7 +180,7 @@ export default function AdminHeader({
 
           <div className="h-6 w-px bg-outline-variant" />
 
-          {/* Super Admin User Profile Pill & Role Switcher */}
+          {/* Super Admin User Profile Pill & Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -189,11 +191,11 @@ export default function AdminHeader({
               className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/70 transition-colors cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs shadow-xs">
-                TR
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : "SA"}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="font-label-md text-xs font-semibold text-on-surface leading-tight">
-                  Tahmid Rahman
+                <span className="font-label-md text-xs font-semibold text-on-surface leading-tight truncate max-w-[120px]">
+                  {user?.name || "Super Admin"}
                 </span>
                 <span className="font-label-sm text-[10px] text-secondary font-bold leading-tight uppercase tracking-wider">
                   Super Admin
@@ -204,38 +206,47 @@ export default function AdminHeader({
               </span>
             </button>
 
-            {/* Role Switcher Menu */}
+            {/* Admin Management Menu */}
             {roleMenuOpen && (
               <div className="absolute right-0 top-full mt-2 w-60 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-2 z-50 animate-in fade-in slide-in-from-top-1">
                 <div className="px-3 py-2 border-b border-outline-variant/40">
                   <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
                     Active Authority
                   </span>
-                  <span className="text-xs font-bold text-primary block mt-0.5">
-                    Platform Super Admin
+                  <span className="text-xs font-bold text-primary block mt-0.5 truncate">
+                    {user?.name || "Super Admin"}
                   </span>
-                  <span className="text-[11px] text-on-surface-variant block mt-0.5">
-                    tahmid.admin@dinedesk.bd
+                  <span className="text-[11px] text-on-surface-variant block mt-0.5 truncate">
+                    {user?.email || "admin@dinedesk.com"}
                   </span>
                 </div>
 
                 <div className="py-1">
                   <Link
-                    href="/dashboard/vendor"
+                    href="/dashboard/admin/manage-admins"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-primary">storefront</span>
-                    <span>Switch to Merchant Console</span>
+                    <span className="material-symbols-outlined text-base text-primary">admin_panel_settings</span>
+                    <span>Manage Admins</span>
                   </Link>
 
                   <Link
-                    href="/dashboard/customer"
+                    href="/dashboard/admin/analytics"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-secondary">person</span>
-                    <span>Switch to Diner Account</span>
+                    <span className="material-symbols-outlined text-base text-primary">analytics</span>
+                    <span>Platform Analytics</span>
+                  </Link>
+
+                  <Link
+                    href="/dashboard/admin/settings"
+                    onClick={() => setRoleMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">tune</span>
+                    <span>Platform Settings</span>
                   </Link>
 
                   <Link
@@ -249,14 +260,17 @@ export default function AdminHeader({
                 </div>
 
                 <div className="pt-1 border-t border-outline-variant/40">
-                  <Link
-                    href="/"
-                    onClick={() => setRoleMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-error hover:bg-error-container/20 font-medium transition-colors"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRoleMenuOpen(false);
+                      logout();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-error hover:bg-error-container/20 font-medium transition-colors text-left cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-base">logout</span>
                     <span>Log Out Session</span>
-                  </Link>
+                  </button>
                 </div>
               </div>
             )}

@@ -7,9 +7,8 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { getCustomerReservations } from "@/services/mockCustomerReservationService";
-import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
-import { getMockOrders } from "@/services/mockOrderService";
+import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { getSavedRestaurants } from "@/services/mockCustomerFavoritesService";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { CustomerReservation } from "@/types/customerReservation";
 import { FavoriteRestaurant } from "@/types/customerFavorites";
@@ -18,9 +17,12 @@ import { useReservation } from "@/context/ReservationContext";
 import { useCart } from "@/context/CartContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function CustomerDashboardOverviewPage() {
   const { openReservationModal } = useReservation();
   const { addItem, openDrawer } = useCart();
+  const { user } = useAuth();
 
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
@@ -30,17 +32,57 @@ export default function CustomerDashboardOverviewPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const p = getCustomerProfile();
-    const r = getCustomerReservations();
-    const f = getSavedRestaurants();
-    const o = getMockOrders();
+    let isMounted = true;
 
-    setProfile(p);
-    setReservations(r);
-    setFavorites(f);
-    setOrders(o);
-    setIsLoaded(true);
-  }, []);
+    async function loadRealData() {
+      const p = getCustomerProfile();
+      if (user && user.name) {
+        p.fullName = user.name;
+        p.email = user.email || p.email;
+        if (user.phone) p.phone = user.phone;
+        if (user.loyaltyPoints !== undefined) {
+          p.stats.loyaltyPoints = user.loyaltyPoints;
+        }
+      }
+      const f = getSavedRestaurants();
+
+      try {
+        const [realOrders, realReservations] = await Promise.all([
+          fetchCustomerOrders(user?.id),
+          fetchCustomerReservations(user?.id),
+        ]);
+
+        if (!isMounted) return;
+
+        // Populate real user stats
+        p.stats.totalOrders = realOrders.length;
+        p.stats.activeBookings = realReservations.filter(
+          (r) => r.status === "confirmed" || r.status === "pending"
+        ).length;
+        p.stats.savedSpots = f.length;
+        p.stats.loyaltyPoints = user?.loyaltyPoints ?? p.stats.loyaltyPoints ?? 0;
+
+        setProfile(p);
+        setReservations(realReservations);
+        setFavorites(f);
+        setOrders(realOrders);
+      } catch (err) {
+        if (!isMounted) return;
+        setProfile(p);
+        setReservations([]);
+        setFavorites(f);
+        setOrders([]);
+      } finally {
+        if (isMounted) setIsLoaded(true);
+      }
+    }
+
+    loadRealData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const upcomingReservation = reservations.find(
     (res) => res.status === "confirmed" || res.status === "pending"
@@ -48,7 +90,7 @@ export default function CustomerDashboardOverviewPage() {
 
   const activeOrder = orders.find(
     (ord) => ord.status !== "delivered" && ord.status !== "completed" && ord.status !== "cancelled"
-  ) || orders[0];
+  );
 
   const recentOrders = orders.slice(0, 3);
   const topFavorites = favorites.slice(0, 3);
@@ -390,43 +432,61 @@ export default function CustomerDashboardOverviewPage() {
                 </div>
 
                 <div className="flex flex-col gap-3">
-                  {recentOrders.map((ord) => (
-                    <div
-                      key={ord.orderId}
-                      className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-primary/40 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-lg">receipt</span>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-headline-sm text-sm font-semibold text-primary">
-                              {ord.restaurantName}
-                            </h3>
-                            <span className="px-2 py-0.5 rounded-sm bg-surface-container text-on-surface-variant text-[11px] font-medium">
-                              #{ord.orderId}
-                            </span>
+                  {recentOrders.length > 0 ? (
+                    recentOrders.map((ord) => (
+                      <div
+                        key={ord.orderId}
+                        className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-primary/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-lg">receipt</span>
                           </div>
-                          <p className="font-body-sm text-xs text-on-surface-variant mt-0.5 line-clamp-1">
-                            {ord.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
-                          </p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-headline-sm text-sm font-semibold text-primary">
+                                {ord.restaurantName}
+                              </h3>
+                              <span className="px-2 py-0.5 rounded-sm bg-surface-container text-on-surface-variant text-[11px] font-medium">
+                                #{ord.orderId}
+                              </span>
+                            </div>
+                            <p className="font-body-sm text-xs text-on-surface-variant mt-0.5 line-clamp-1">
+                              {ord.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-outline-variant/30">
+                          <span className="font-bold text-primary text-sm">
+                            ৳{ord.total.toLocaleString()}
+                          </span>
+                          <Link
+                            href={`/order-confirmation/${ord.orderId}`}
+                            className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg text-xs font-medium transition-colors border border-outline-variant/60"
+                          >
+                            Receipt
+                          </Link>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-outline-variant/30">
-                        <span className="font-bold text-primary text-sm">
-                          ৳{ord.total.toLocaleString()}
-                        </span>
-                        <Link
-                          href={`/order-confirmation/${ord.orderId}`}
-                          className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg text-xs font-medium transition-colors border border-outline-variant/60"
-                        >
-                          Receipt
-                        </Link>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant shadow-xs flex flex-col items-center justify-center text-center gap-2">
+                      <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">
+                        receipt_long
+                      </span>
+                      <h3 className="font-headline-sm text-sm font-semibold text-primary">No Recent Orders</h3>
+                      <p className="font-body-sm text-xs text-on-surface-variant max-w-sm">
+                        You haven&apos;t placed any orders yet. Discover Dhaka&apos;s finest kitchens and enjoy direct delivery.
+                      </p>
+                      <Link
+                        href="/explore"
+                        className="mt-2 px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary rounded-lg text-xs font-semibold transition-colors"
+                      >
+                        Browse Restaurants
+                      </Link>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -440,7 +500,11 @@ export default function CustomerDashboardOverviewPage() {
                         workspace_premium
                       </span>
                       <h2 className="font-headline-sm text-sm font-bold text-primary">
-                        Gold Foodie Patron
+                        {profile.stats.loyaltyPoints >= 2000
+                          ? "Platinum VIP Patron"
+                          : profile.stats.loyaltyPoints >= 1000
+                          ? "Gold Foodie Patron"
+                          : "Silver Foodie Patron"}
                       </h2>
                     </div>
                     <Link
@@ -463,7 +527,9 @@ export default function CustomerDashboardOverviewPage() {
                       />
                     </div>
                     <p className="font-body-sm text-[11px] text-on-surface-variant mt-1.5">
-                      Earn 550 more points to unlock Platinum VIP Priority Seating.
+                      {profile.stats.loyaltyPoints >= 2000
+                        ? "You have achieved Platinum VIP Priority Seating status!"
+                        : `Earn ${Math.max(0, 2000 - profile.stats.loyaltyPoints)} more points to unlock Platinum VIP Priority Seating.`}
                     </p>
                   </div>
                 </div>
@@ -483,42 +549,59 @@ export default function CustomerDashboardOverviewPage() {
                   </div>
 
                   <div className="flex flex-col gap-2.5">
-                    {topFavorites.map((spot) => (
-                      <div
-                        key={spot.id}
-                        className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-surface-container-low transition-colors"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <img
-                            src={spot.image}
-                            alt={spot.name}
-                            className="w-10 h-10 rounded-md object-cover shrink-0 bg-surface-container"
-                          />
-                          <div className="min-w-0">
-                            <h3 className="font-headline-sm text-xs font-semibold text-primary truncate">
-                              {spot.name}
-                            </h3>
-                            <span className="text-[11px] text-on-surface-variant truncate block">
-                              {spot.cuisine} • {spot.neighborhood}
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openReservationModal({
-                              id: spot.restaurantId,
-                              name: spot.name,
-                              neighborhood: spot.neighborhood,
-                            })
-                          }
-                          className="px-2.5 py-1 text-[11px] font-medium bg-primary-container hover:bg-primary text-on-primary rounded-md transition-colors shrink-0 shadow-xs cursor-pointer"
+                    {topFavorites.length > 0 ? (
+                      topFavorites.map((spot) => (
+                        <div
+                          key={spot.id}
+                          className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-surface-container-low transition-colors"
                         >
-                          Book
-                        </button>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={spot.image}
+                              alt={spot.name}
+                              className="w-10 h-10 rounded-md object-cover shrink-0 bg-surface-container"
+                            />
+                            <div className="min-w-0">
+                              <h3 className="font-headline-sm text-xs font-semibold text-primary truncate">
+                                {spot.name}
+                              </h3>
+                              <span className="text-[11px] text-on-surface-variant truncate block">
+                                {spot.cuisine} • {spot.neighborhood}
+                              </span>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openReservationModal({
+                                id: spot.restaurantId,
+                                name: spot.name,
+                                neighborhood: spot.neighborhood,
+                              })
+                            }
+                            className="px-2.5 py-1 text-[11px] font-medium bg-primary-container hover:bg-primary text-on-primary rounded-md transition-colors shrink-0 shadow-xs cursor-pointer"
+                          >
+                            Book
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-6 px-4 bg-surface-container-low/50 rounded-lg text-center flex flex-col items-center justify-center gap-1.5 border border-dashed border-outline-variant/60">
+                        <span className="material-symbols-outlined text-2xl text-on-surface-variant/40">
+                          bookmark_border
+                        </span>
+                        <p className="font-body-sm text-xs text-on-surface-variant">
+                          No saved spots yet.
+                        </p>
+                        <Link
+                          href="/explore"
+                          className="text-xs font-semibold text-primary hover:underline mt-1"
+                        >
+                          Explore Restaurants
+                        </Link>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               </div>

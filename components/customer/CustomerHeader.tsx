@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
+import { useAuth } from "@/context/AuthContext";
+
 interface CustomerHeaderProps {
   userName?: string;
   userRole?: string;
@@ -14,13 +16,18 @@ interface CustomerHeaderProps {
 }
 
 export default function CustomerHeader({
-  userName = "Tahmid Rahman",
-  userRole = "Verified Foodie",
+  userName = "Diner",
+  userRole = "Verified Diner",
   avatarUrl = "/avatars/tahmid-avatar.svg",
   onToggleSidebar,
   isSidebarOpen,
 }: CustomerHeaderProps) {
   const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const displayName = user?.name || (userName && userName !== "Tahmid Rahman" && userName !== "Diner" ? userName : user?.name || "Diner");
+  const displayRole = user?.role === "ADMIN" ? "Super Admin" : user?.role === "VENDOR" ? "Restaurant Owner" : userRole;
+
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -150,10 +157,10 @@ export default function CustomerHeader({
               />
               <div className="hidden sm:flex flex-col text-left">
                 <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
-                  {userName}
+                  {displayName}
                 </span>
                 <span className="font-label-sm text-[11px] text-secondary font-medium leading-tight">
-                  {userRole}
+                  {displayRole}
                 </span>
               </div>
               <span className="material-symbols-outlined text-base text-on-surface-variant hidden sm:block">
@@ -169,7 +176,7 @@ export default function CustomerHeader({
                     Account
                   </span>
                   <span className="text-xs font-bold text-primary block mt-0.5">
-                    {userName}
+                    {displayName}
                   </span>
                 </div>
                 <div className="py-1">
@@ -205,6 +212,19 @@ export default function CustomerHeader({
                     <span className="material-symbols-outlined text-base text-on-surface-variant">home</span>
                     <span>Return to Public Homepage</span>
                   </Link>
+                  <div className="my-1 border-t border-outline-variant/40" />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setProfileDropdownOpen(false);
+                      await logout();
+                      router.push("/sign-in");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-error hover:bg-error-container/20 font-medium transition-colors text-left cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-base">logout</span>
+                    <span>Sign Out</span>
+                  </button>
                 </div>
               </div>
             )}
