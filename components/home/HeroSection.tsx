@@ -155,6 +155,8 @@ export default function HeroSection() {
                     <option value="banani">Banani Avenue</option>
                     <option value="dhanmondi">Dhanmondi Satmasjid Rd</option>
                     <option value="uttara">Uttara Sectors</option>
+                    <option value="gec">GEC Circle</option>
+                    <option value="agrabad">Agrabad</option>
                   </select>
                 </div>
               </div>
