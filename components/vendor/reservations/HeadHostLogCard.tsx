@@ -59,7 +59,7 @@ export default function HeadHostLogCard({ onPageHost }: HeadHostLogCardProps) {
             Front Desk In-charge
           </span>
           <span className="font-label-md text-label-md font-semibold">
-            Sarah Zaman (Hostess)
+            Sarah Jenkins (Lead Hostess)
           </span>
         </div>
         <button

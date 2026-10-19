@@ -47,7 +47,7 @@ export default function VendorIncomingOrdersPage() {
   });
 
   const loadOrders = () => {
-    const list = getVendorOrders("sultans-heritage");
+    const list = getVendorOrders("the-maple-and-vine");
     setOrders(list);
   };
 
@@ -64,7 +64,7 @@ export default function VendorIncomingOrdersPage() {
 
   // Dynamic Statistics
   const stats = useMemo(() => {
-    return getOrderStatistics("sultans-heritage");
+    return getOrderStatistics("the-maple-and-vine");
   }, [orders]);
 
   // Selected Order Object
@@ -215,7 +215,7 @@ export default function VendorIncomingOrdersPage() {
   };
 
   const handleSimulateNewOrder = () => {
-    const newOrd = simulateNewOrder("sultans-heritage");
+    const newOrd = simulateNewOrder("the-maple-and-vine");
     loadOrders();
     setSelectedOrderId(newOrd.orderId);
     showToast(`Simulated new incoming order #${newOrd.orderId} from ${newOrd.contact.fullName}!`);
@@ -233,7 +233,7 @@ export default function VendorIncomingOrdersPage() {
 
       {/* 2. Top Header with Outlet Switcher and Online Toggle */}
       <VendorHeader
-        restaurantName="Sultan's Heritage Kitchen"
+        restaurantName="The Maple & Vine"
         pendingCount={stats.newOrders}
         onRefresh={loadOrders}
         isSidebarOpen={isSidebarOpen}
@@ -448,7 +448,7 @@ export default function VendorIncomingOrdersPage() {
                     >
                       <option value="newest">Newest First</option>
                       <option value="oldest">Oldest First</option>
-                      <option value="highest">Highest Value (৳)</option>
+                      <option value="highest">Highest Value ($)</option>
                     </select>
 
                     {(searchQuery || fulfillmentFilter !== "all" || activeTab !== "all") && (
@@ -592,7 +592,7 @@ export default function VendorIncomingOrdersPage() {
                             <div className="flex items-center justify-between lg:justify-end gap-space-md">
                               <div className="flex flex-col text-right">
                                 <span className="font-headline-sm text-headline-sm font-display text-primary font-bold">
-                                  ৳ {ord.total.toLocaleString()}
+                                  $ {ord.total.toLocaleString()}
                                 </span>
                                 <span
                                   className={`font-label-sm text-[11px] px-1.5 py-0.5 rounded flex items-center justify-end gap-0.5 ${
@@ -769,7 +769,7 @@ export default function VendorIncomingOrdersPage() {
                       3 Express Couriers Nearby
                     </span>
                     <span className="font-body-sm text-[12px] text-on-surface-variant">
-                      Average dispatch pickup time at Banani outlet is 4 mins.
+                      Average dispatch pickup time at Michigan Avenue dining room is 4 mins.
                     </span>
                   </div>
                 </div>

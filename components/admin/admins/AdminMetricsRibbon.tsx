@@ -90,7 +90,7 @@ export default function AdminMetricsRibbon({ metrics }: AdminMetricsRibbonProps)
         </div>
         <div className="mt-3 flex items-baseline gap-2">
           <span className="font-headline-md text-2xl sm:text-3xl font-bold text-primary">
-            ৳{(metrics.dualSignoffThresholdBdt / 1000).toFixed(0)}K+
+            ${(metrics.dualSignoffThresholdBdt / 1000).toFixed(0)}K+
           </span>
           <span className="font-label-sm text-xs text-on-surface-variant font-medium">
             Threshold

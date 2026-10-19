@@ -5,19 +5,36 @@ export type CuisineFilterType =
   | "mughlai"
   | "japanese"
   | "artisan"
-  | "dhakaiya";
+  | "dhakaiya"
+  | "american"
+  | "smokehouse"
+  | "indian";
 
-export type AreaFilterType = "all" | "banani" | "gulshan" | "old-dhaka";
+export type AreaFilterType =
+  | "all"
+  | "banani"
+  | "gulshan"
+  | "old-dhaka"
+  | "corktown"
+  | "midtown"
+  | "downtown";
 
 export interface FavoriteRestaurant {
   id: string;
   type: "restaurant";
   name: string;
   neighborhood: string;
-  areaKey: "banani" | "gulshan" | "old-dhaka";
+  areaKey: "banani" | "gulshan" | "old-dhaka" | "corktown" | "midtown" | "downtown";
   areaBadge: string;
   cuisine: string;
-  cuisineKey: "mughlai" | "japanese" | "artisan" | "dhakaiya";
+  cuisineKey:
+    | "mughlai"
+    | "japanese"
+    | "artisan"
+    | "dhakaiya"
+    | "american"
+    | "smokehouse"
+    | "indian";
   rating: number;
   reviewCount: number;
   description: string;
@@ -39,8 +56,15 @@ export interface FavoriteDish {
   description: string;
   image: string;
   imageAlt: string;
-  cuisineKey: "mughlai" | "japanese" | "artisan" | "dhakaiya";
-  areaKey: "banani" | "gulshan" | "old-dhaka";
+  cuisineKey:
+    | "mughlai"
+    | "japanese"
+    | "artisan"
+    | "dhakaiya"
+    | "american"
+    | "smokehouse"
+    | "indian";
+  areaKey: "banani" | "gulshan" | "old-dhaka" | "corktown" | "midtown" | "downtown";
 }
 
 export type ActiveFavoritesTab = "all" | "restaurants" | "dishes";

@@ -221,7 +221,7 @@ export default function HeroSection() {
               <div className="flex items-center gap-3 ml-auto pl-4 text-on-surface-variant hidden md:flex">
                 <div className="flex -space-x-2">
                   <div className="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-on-primary-fixed shadow-xs">★</div>
-                  <div className="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-[10px] font-bold text-on-secondary-fixed shadow-xs">৳</div>
+                  <div className="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-[10px] font-bold text-on-secondary-fixed shadow-xs">$</div>
                   <div className="w-7 h-7 rounded-full bg-tertiary-fixed flex items-center justify-center text-[10px] font-bold text-on-tertiary-fixed shadow-xs">♥</div>
                 </div>
                 <span className="text-xs font-medium">4.8 avg table &amp; delivery score</span>

@@ -26,7 +26,7 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
 
     // 2. If authenticated but role is not allowed, redirect to user's authorized portal
     if (!allowedRoles.includes(user.role)) {
-      if (user.role === "ADMIN") {
+      if (user.role === "ADMIN" || user.role === "SUPERADMIN") {
         router.replace("/dashboard/admin");
       } else if (user.role === "VENDOR") {
         router.replace("/dashboard/vendor");

@@ -134,7 +134,7 @@ export default function VendorActionDialogs({
                       Cash on Delivery Notice
                     </span>
                     <span className="font-headline-sm text-primary font-bold">
-                      ৳ {deliverModal.amount.toLocaleString()}
+                      $ {deliverModal.amount.toLocaleString()}
                     </span>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer mt-1 text-on-surface text-[13px] font-medium">

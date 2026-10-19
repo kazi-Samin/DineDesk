@@ -25,10 +25,10 @@ export default function StorefrontPreviewCard({
   // Format price tier label
   const priceTierLabel =
     priceTier === "economy"
-      ? "৳ Economy"
+      ? "$ Economy"
       : priceTier === "fine-dining"
-      ? "৳৳৳ Fine Dining"
-      : "৳৳ Moderate";
+      ? "$$$ Fine Dining"
+      : "$$ Moderate";
 
   // Derive today's schedule
   const todayDayName = new Date().toLocaleDateString("en-US", {
@@ -45,7 +45,7 @@ export default function StorefrontPreviewCard({
       : "Traditional Heritage Cuisine";
 
   // Neighborhood preview
-  const shortNeighborhood = neighborhood.split(",")[0] || "Banani";
+  const shortNeighborhood = neighborhood.split(",")[0] || "Michigan Ave";
 
   return (
     <div
@@ -102,7 +102,7 @@ export default function StorefrontPreviewCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <h3 className="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-tight truncate">
-              {name || "Sultan's Heritage Kitchen"}
+              {name || "The Maple & Vine"}
             </h3>
             <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-1">
               {cuisinePreview}
@@ -141,7 +141,7 @@ export default function StorefrontPreviewCard({
         {/* Action Link */}
         <div className="pt-2">
           <Link
-            href="/restaurants/sultans-dine"
+            href="/explore"
             className="block w-full py-2 text-center rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors"
           >
             Open Full Guest Menu &amp; Book

@@ -158,9 +158,14 @@ export function cancelMockOrder(orderId: string): OrderConfirmation | null {
 }
 
 // Vendor: Get orders filtered by restaurantId
-export function getVendorOrders(restaurantId = "sultans-heritage"): OrderConfirmation[] {
+export function getVendorOrders(restaurantId = "the-maple-and-vine"): OrderConfirmation[] {
   const allOrders = getMockOrders();
-  return allOrders.filter((o) => o.restaurantId === restaurantId);
+  return allOrders.filter(
+    (o) =>
+      o.restaurantId === restaurantId ||
+      o.restaurantId === "the-maple-and-vine" ||
+      (restaurantId === "sultans-heritage" && o.restaurantId === "sultans-heritage")
+  );
 }
 
 // Vendor: Accept order
@@ -223,7 +228,7 @@ export interface VendorOrderStats {
   totalOrders: number;
 }
 
-export function getOrderStatistics(restaurantId = "sultans-heritage"): VendorOrderStats {
+export function getOrderStatistics(restaurantId = "the-maple-and-vine"): VendorOrderStats {
   const orders = getVendorOrders(restaurantId);
 
   const newOrders = orders.filter((o) => o.status === "pending").length;
@@ -250,57 +255,57 @@ export function getOrderStatistics(restaurantId = "sultans-heritage"): VendorOrd
 }
 
 // Vendor: Simulate a new incoming demo order
-export function simulateNewOrder(restaurantId = "sultans-heritage"): OrderConfirmation {
+export function simulateNewOrder(restaurantId = "the-maple-and-vine"): OrderConfirmation {
   const randomNum = Math.floor(10000 + Math.random() * 90000);
   const now = new Date();
   const timeStr = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   const demoCustomers = [
-    { name: "Rafeeq Chowdhury", phone: "+880 1711-229988", area: "Gulshan 1, Road 28" },
-    { name: "Mehnaz Parveen", phone: "+880 1819-334411", area: "Banani DOHS, House 14" },
-    { name: "Shakib Al Amin", phone: "+880 1922-887766", area: "Dhanmondi 27, Apt 6A" },
-    { name: "Tanzeem Akhtar", phone: "+880 1688-441122", area: "Uttara Sector 4, Road 7" },
+    { name: "Sarah Jenkins", phone: "(313) 555-0143", area: "Midtown Detroit, Cass Ave" },
+    { name: "Marcus Vance", phone: "(313) 555-0142", area: "Corktown, Michigan Ave" },
+    { name: "Jordan Smith", phone: "(313) 555-0100", area: "Downtown Detroit, Woodward Ave" },
+    { name: "Elena Rostova", phone: "(313) 555-0199", area: "Riverfront Towers, Suite 12B" },
   ];
   const selectedCust = demoCustomers[Math.floor(Math.random() * demoCustomers.length)];
 
   const demoItems = [
     {
       id: `item-${Date.now()}-1`,
-      name: "Special Mutton Kacchi Biryani",
-      description: "Full Portion with aloo and egg",
-      price: 650,
+      name: "Heritage Dry-Aged Ribeye",
+      description: "14oz Prime Cut • Rosemary-infused tallow butter, roasted garlic",
+      price: 48,
       quantity: 2,
       image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuBJq_BIGeRh7asvUEwulDsgwYADl4ReFd7wVPOHCkC6WfPynWNgRKObHdkcFhYKERWIIGoYTaVeKeZ2muyJS8Z-d9FTj8iGJ6752xAa5Y7gczu6VrnDbMUjtxJYNA6cuoozomIMSdrWOE1HD7gsqFiPimXyPa_h4NZykLThvxvWamPfRyUKpoh017W8JLPgfodsAlhPUphXBQ7cDUtA-9K-1W4LO_A1zbdiuAtshihfNDe4VzuIjHlQow",
+        "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=400&auto=format&fit=crop",
       category: "Mains",
     },
     {
       id: `item-${Date.now()}-2`,
-      name: "Shahi Borhani Glass Bottles",
-      description: "500ml chilled bottles",
-      price: 110,
+      name: "Artisanal Michigan Cider",
+      description: "Chilled 750ml bottle • Crisp heirloom apple blend",
+      price: 14,
       quantity: 2,
       image:
-        "https://lh3.googleusercontent.com/aida-public/AB6AXuB2eDk3yqZ8nml6Rop4T2g9B10VpLm86T_f88qgZ7mK8oP0Q21v0a=w400-h400-c",
+        "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=400&auto=format&fit=crop",
       category: "Beverages",
     },
   ];
 
-  const subtotal = 1520;
-  const deliveryFee = 60;
-  const packagingFee = 30;
-  const tax = 76;
+  const subtotal = 124;
+  const deliveryFee = 5;
+  const packagingFee = 3;
+  const tax = 8;
   const total = subtotal + deliveryFee + packagingFee + tax;
 
   const newOrder: OrderConfirmation = {
     orderId: `DD-${randomNum}`,
     fulfillmentMode: "delivery",
     restaurantId,
-    restaurantName: "Sultan’s Heritage Kitchen",
-    restaurantAddress: "House 67, Road 11, Block D, Banani, Dhaka",
-    restaurantPhone: "+880 1712-490211",
+    restaurantName: "The Maple & Vine",
+    restaurantAddress: "1420 Michigan Avenue, Detroit, MI 48216",
+    restaurantPhone: "(313) 555-0142",
     restaurantImage:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAAynW47GxjfwGapFKKcsY7IuW4kqHfCXUe7TiLX200KTAEtDwDlSZIcenq9-NqhRY35p_T8Yb5-OACxT5MBxecujPwMRSdQt_kpCY8JfgaXQ0X08WEk5TlLafJqxmaZc79Dys1jgger7AyfwAFr7bDnJSFpG4DuIoHL2Bh-kgu8PhDo_YTITymqVIjmJAv4sdbubdPl3PhUejLyMmYiOfZjgRkpttoKmrKuAvyRgFUUJu19y4XX9NCZg",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1400&auto=format&fit=crop",
     items: demoItems,
     address: {
       id: `addr-${Date.now()}`,
@@ -309,7 +314,7 @@ export function simulateNewOrder(restaurantId = "sultans-heritage"): OrderConfir
       street: selectedCust.area,
       apartment: "Apartment 4B",
       floor: "4th Floor",
-      instructions: "Ring door buzzer twice upon arrival.",
+      instructions: "Ring front door buzzer upon arrival.",
     },
     contact: {
       fullName: selectedCust.name,

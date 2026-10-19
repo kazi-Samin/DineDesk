@@ -25,7 +25,7 @@ export default function GovernancePolicyNotice() {
               Multi-Person Authorization
             </span>
             <p className="leading-relaxed">
-              Financial overrides exceeding ৳50,000, fee restructuring, or restaurant un-listing
+              Financial overrides exceeding $50,000, fee restructuring, or restaurant un-listing
               require dual-signoff by at least two distinct Super Administrators.
             </p>
           </div>

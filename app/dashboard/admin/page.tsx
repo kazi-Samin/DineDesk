@@ -167,7 +167,7 @@ export default function AdminOverviewPage() {
 
               <AdminStatCard
                 title="Platform Gross GMV"
-                value={`৳${kpis.grossGmv.toLocaleString()}`}
+                value={`$${kpis.grossGmv.toLocaleString()}`}
                 changeText={`+${kpis.gmvGrowthPct}%`}
                 changeNote={kpis.gmvGrowthNote}
                 isPositive={true}

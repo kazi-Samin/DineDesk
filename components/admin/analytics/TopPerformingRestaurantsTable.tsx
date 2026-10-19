@@ -142,7 +142,7 @@ export default function TopPerformingRestaurantsTable({
                 {/* 4. GMV Contribution */}
                 <td className="py-3.5 px-4 text-right">
                   <span className="font-bold text-primary font-headline-sm text-sm block">
-                    ৳{vendor.revenue.toLocaleString()}
+                    ${vendor.revenue.toLocaleString()}
                   </span>
                   <span className="text-[10px] font-semibold text-secondary block">
                     {vendor.targetComparison || "+14.2% vs target"}
@@ -213,7 +213,7 @@ export default function TopPerformingRestaurantsTable({
       {/* Footer Info Bar */}
       <div className="p-4 bg-surface-container-low/40 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-on-surface-variant">
         <span>Showing top 5 Tier-1 high-density commercial partners</span>
-        <span className="font-medium text-on-surface">Total Group Yield: ৳12,200,000 (82.1% of sector total)</span>
+        <span className="font-medium text-on-surface">Total Group Yield: $12,200,000 (82.1% of sector total)</span>
       </div>
 
       {/* Quick Vendor Detail Modal */}
@@ -264,7 +264,7 @@ export default function TopPerformingRestaurantsTable({
                   Total GMV
                 </span>
                 <span className="text-base font-bold text-primary font-headline-sm mt-0.5 block">
-                  ৳{selectedVendorModal.revenue.toLocaleString()}
+                  ${selectedVendorModal.revenue.toLocaleString()}
                 </span>
               </div>
               <div className="bg-surface-container-low p-3 rounded-xl">

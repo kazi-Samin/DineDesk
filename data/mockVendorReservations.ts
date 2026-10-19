@@ -14,7 +14,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 2,
     status: "occupied",
     reservationId: "#TB-4033",
-    currentGuest: "Shaan Chowdhury (2 Guests)",
+    currentGuest: "Sean Connors (2 Guests)",
   },
   {
     id: "C-2",
@@ -32,7 +32,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 4,
     status: "reserved",
     reservationId: "#TB-4065",
-    currentGuest: "Farhan Akhtar (4 Guests)",
+    currentGuest: "Franklin Hayes (4 Guests)",
   },
   {
     id: "C-4",
@@ -42,7 +42,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 4,
     status: "assigned",
     reservationId: "#TB-4091",
-    currentGuest: "Nusrat Anam (4 Guests)",
+    currentGuest: "Nora Adams (4 Guests)",
   },
   {
     id: "C-5",
@@ -60,7 +60,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 6,
     status: "occupied",
     reservationId: "#TB-4022",
-    currentGuest: "Ayesha Siddiqua (6 Guests)",
+    currentGuest: "Emily Watson (6 Guests)",
   },
 
   // Main Dining Hall (8 Tables)
@@ -72,7 +72,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 2,
     status: "reserved",
     reservationId: "#TB-4084",
-    currentGuest: "Dr. Maliha Zafar (2 Guests)",
+    currentGuest: "Dr. Melissa Vance (2 Guests)",
   },
   {
     id: "T-2",
@@ -90,7 +90,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 4,
     status: "occupied",
     reservationId: "#TB-4028",
-    currentGuest: "Naila Karim (4 Guests)",
+    currentGuest: "Natalie King (4 Guests)",
   },
   {
     id: "T-4",
@@ -108,7 +108,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 2,
     status: "reserved",
     reservationId: "#TB-4078",
-    currentGuest: "Syed Kamran (2 Guests)",
+    currentGuest: "Kevin Sterling (2 Guests)",
   },
   {
     id: "T-6",
@@ -118,7 +118,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 4,
     status: "occupied",
     reservationId: "#TB-4015",
-    currentGuest: "Imran Farooq (4 Guests)",
+    currentGuest: "Ian Cooper (4 Guests)",
   },
   {
     id: "T-7",
@@ -128,7 +128,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 6,
     status: "reserved",
     reservationId: "#TB-4052",
-    currentGuest: "Sarah Rahman (6 Guests)",
+    currentGuest: "Sarah Jenkins (6 Guests)",
   },
   {
     id: "T-8",
@@ -148,7 +148,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 10,
     status: "reserved",
     reservationId: "#TB-4089",
-    currentGuest: "Tanvir Chowdhury (8 Guests)",
+    currentGuest: "Thomas Campbell (8 Guests)",
   },
   {
     id: "P-2",
@@ -158,7 +158,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 8,
     status: "occupied",
     reservationId: "#TB-4019",
-    currentGuest: "Rubel Hossain (8 Guests)",
+    currentGuest: "Robert Hayes (8 Guests)",
   },
   {
     id: "P-3",
@@ -176,7 +176,7 @@ export const DEFAULT_TABLES: TableEntity[] = [
     capacity: 12,
     status: "reserved",
     reservationId: "#TB-4040",
-    currentGuest: "Mahir Faisal (10 Guests)",
+    currentGuest: "Michael Ford (10 Guests)",
   },
 
   // Walk-in Flex / Buffer Tables
@@ -231,15 +231,15 @@ export const DEFAULT_TABLES: TableEntity[] = [
 ];
 
 export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
-  // 1. Nusrat Anam (Pending - High Priority Anniversary)
+  // 1. Nora Adams (Pending - High Priority Anniversary)
   {
     id: "#TB-4091",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Nusrat Anam",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Nora Adams",
     initials: "NA",
-    phone: "+880 1819-223344",
-    email: "nusrat.anam@dhaka-corp.com",
+    phone: "(313) 555-0144",
+    email: "nora.adams@detroit-ventures.com",
     guestType: "VIP Diner",
     guestSubtitle: "3rd Visit",
     reservationDate: new Date().toISOString().split("T")[0],
@@ -253,7 +253,7 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasionBadge: "High Preference",
     occasionType: "celebration",
     guestNotes:
-      "Celebrating our wedding anniversary. Requesting a quiet corner with fresh jasmine floral setup and complimentary dessert plating if possible.",
+      "Celebrating our wedding anniversary. Requesting a quiet corner with fresh floral setup and celebratory dessert plating if possible.",
     status: "pending",
     createdAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
     requestAge: "15 mins ago",
@@ -263,17 +263,17 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 2. Tanvir Chowdhury (Pending - Corporate Luncheon)
+  // 2. Thomas Campbell (Pending - Corporate Luncheon)
   {
     id: "#TB-4089",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Tanvir Chowdhury",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Thomas Campbell",
     initials: "TC",
-    phone: "+880 1711-556677",
-    email: "t.chowdhury@apexholdings.bd",
+    phone: "(313) 555-0155",
+    email: "t.campbell@apexauto.com",
     guestType: "Corporate Guest",
-    guestSubtitle: "Apex Holdings",
+    guestSubtitle: "Apex Automotive",
     reservationDate: new Date(Date.now() + 86400000).toISOString().split("T")[0],
     displayDate: "Tomorrow, Oct 25",
     reservationTime: "1:30 PM",
@@ -285,7 +285,7 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasionBadge: "Acoustic Preference",
     occasionType: "business",
     guestNotes:
-      "Executive business dinner with 4 foreign visiting delegates. Needs high-privacy acoustic enclosure. Pre-ordered Chef's Kacchi Degchi sampler.",
+      "Executive business lunch with 4 visiting partners. Needs high-privacy acoustic enclosure. Pre-ordered Prime Ribeye course.",
     status: "pending",
     createdAt: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
     requestAge: "40 mins ago",
@@ -295,15 +295,15 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 3. Dr. Maliha Zafar (Pending - Accessibility First-timer)
+  // 3. Dr. Melissa Vance (Pending - Accessibility First-timer)
   {
     id: "#TB-4084",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Dr. Maliha Zafar",
-    initials: "MZ",
-    phone: "+880 1912-778899",
-    email: "maliha.zafar@bsmmu.edu.bd",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Dr. Melissa Vance",
+    initials: "MV",
+    phone: "(313) 555-0166",
+    email: "m.vance@detroitmedical.org",
     guestType: "First-time Diner",
     guestSubtitle: "First-time Diner",
     reservationDate: new Date().toISOString().split("T")[0],
@@ -327,15 +327,15 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 4. Syed Kamran (Pending - Frequent Diner)
+  // 4. Kevin Sterling (Pending - Frequent Diner)
   {
     id: "#TB-4078",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Syed Kamran",
-    initials: "SK",
-    phone: "+880 1678-334411",
-    email: "kamran.syed@dhakaventures.com",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Kevin Sterling",
+    initials: "KS",
+    phone: "(313) 555-0177",
+    email: "kevin.s@corktownholdings.com",
     guestType: "Frequent Diner",
     guestSubtitle: "12 Visits",
     reservationDate: new Date(Date.now() + 86400000).toISOString().split("T")[0],
@@ -349,7 +349,7 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasionBadge: "Window Preference",
     occasionType: "standard",
     guestNotes:
-      "Frequent diner favorite booth T-5 requested. No cilantro in salads or chutneys please.",
+      "Frequent diner favorite booth T-5 requested. No cilantro in salads please.",
     status: "pending",
     createdAt: new Date(Date.now() - 150 * 60 * 1000).toISOString(),
     requestAge: "Earlier today (2.5 hrs ago)",
@@ -358,14 +358,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 5. Farhan Akhtar (Upcoming Confirmed)
+  // 5. Franklin Hayes (Upcoming Confirmed)
   {
     id: "#TB-4065",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Farhan Akhtar",
-    initials: "FA",
-    phone: "+880 1715-998811",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Franklin Hayes",
+    initials: "FH",
+    phone: "(313) 555-0188",
     guestType: "Standard Diner",
     guestSubtitle: "Online Booking",
     reservationDate: new Date().toISOString().split("T")[0],
@@ -378,24 +378,24 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasion: "Family Dinner",
     occasionBadge: "Confirmed",
     occasionType: "standard",
-    guestNotes: "Four family members celebrating birthday. Bringing outside cake.",
+    guestNotes: "Four family members celebrating birthday. Bringing celebratory cake.",
     status: "confirmed",
     createdAt: new Date(Date.now() - 180 * 60 * 1000).toISOString(),
     requestAge: "3 hrs ago",
     activityTimeline: [
-      { time: "3 hrs ago", event: "Booking confirmed by Host Sarah Zaman", type: "success" },
+      { time: "3 hrs ago", event: "Booking confirmed by Host Sarah Jenkins", type: "success" },
       { time: "3 hrs ago", event: "Table C-3 locked for 7:00 PM slot", type: "info" },
     ],
   },
 
-  // 6. Sarah Rahman (Upcoming Confirmed)
+  // 6. Sarah Jenkins (Upcoming Confirmed)
   {
     id: "#TB-4052",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Sarah Rahman",
-    initials: "SR",
-    phone: "+880 1812-445566",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Sarah Jenkins",
+    initials: "SJ",
+    phone: "(313) 555-0199",
     guestType: "VIP Diner",
     guestSubtitle: "6th Visit",
     reservationDate: new Date().toISOString().split("T")[0],
@@ -408,7 +408,7 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasion: "Alumni Reunion",
     occasionBadge: "Confirmed",
     occasionType: "celebration",
-    guestNotes: "Class of 2018 reunion. Pre-arranged banquet set menu.",
+    guestNotes: "Class reunion dinner. Pre-arranged tasting set menu.",
     status: "confirmed",
     createdAt: new Date(Date.now() - 240 * 60 * 1000).toISOString(),
     requestAge: "4 hrs ago",
@@ -417,14 +417,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 7. Mahir Faisal (Upcoming Confirmed)
+  // 7. Michael Ford (Upcoming Confirmed)
   {
     id: "#TB-4040",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Mahir Faisal",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Michael Ford",
     initials: "MF",
-    phone: "+880 1918-001122",
+    phone: "(313) 555-0122",
     guestType: "VIP Diner",
     guestSubtitle: "Platinum Member",
     reservationDate: new Date().toISOString().split("T")[0],
@@ -437,7 +437,7 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     occasion: "Private Family Banquet",
     occasionBadge: "Grand Suite",
     occasionType: "celebration",
-    guestNotes: "Grand Imperial Suite setup with personalized calligraphy name cards.",
+    guestNotes: "Grand Imperial Suite setup with personalized menu cards.",
     status: "confirmed",
     createdAt: new Date(Date.now() - 300 * 60 * 1000).toISOString(),
     requestAge: "5 hrs ago",
@@ -446,14 +446,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 8. Shaan Chowdhury (Seated Today)
+  // 8. Sean Connors (Seated Today)
   {
     id: "#TB-4033",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Shaan Chowdhury",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Sean Connors",
     initials: "SC",
-    phone: "+880 1718-223399",
+    phone: "(313) 555-0133",
     guestType: "Standard Diner",
     reservationDate: new Date().toISOString().split("T")[0],
     displayDate: "Today",
@@ -467,18 +467,18 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     requestAge: "1 hr ago",
     activityTimeline: [
       { time: "45 mins ago", event: "Guest arrived at front desk and seated at Table C-1", type: "success" },
-      { time: "40 mins ago", event: "Drink starters and appetizers fired", type: "info" },
+      { time: "40 mins ago", event: "Cocktail starters and appetizers fired", type: "info" },
     ],
   },
 
-  // 9. Naila Karim (Seated Today)
+  // 9. Natalie King (Seated Today)
   {
     id: "#TB-4028",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Naila Karim",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Natalie King",
     initials: "NK",
-    phone: "+880 1611-334455",
+    phone: "(313) 555-0111",
     guestType: "VIP Diner",
     reservationDate: new Date().toISOString().split("T")[0],
     displayDate: "Today",
@@ -495,14 +495,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 10. Rubel Hossain (Seated Today)
+  // 10. Robert Hayes (Seated Today)
   {
     id: "#TB-4019",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Rubel Hossain",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Robert Hayes",
     initials: "RH",
-    phone: "+880 1822-778811",
+    phone: "(313) 555-0105",
     guestType: "Corporate Guest",
     reservationDate: new Date().toISOString().split("T")[0],
     displayDate: "Today",
@@ -520,14 +520,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 11. Asif Kamal (Rejected)
+  // 11. Arthur Miller (Rejected)
   {
     id: "#TB-3990",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Asif Kamal",
-    initials: "AK",
-    phone: "+880 1515-667788",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Arthur Miller",
+    initials: "AM",
+    phone: "(313) 555-0161",
     guestType: "Standard Diner",
     reservationDate: new Date().toISOString().split("T")[0],
     displayDate: "Today",
@@ -546,14 +546,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 12. Sabrina Noor (Cancelled)
+  // 12. Sabrina North (Cancelled)
   {
     id: "#TB-3982",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Sabrina Noor",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Sabrina North",
     initials: "SN",
-    phone: "+880 1733-441122",
+    phone: "(313) 555-0172",
     guestType: "Standard Diner",
     reservationDate: new Date().toISOString().split("T")[0],
     displayDate: "Today",
@@ -571,14 +571,14 @@ export const SEED_VENDOR_RESERVATIONS: VendorReservation[] = [
     ],
   },
 
-  // 13. Tariq Mansoor (Completed)
+  // 13. Tyler Moore (Completed)
   {
     id: "#TB-3950",
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
-    guestName: "Tariq Mansoor",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
+    guestName: "Tyler Moore",
     initials: "TM",
-    phone: "+880 1911-332200",
+    phone: "(313) 555-0183",
     guestType: "Frequent Diner",
     guestSubtitle: "8 Visits",
     reservationDate: new Date().toISOString().split("T")[0],

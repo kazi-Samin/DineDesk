@@ -115,7 +115,7 @@ export function mapBackendOrderToConfirmation(bo: BackendOrder): OrderConfirmati
     restaurantId: bo.restaurantId,
     restaurantName: bo.restaurant?.name || "Curated Dine Partner",
     restaurantAddress: bo.restaurant?.address,
-    restaurantImage: bo.restaurant?.coverUrl || "/images/restaurants/sultans-dine.png",
+    restaurantImage: bo.restaurant?.coverUrl || "/images/restaurant-cover-placeholder.svg",
     items,
     contact: {
       fullName: "DineDesk Patron",
@@ -183,10 +183,10 @@ export function mapBackendReservationToCustomer(br: BackendReservation): Custome
   return {
     id: br.id.length > 10 ? `RES-${br.id.slice(-4).toUpperCase()}` : br.id,
     restaurantId: br.restaurantId,
-    restaurantName: br.restaurant?.name || "Curated Dine Partner",
-    restaurantImage: br.restaurant?.coverUrl || "/images/restaurants/sultans-dine.png",
-    neighborhood: br.restaurant?.address || "Dhaka",
-    fullAddress: br.restaurant?.address || "Dhaka, Bangladesh",
+    restaurantName: br.restaurant?.name || "The Maple & Vine",
+    restaurantImage: br.restaurant?.coverUrl || "/images/restaurant-cover-placeholder.svg",
+    neighborhood: br.restaurant?.address || "Corktown, Detroit",
+    fullAddress: br.restaurant?.address || "1420 Michigan Avenue, Detroit, MI 48216",
     cuisine: "Fine Dining",
     date: dateStr,
     displayDate,

@@ -201,7 +201,7 @@ export default function ManageMenuPage() {
 
       {/* Vendor Top Header */}
       <VendorHeader
-        restaurantName="Sultan's Heritage Kitchen"
+        restaurantName="The Maple & Vine"
         onRefresh={handleRefresh}
         isSidebarOpen={isSidebarOpen}
         onToggleSidebar={toggleSidebar}
@@ -282,7 +282,7 @@ export default function ManageMenuPage() {
               {/* Demo Helper Reset Action */}
               <div className="pt-2 flex items-center justify-between text-xs text-on-surface-variant border-t border-outline-variant/30">
                 <span>
-                  Showing {filteredItems.length} of {menuItems.length} dishes in Sultan&apos;s Heritage catalog
+                  Showing {filteredItems.length} of {menuItems.length} dishes in The Maple &amp; Vine kitchen menu
                 </span>
                 <button
                   type="button"

@@ -67,7 +67,7 @@ export default function LocationSection({
             type="text"
             value={streetAddress}
             onChange={(e) => onStreetAddressChange(e.target.value)}
-            placeholder="e.g. House 42, Road 11, Block D"
+            placeholder="e.g. 1420 Michigan Avenue"
           />
         </div>
 
@@ -108,7 +108,7 @@ export default function LocationSection({
               type="text"
               value={phone}
               onChange={(e) => onPhoneChange(e.target.value)}
-              placeholder="+880 1711-209844"
+              placeholder="(313) 555-0142"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function LocationSection({
               type="email"
               value={managerEmail}
               onChange={(e) => onEmailChange(e.target.value)}
-              placeholder="manager@sultansheritage.com"
+              placeholder="manager@mapleandvine.com"
             />
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function LocationSection({
             <div className="relative flex flex-col items-center animate-bounce-subtle">
               <div className="px-3 py-1 rounded-md bg-primary-container text-on-primary font-label-sm text-xs font-semibold shadow-md whitespace-nowrap mb-1 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>{restaurantName || "Sultan's Heritage Kitchen"}</span>
+                <span>{restaurantName || "The Maple & Vine"}</span>
               </div>
               <span
                 className="material-symbols-outlined text-3xl text-secondary drop-shadow-md"

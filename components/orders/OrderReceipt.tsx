@@ -43,7 +43,7 @@ export default function OrderReceipt({ order }: OrderReceiptProps) {
       <div className="flex flex-col gap-space-xs bg-surface-container rounded-lg p-space-md border border-outline-variant/30">
         <div className="flex justify-between items-center font-body-sm text-body-sm text-on-surface-variant">
           <span>Item Subtotal</span>
-          <span className="font-medium text-on-surface">৳{order.subtotal.toLocaleString()}</span>
+          <span className="font-medium text-on-surface">${order.subtotal.toLocaleString()}</span>
         </div>
 
         {order.discount > 0 && (
@@ -52,7 +52,7 @@ export default function OrderReceipt({ order }: OrderReceiptProps) {
               <span className="material-symbols-outlined text-sm">loyalty</span>
               Promo Code ({order.appliedCoupon || "FIRSTDINE"})
             </span>
-            <span className="font-semibold">-৳{order.discount.toLocaleString()}</span>
+            <span className="font-semibold">-${order.discount.toLocaleString()}</span>
           </div>
         )}
 
@@ -65,14 +65,14 @@ export default function OrderReceipt({ order }: OrderReceiptProps) {
               : "Table Reservation Service"}
           </span>
           <span className="font-medium text-on-surface">
-            {order.deliveryFee > 0 ? `৳${order.deliveryFee.toLocaleString()}` : "৳0 (Free)"}
+            {order.deliveryFee > 0 ? `$${order.deliveryFee.toLocaleString()}` : "$0 (Free)"}
           </span>
         </div>
 
         <div className="flex justify-between items-center font-body-sm text-body-sm text-on-surface-variant">
-          <span>Eco Thermal Packaging &amp; Gov VAT (5%)</span>
+          <span>Eco Thermal Packaging &amp; State Sales Tax (6%)</span>
           <span className="font-medium text-on-surface">
-            ৳{(order.packagingFee + order.tax).toLocaleString()}
+            ${(order.packagingFee + order.tax).toLocaleString()}
           </span>
         </div>
 
@@ -82,11 +82,11 @@ export default function OrderReceipt({ order }: OrderReceiptProps) {
               {order.paymentMethod === "cod" ? "Total Payable" : "Total Paid"}
             </span>
             <span className="font-body-sm text-[12px] text-on-surface-variant">
-              Includes all taxes, thermal packaging &amp; service
+              Includes all taxes, packaging &amp; service
             </span>
           </div>
           <span className="font-headline-lg text-2xl sm:text-3xl text-primary font-display font-medium">
-            ৳{order.total.toLocaleString()}
+            ${order.total.toLocaleString()}
           </span>
         </div>
       </div>

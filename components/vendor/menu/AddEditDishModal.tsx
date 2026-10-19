@@ -147,7 +147,7 @@ export default function AddEditDishModal({
 
     const numericPrice = parseFloat(price);
     if (isNaN(numericPrice) || numericPrice <= 0) {
-      newErrors.price = "Valid price in ৳ (greater than 0) is required.";
+      newErrors.price = "Valid price in $ (greater than 0) is required.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -168,13 +168,13 @@ export default function AddEditDishModal({
       category,
       price: numericPrice,
       prepTime: prepTime.trim() || "20 mins",
-      description: description.trim() || "Authentic freshly prepared Bangladeshi specialty.",
+      description: description.trim() || "Authentic freshly prepared specialty.",
       image: imageUrl || DEFAULT_IMAGE,
       imageFileName,
       imageFileSize,
       isAvailable,
       badge: dietary.chefRecommended ? "Chef Signature" : undefined,
-      tags: tags.length > 0 ? tags : ["Halal"],
+      tags: tags.length > 0 ? tags : ["Chef Special"],
       dietary,
     };
 
@@ -196,7 +196,7 @@ export default function AddEditDishModal({
                 {editingItem ? "Edit Menu Dish" : "Add New Dish to Menu"}
               </h2>
               <span className="font-body-sm text-xs text-on-surface-variant">
-                Sultan&apos;s Heritage Kitchen • Real-time Sync
+                The Maple &amp; Vine Kitchen • Real-time Sync
               </span>
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function AddEditDishModal({
                 setName(e.target.value);
                 if (errors.name) setErrors((p) => ({ ...p, name: "" }));
               }}
-              placeholder="e.g. Traditional Shahi Morog Polao"
+              placeholder="e.g. Pan-Seared Duck Breast"
               className={`w-full px-space-md py-2.5 rounded-lg bg-surface-container font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest transition-colors shadow-inner border ${
                 errors.name ? "border-error" : "border-outline-variant/40"
               }`}
@@ -259,23 +259,23 @@ export default function AddEditDishModal({
             <div className="grid grid-cols-2 gap-space-sm">
               <div className="space-y-1.5">
                 <label className="block font-label-md text-label-md text-on-surface font-semibold">
-                  Price in ৳ <span className="text-secondary">*</span>
+                  Price in $ <span className="text-secondary">*</span>
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 font-label-md text-on-surface-variant font-semibold">
-                    ৳
+                    $
                   </span>
                   <input
                     type="number"
                     min="1"
-                    step="10"
+                    step="1"
                     required
                     value={price}
                     onChange={(e) => {
                       setPrice(e.target.value);
                       if (errors.price) setErrors((p) => ({ ...p, price: "" }));
                     }}
-                    placeholder="590"
+                    placeholder="34"
                     className={`w-full pl-7 pr-3 py-2.5 rounded-lg bg-surface-container font-body-md text-body-md text-on-surface focus:outline-none focus:bg-surface-container-lowest shadow-inner border ${
                       errors.price ? "border-error" : "border-outline-variant/40"
                     }`}

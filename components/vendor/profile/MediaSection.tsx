@@ -110,7 +110,7 @@ export default function MediaSection({
                 Main Storefront Banner
               </span>
               <p className="font-label-md text-label-md font-semibold mt-1 drop-shadow-sm text-white">
-                {coverSubtitle || "Evening Dining Room Setting (Banani Main Hall)"}
+                {coverSubtitle || "Evening Dining Room Setting (Main Dining Room)"}
               </p>
             </div>
             <div className="flex items-center gap-2">

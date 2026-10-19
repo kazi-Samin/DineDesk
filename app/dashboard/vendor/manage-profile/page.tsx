@@ -337,7 +337,7 @@ export default function RestaurantProfilePage() {
   // Reset demo
   const handleResetDemo = () => {
     if (
-      confirm("Reset restaurant profile to default Sultan's Heritage demo data?")
+      confirm("Reset restaurant profile to default The Maple & Vine demo data?")
     ) {
       const reset = resetRestaurantProfile();
       setProfile(reset);
@@ -345,7 +345,7 @@ export default function RestaurantProfilePage() {
       setNameError("");
       showToast(
         "Profile Reset",
-        "Restored default Sultan's Heritage Kitchen configuration."
+        "Restored default The Maple & Vine configuration."
       );
     }
   };

@@ -30,7 +30,7 @@ export default function RevenueBarChart({ data }: RevenueBarChartProps) {
             Monthly Gross Volume (2025)
           </h2>
           <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-            Aggregated dining, delivery, and culinary table bookings across Dhaka outlets
+            Aggregated dining, delivery, and culinary table bookings across Detroit venues
           </p>
         </div>
 
@@ -62,7 +62,7 @@ export default function RevenueBarChart({ data }: RevenueBarChartProps) {
                 {activeItem.fullMonth}
               </span>
               <span className="text-xs font-bold text-on-primary font-mono">
-                ৳{(activeItem.revenue / 1000000).toFixed(2)}M • {activeItem.orders.toLocaleString()} orders
+                ${(activeItem.revenue / 1000000).toFixed(2)}M • {activeItem.orders.toLocaleString()} orders
               </span>
             </div>
             <div className="w-2 h-2 bg-inverse-surface rotate-45 mx-auto -mt-1" />

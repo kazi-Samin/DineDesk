@@ -17,7 +17,7 @@ export default function DispatchHelpCard() {
         href="#contact-support"
         onClick={(e) => {
           e.preventDefault();
-          alert("Account Specialist hotline: +880 1800-DINEDESK (Mon-Fri 9AM-8PM)");
+          alert("Account Specialist hotline: (313) 555-0199 (Mon-Fri 9AM-8PM EST)");
         }}
       >
         <span>Contact Account Specialist</span>

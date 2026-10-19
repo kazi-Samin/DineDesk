@@ -29,7 +29,7 @@ export default function DeleteDishDialog({
               Remove Dish from Menu?
             </h3>
             <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-              Are you sure you want to permanently remove <strong>&ldquo;{item.name}&rdquo;</strong> from Sultan&apos;s Heritage menu? This will remove it from all live dining listings.
+              Are you sure you want to permanently remove <strong>&ldquo;{item.name}&rdquo;</strong> from The Maple &amp; Vine menu? This will remove it from all live dining listings.
             </p>
           </div>
         </div>
@@ -46,7 +46,7 @@ export default function DeleteDishDialog({
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-on-surface truncate">{item.name}</p>
             <p className="text-[11px] text-on-surface-variant">
-              {item.category} • ৳{item.price}
+              {item.category} • ${item.price}
             </p>
           </div>
         </div>

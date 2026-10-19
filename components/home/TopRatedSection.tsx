@@ -46,10 +46,10 @@ export default function TopRatedSection() {
               <div className="flex flex-col gap-space-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Gulshan 2 · Park Road
+                    Downtown Detroit · Woodward Ave
                   </span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    ৳৳৳৳ · Fine Dining
+                    $$$$ · Fine Dining
                   </span>
                 </div>
                 <Link href="/explore?q=Izumi">
@@ -58,7 +58,7 @@ export default function TopRatedSection() {
                   </h3>
                 </Link>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Master Chef Hiroshi’s seasonal omakase, binchotan charcoal robatayaki skewers, and Dhaka’s cleanest hamachi nigiri imports.
+                  Master Chef Hiroshi’s seasonal omakase, binchotan charcoal robatayaki skewers, and Detroit’s freshest hamachi nigiri imports.
                 </p>
                 {/* Star breakdown bar */}
                 <div className="bg-surface-container p-3.5 rounded-lg border border-outline-variant/60 my-space-xs flex items-center gap-space-md">
@@ -121,19 +121,19 @@ export default function TopRatedSection() {
               <div className="flex flex-col gap-space-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Dhanmondi 2
+                    Midtown Detroit
                   </span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    ৳৳ · Authentic Bengali
+                    $$ · Prime Smokehouse
                   </span>
                 </div>
-                <Link href="/explore?q=Star+Kabab">
+                <Link href="/explore?q=Midtown+Grille">
                   <h3 className="font-headline-lg text-headline-lg text-primary hover:text-secondary transition-colors cursor-pointer">
-                    Star Kabab &amp; Heritage Biryani
+                    Midtown Grille &amp; Smokehouse
                   </h3>
                 </Link>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Uncompromising century-old recipes: spiced mutton leg roast, fall-off-the-bone khasi kacchi, and freshly spun lassi jugs.
+                  Uncompromising post-oak smoked brisket, tender baby back ribs, and fresh cast-iron skillet cornbread.
                 </p>
                 <div className="bg-surface-container p-3.5 rounded-lg border border-outline-variant/60 my-space-xs flex items-center gap-space-md">
                   <div className="flex items-baseline gap-1">
@@ -197,10 +197,10 @@ export default function TopRatedSection() {
               <div className="flex flex-col gap-space-sm">
                 <div className="flex items-center justify-between">
                   <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Banani Rd 10
+                    Corktown · Michigan Ave
                   </span>
                   <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    ৳৳৳ · Mediterranean Bistro
+                    $$$ · Mediterranean Bistro
                   </span>
                 </div>
                 <h3 className="font-headline-lg text-headline-lg text-primary">

@@ -142,7 +142,7 @@ export default function CartDrawer() {
                         </button>
                       </div>
                       <span className="font-label-md text-label-md font-bold text-on-surface tabular-nums">
-                        ৳{(item.price * item.quantity).toLocaleString()}
+                        ${(item.price * item.quantity).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -157,10 +157,10 @@ export default function CartDrawer() {
                   </span>
                   <div>
                     <p className="font-label-sm text-label-sm font-semibold text-on-surface">
-                      Firni &amp; Zarda Duo
+                      Artisanal Honey Panna Cotta
                     </p>
                     <p className="text-[11px] text-on-surface-variant">
-                      +৳140 (Special dessert pairing)
+                      +$8 (Special dessert pairing)
                     </p>
                   </div>
                 </div>
@@ -182,24 +182,24 @@ export default function CartDrawer() {
             <div className="space-y-1.5 font-body-sm text-body-sm pb-space-md">
               <div className="flex items-center justify-between text-on-surface-variant">
                 <span>Subtotal</span>
-                <span className="tabular-nums">৳{cart.subtotal.toLocaleString()}</span>
+                <span className="tabular-nums">${cart.subtotal.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-on-surface-variant">
                 <span>Delivery Fee</span>
-                <span className="tabular-nums">৳{cart.deliveryFee.toLocaleString()}</span>
+                <span className="tabular-nums">${cart.deliveryFee.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-on-surface-variant">
                 <span>Restaurant Packaging</span>
-                <span className="tabular-nums">৳{cart.packagingFee.toLocaleString()}</span>
+                <span className="tabular-nums">${cart.packagingFee.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between text-on-surface-variant">
-                <span>VAT / Govt Tax (5%)</span>
-                <span className="tabular-nums">৳{cart.tax.toLocaleString()}</span>
+                <span>State &amp; Local Tax (6%)</span>
+                <span className="tabular-nums">${cart.tax.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between pt-space-xs font-headline-sm text-headline-sm text-on-surface font-semibold">
                 <span>Total</span>
                 <span className="text-primary-container tabular-nums">
-                  ৳{(cart.subtotal + cart.deliveryFee + cart.packagingFee + cart.tax).toLocaleString()}
+                  ${(cart.subtotal + cart.deliveryFee + cart.packagingFee + cart.tax).toLocaleString()}
                 </span>
               </div>
             </div>

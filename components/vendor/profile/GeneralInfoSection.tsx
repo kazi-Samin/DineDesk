@@ -70,7 +70,7 @@ export default function GeneralInfoSection({
             type="text"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="e.g. Sultan's Heritage Kitchen"
+            placeholder="e.g. The Maple & Vine"
             maxLength={60}
           />
           {nameError ? (
@@ -95,7 +95,7 @@ export default function GeneralInfoSection({
             type="text"
             value={tagline}
             onChange={(e) => onTaglineChange(e.target.value)}
-            placeholder="e.g. Authentic Mughlai, Old Dhaka Kacchi & Dum Biryanis since 1984"
+            placeholder="e.g. Contemporary Michigan dining, wood-fired hearth & artisanal spirits"
             maxLength={120}
           />
           <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
@@ -157,7 +157,7 @@ export default function GeneralInfoSection({
                     : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
                 }`}
               >
-                ৳ Economy
+                $ Economy
               </button>
               <button
                 type="button"
@@ -168,7 +168,7 @@ export default function GeneralInfoSection({
                     : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
                 }`}
               >
-                ৳৳ Moderate
+                $$ Moderate
               </button>
               <button
                 type="button"
@@ -179,14 +179,14 @@ export default function GeneralInfoSection({
                     : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
                 }`}
               >
-                ৳৳৳ Fine Dining
+                $$$ Fine Dining
               </button>
             </div>
           </div>
 
           <div>
             <label className="block font-label-md text-label-md text-on-surface mb-1.5 font-semibold">
-              BSTI Hygiene &amp; Trade License
+              Michigan Health Dept &amp; Food License
             </label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -195,7 +195,7 @@ export default function GeneralInfoSection({
                   type="text"
                   value={licenseReference}
                   onChange={(e) => onLicenseChange(e.target.value)}
-                  placeholder="e.g. BSTI-DHK-2024-98421"
+                  placeholder="e.g. MI-DET-2024-98421"
                 />
                 <span className="material-symbols-outlined absolute right-2.5 top-2.5 text-base text-emerald-700 pointer-events-none">
                   verified

@@ -30,7 +30,7 @@ export default function TopCuisinesRanking({
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-on-surface truncate">{c.name}</span>
                 <span className="font-mono font-semibold text-primary">
-                  ৳{(c.revenue / 1000000).toFixed(2)}M ({c.orderSharePct}%)
+                  ${(c.revenue / 1000000).toFixed(2)}M ({c.orderSharePct}%)
                 </span>
               </div>
 
@@ -92,7 +92,7 @@ export default function TopCuisinesRanking({
                   <td className="py-3 px-3">
                     <div className="flex flex-col">
                       <span className="font-mono font-bold text-primary">
-                        ৳{(v.revenue / 1000000).toFixed(2)}M
+                        ${(v.revenue / 1000000).toFixed(2)}M
                       </span>
                       <span className="text-[10px] text-on-surface-variant">
                         {v.orders.toLocaleString()} orders

@@ -130,7 +130,7 @@ export default function CustomerHeader({
                       Kitchen Preparing Order
                     </span>
                     <span className="font-body-sm text-[11px] text-on-surface-variant mt-0.5 block">
-                      Sultan&apos;s Heritage Kitchen has confirmed your order #DD-23698.
+                      The Maple &amp; Vine has confirmed your order #DD-23698.
                     </span>
                   </div>
                 </div>

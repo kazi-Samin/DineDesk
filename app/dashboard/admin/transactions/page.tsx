@@ -8,10 +8,10 @@ export default function AdminTransactionsPage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_admin_sidebar");
 
   const transactions = [
-    { id: "TXN-84920", restaurant: "Sultan's Heritage Kitchen", amount: "৳2,450.00", method: "bKash Digital", type: "Food Delivery", date: "Today, 18:24", status: "Settled" },
-    { id: "TXN-84919", restaurant: "Gulshan Bistro Heritage", amount: "৳4,800.00", method: "Visa •••• 4092", type: "VIP Table Booking", date: "Today, 17:50", status: "Settled" },
-    { id: "TXN-84918", restaurant: "The Brass Spoon Banani", amount: "৳1,890.00", method: "Cash on Delivery", type: "Food Delivery", date: "Today, 17:15", status: "In Transit" },
-    { id: "TXN-84917", restaurant: "SmashCraft Burger Studio", amount: "৳1,250.00", method: "Nagad Gateway", type: "Express Pickup", date: "Today, 16:40", status: "Settled" },
+    { id: "TXN-84920", restaurant: "The Maple & Vine", amount: "$99.00", method: "Visa •••• 4242", type: "Food Delivery", date: "Today, 18:24", status: "Settled" },
+    { id: "TXN-84919", restaurant: "Midtown Bistro & Grill", amount: "$180.00", method: "Visa •••• 4092", type: "VIP Table Booking", date: "Today, 17:50", status: "Settled" },
+    { id: "TXN-84918", restaurant: "The Brass Spoon", amount: "$75.50", method: "Mastercard •••• 1088", type: "Food Delivery", date: "Today, 17:15", status: "In Transit" },
+    { id: "TXN-84917", restaurant: "SmashCraft Burger Studio", amount: "$44.00", method: "Apple Pay", type: "Express Pickup", date: "Today, 16:40", status: "Settled" },
   ];
 
   return (

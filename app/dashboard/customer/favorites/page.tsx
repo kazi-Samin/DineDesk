@@ -108,7 +108,7 @@ export default function CustomerFavoritesPage() {
       image: dish.image,
       imageAlt: dish.imageAlt,
     });
-    showToast(`Added ${dish.name} (৳${dish.price}) to Cart`);
+    showToast(`Added ${dish.name} ($${dish.price}) to Cart`);
 
     setTimeout(() => {
       setAddingDishId(null);
@@ -334,10 +334,12 @@ export default function CustomerFavoritesPage() {
                       onChange={(e) => setCuisineFilter(e.target.value as CuisineFilterType)}
                     >
                       <option value="all">All Cuisines</option>
-                      <option value="mughlai">Mughlai &amp; Kacchi</option>
+                      <option value="american">Modern American &amp; Hearth</option>
+                      <option value="smokehouse">Wood-Fired Smokehouse</option>
                       <option value="japanese">Japanese Robata</option>
-                      <option value="artisan">Artisan Burgers</option>
-                      <option value="dhakaiya">Old Dacca Heritage</option>
+                      <option value="indian">Modern Indian</option>
+                      <option value="artisan">Artisan Bakery &amp; Grill</option>
+                      <option value="mughlai">Mughlai Specialities</option>
                     </select>
                     <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-lg">
                       expand_more
@@ -355,9 +357,9 @@ export default function CustomerFavoritesPage() {
                       onChange={(e) => setAreaFilter(e.target.value as AreaFilterType)}
                     >
                       <option value="all">All Neighborhoods</option>
-                      <option value="banani">Banani &amp; Banani 11</option>
-                      <option value="gulshan">Gulshan 2</option>
-                      <option value="old-dhaka">Old Dhaka</option>
+                      <option value="corktown">Corktown &amp; Michigan Ave</option>
+                      <option value="midtown">Midtown &amp; Cultural Center</option>
+                      <option value="downtown">Downtown Detroit</option>
                     </select>
                     <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-lg">
                       location_on
@@ -558,7 +560,7 @@ export default function CustomerFavoritesPage() {
                                 </h3>
                               </div>
                               <div className="text-secondary font-headline-sm text-base mb-1.5 font-bold">
-                                ৳{dish.price}
+                                ${dish.price}
                               </div>
                               <p className="font-body-sm text-xs text-on-surface-variant line-clamp-2 leading-relaxed">
                                 {dish.description}

@@ -380,7 +380,7 @@ export default function CustomerOrdersPage() {
                         <div className="text-left md:text-right">
                           <span className="text-[11px] text-on-surface-variant block">Total Bill</span>
                           <span className="font-headline-sm text-base font-bold text-primary">
-                            ৳{order.total.toLocaleString()}
+                            ${order.total.toLocaleString()}
                           </span>
                         </div>
 

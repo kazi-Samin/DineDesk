@@ -420,11 +420,11 @@ export function createWalkInReservation(
 
   const newReservation: VendorReservation = {
     id: newId,
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
     guestName: input.guestName,
     initials,
-    phone: input.phone || "+880 1700-000000",
+    phone: input.phone || "(313) 555-0100",
     guestType: "Standard Diner",
     guestSubtitle: "Manual Walk-in",
     reservationDate: input.reservationDate,
