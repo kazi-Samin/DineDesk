@@ -210,9 +210,9 @@ export default function CustomerDashboardOverviewPage() {
                 type="button"
                 onClick={() =>
                   openReservationModal({
-                    id: "sultans-heritage",
-                    name: "Sultan's Heritage Kitchen",
-                    neighborhood: "Banani, Dhaka",
+                    id: "the-maple-and-vine",
+                    name: "The Maple & Vine",
+                    neighborhood: "Corktown, Detroit",
                   })
                 }
                 className="p-space-md bg-surface-container-lowest rounded-xl border border-outline-variant shadow-xs hover:border-primary transition-all flex items-center gap-3 group text-left cursor-pointer"
@@ -222,7 +222,7 @@ export default function CustomerDashboardOverviewPage() {
                 </div>
                 <div>
                   <h3 className="font-headline-sm text-sm font-semibold text-primary">Reserve Table</h3>
-                  <p className="font-body-sm text-xs text-on-surface-variant">Book ahead in Dhaka</p>
+                  <p className="font-body-sm text-xs text-on-surface-variant">Book ahead in Detroit</p>
                 </div>
               </button>
 
@@ -294,7 +294,7 @@ export default function CustomerDashboardOverviewPage() {
                         <span>Estimated Arrival: <strong className="text-on-surface">25–35 mins</strong></span>
                       </div>
                       <span className="font-bold text-primary text-sm">
-                        ৳{activeOrder.total.toLocaleString()}
+                        ${activeOrder.total.toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -402,9 +402,9 @@ export default function CustomerDashboardOverviewPage() {
                     type="button"
                     onClick={() =>
                       openReservationModal({
-                        id: "sultans-heritage",
-                        name: "Sultan's Heritage Kitchen",
-                        neighborhood: "Banani, Dhaka",
+                        id: "the-maple-and-vine",
+                        name: "The Maple & Vine",
+                        neighborhood: "Corktown, Detroit",
                       })
                     }
                     className="mt-2 px-4 py-2 bg-primary-container text-on-primary rounded-lg text-xs font-semibold hover:bg-primary transition-colors cursor-pointer"
@@ -459,7 +459,7 @@ export default function CustomerDashboardOverviewPage() {
 
                         <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-outline-variant/30">
                           <span className="font-bold text-primary text-sm">
-                            ৳{ord.total.toLocaleString()}
+                            ${ord.total.toLocaleString()}
                           </span>
                           <Link
                             href={`/order-confirmation/${ord.orderId}`}

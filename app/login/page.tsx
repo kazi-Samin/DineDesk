@@ -1,5 +1,5 @@
-import SignInPage from "../sign-in/page";
+import AuthView from "@/components/auth/AuthView";
 
 export default function LoginPage() {
-  return <SignInPage />;
+  return <AuthView initialMode="signin" />;
 }

@@ -22,9 +22,9 @@ const ReservationContext = createContext<ReservationContextType | undefined>(und
 export function ReservationProvider({ children }: { children: React.ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [restaurantInfo, setRestaurantInfo] = useState({
-    id: "sultans-heritage",
-    name: "Sultan's Heritage Kitchen",
-    neighborhood: "Banani, Dhaka",
+    id: "the-maple-and-vine",
+    name: "The Maple & Vine",
+    neighborhood: "Corktown, Detroit, MI",
   });
   const [lastReservation, setLastReservation] = useState<ReservationConfirmation | null>(null);
 

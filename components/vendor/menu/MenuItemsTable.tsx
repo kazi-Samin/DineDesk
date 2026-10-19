@@ -85,7 +85,7 @@ export default function MenuItemsTable({
                 Category
               </th>
               <th className="py-3.5 px-space-md font-semibold" scope="col">
-                Price (BDT)
+                Price ($)
               </th>
               <th className="py-3.5 px-space-md font-semibold" scope="col">
                 Daily Sales
@@ -184,7 +184,7 @@ export default function MenuItemsTable({
                         isOut ? "text-on-surface-variant" : "text-primary"
                       }`}
                     >
-                      ৳{item.price.toLocaleString()}
+                      ${item.price.toLocaleString()}
                     </span>
                   </td>
 

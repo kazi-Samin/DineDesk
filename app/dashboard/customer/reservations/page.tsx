@@ -327,9 +327,9 @@ export default function CustomerReservationsPage() {
                     type="button"
                     onClick={() =>
                       openReservationModal({
-                        id: "sultans-heritage",
-                        name: "Sultan's Heritage Kitchen",
-                        neighborhood: "Banani, Dhaka",
+                        id: "the-maple-and-vine",
+                        name: "The Maple & Vine",
+                        neighborhood: "Corktown, Detroit",
                       })
                     }
                     className="inline-flex items-center gap-space-xs px-space-md py-2.5 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-xs font-semibold cursor-pointer"
@@ -482,15 +482,15 @@ export default function CustomerReservationsPage() {
                     No Upcoming Reservations
                   </h3>
                   <p className="font-body-sm text-xs text-on-surface-variant max-w-md">
-                    You currently have no upcoming table holds. Reserve a table at premier culinary houses across Dhaka to experience curated seasonal seating.
+                    You currently have no upcoming table holds. Reserve a table at premier culinary houses across Detroit to experience curated seasonal seating.
                   </p>
                   <button
                     type="button"
                     onClick={() =>
                       openReservationModal({
-                        id: "sultans-heritage",
-                        name: "Sultan's Heritage Kitchen",
-                        neighborhood: "Banani, Dhaka",
+                        id: "the-maple-and-vine",
+                        name: "The Maple & Vine",
+                        neighborhood: "Corktown, Detroit",
                       })
                     }
                     className="mt-2 px-space-lg py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-primary transition-colors shadow-xs"

@@ -245,7 +245,7 @@ export default function OrderDetailDrawer({
               </div>
             </div>
             <span className="font-label-md text-[13px] font-semibold text-primary whitespace-nowrap ml-2">
-              ৳ {(item.price * item.quantity).toLocaleString()}
+              $ {(item.price * item.quantity).toLocaleString()}
             </span>
           </div>
         ))}
@@ -254,34 +254,34 @@ export default function OrderDetailDrawer({
         <div className="flex flex-col gap-1 pt-space-xs mt-space-xs bg-surface-container-low p-space-sm rounded-lg text-on-surface-variant font-body-sm text-[12px] border border-outline-variant/30">
           <div className="flex justify-between">
             <span>Item Subtotal</span>
-            <span className="text-on-surface font-medium">৳ {order.subtotal.toLocaleString()}</span>
+            <span className="text-on-surface font-medium">$ {order.subtotal.toLocaleString()}</span>
           </div>
           {order.discount > 0 && (
             <div className="flex justify-between text-secondary">
               <span>Promo Code Discount ({order.appliedCoupon || "COUPON"})</span>
-              <span className="font-semibold">-৳ {order.discount.toLocaleString()}</span>
+              <span className="font-semibold">-$ {order.discount.toLocaleString()}</span>
             </div>
           )}
           {order.deliveryFee > 0 && (
             <div className="flex justify-between">
               <span>Delivery Dispatch Fee</span>
-              <span className="text-on-surface font-medium">৳ {order.deliveryFee.toLocaleString()}</span>
+              <span className="text-on-surface font-medium">$ {order.deliveryFee.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span>Packaging &amp; Gov VAT (5%)</span>
+            <span>Packaging &amp; State Sales Tax (6%)</span>
             <span className="text-on-surface font-medium">
-              ৳ {(order.packagingFee + order.tax).toLocaleString()}
+              $ {(order.packagingFee + order.tax).toLocaleString()}
             </span>
           </div>
           <div className="flex justify-between pt-1 border-t border-outline-variant/40 font-label-lg text-label-lg font-bold text-primary">
             <span>Total Bill</span>
-            <span className="font-display text-headline-sm">৳ {order.total.toLocaleString()}</span>
+            <span className="font-display text-headline-sm">$ {order.total.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-[11px] pt-0.5 text-on-surface-variant">
             <span>Payment Method</span>
             <span className="font-semibold uppercase text-primary">
-              {order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod} (
+              {order.paymentMethod === "cod" ? "Pay at Table / Cash" : order.paymentMethod} (
               {order.paymentStatus.replace(/_/g, " ")})
             </span>
           </div>
@@ -322,7 +322,7 @@ export default function OrderDetailDrawer({
           <button
             className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-[11px] font-medium transition-all"
             type="button"
-            onClick={() => alert(`Customer delivery pin: ${order.address?.street || "Banani, Dhaka"}`)}
+            onClick={() => alert(`Customer delivery pin: ${order.address?.street || "Michigan Avenue, Detroit, MI"}`)}
           >
             <span className="material-symbols-outlined text-sm text-secondary">share_location</span>
             View Location

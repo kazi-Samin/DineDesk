@@ -128,16 +128,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Calculations
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = items.length > 0 ? 60 : 0;
-  const packagingFee = items.length > 0 ? 30 : 0;
-  const tax = items.length > 0 ? Math.round(subtotal * 0.05) : 0;
-  const discount = appliedCoupon && items.length > 0 ? Math.min(200, subtotal) : 0;
+  const deliveryFee = items.length > 0 ? 5 : 0;
+  const packagingFee = items.length > 0 ? 3 : 0;
+  const tax = items.length > 0 ? Math.round(subtotal * 0.06) : 0;
+  const discount = appliedCoupon && items.length > 0 ? Math.min(10, subtotal) : 0;
   const total = Math.max(0, subtotal + deliveryFee + packagingFee + tax - discount);
   const totalItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const cart: CartState = {
-    restaurantId: "sultans-heritage",
-    restaurantName: "Sultan's Heritage Kitchen",
+    restaurantId: "the-maple-and-vine",
+    restaurantName: "The Maple & Vine",
     items,
     subtotal,
     deliveryFee,

@@ -35,13 +35,13 @@ export default function OrderItemsSummary({ order }: OrderItemsSummaryProps) {
                     </span>
                   )}
                   <span className="text-[11px] text-outline mt-0.5">
-                    ৳{item.price.toLocaleString()} each
+                    ${item.price.toLocaleString()} each
                   </span>
                 </div>
               </div>
 
               <span className="font-label-lg text-label-lg font-semibold text-primary whitespace-nowrap ml-2">
-                ৳{lineTotal.toLocaleString()}
+                ${lineTotal.toLocaleString()}
               </span>
             </div>
           );

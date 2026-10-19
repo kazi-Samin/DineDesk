@@ -280,11 +280,11 @@ export function RecalibratePinModal({
   if (!isOpen) return null;
 
   const presets = [
-    { label: "Banani 11", lat: 23.7937, lng: 90.4066 },
-    { label: "Gulshan 1", lat: 23.7781, lng: 90.4172 },
-    { label: "Gulshan 2 Circle", lat: 23.7925, lng: 90.4162 },
-    { label: "Dhanmondi 27", lat: 23.7533, lng: 90.3753 },
-    { label: "Uttara Sector 3", lat: 23.8687, lng: 90.3986 },
+    { label: "Downtown Detroit", lat: 42.3314, lng: -83.0458 },
+    { label: "Corktown (Michigan Ave)", lat: 42.3318, lng: -83.0682 },
+    { label: "Midtown Detroit", lat: 42.3556, lng: -83.0645 },
+    { label: "Riverfront Detroit", lat: 42.3278, lng: -83.0375 },
+    { label: "Eastern Market", lat: 42.3486, lng: -83.0396 },
   ];
 
   return (
@@ -309,7 +309,7 @@ export function RecalibratePinModal({
         <div className="p-space-lg space-y-space-md">
           <div>
             <span className="block font-label-sm text-xs text-on-surface-variant mb-2">
-              Dhaka Grid Presets:
+              Detroit Metro Area Grid Presets:
             </span>
             <div className="flex flex-wrap gap-2">
               {presets.map((p) => (

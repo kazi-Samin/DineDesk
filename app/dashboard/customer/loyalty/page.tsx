@@ -26,28 +26,28 @@ interface RewardPerk {
 const AVAILABLE_PERKS: RewardPerk[] = [
   {
     id: "perk-credit-500",
-    title: "৳500 DineDesk Dining Credit",
+    title: "$25 DineDesk Dining Credit",
     restaurant: "Applicable on any partner restaurant",
     pointsCost: 800,
     description: "Instant discount voucher applied straight to your order checkout or table bill.",
     category: "credit",
     icon: "account_balance_wallet",
-    code: "GOLD500CREDIT",
+    code: "GOLD25CREDIT",
   },
   {
-    id: "perk-dessert-sultan",
-    title: "Complimentary Shahi Firni or Kulfi",
-    restaurant: "Sultan's Heritage Kitchen",
+    id: "perk-dessert-maple",
+    title: "Complimentary Artisanal Dessert",
+    restaurant: "The Maple & Vine",
     pointsCost: 500,
-    description: "One artisanal traditional clay pot dessert with your next dine-in seating.",
+    description: "One artisanal seasonal dessert pairing with your next dine-in seating.",
     category: "dining",
     icon: "icecream",
-    code: "SULTAN-SWEET-DINE",
+    code: "MAPLE-SWEET-DINE",
   },
   {
     id: "perk-priority-table",
     title: "VIP Priority Weekend Seating Pass",
-    restaurant: "Gulshan & Banani Premier Venues",
+    restaurant: "Corktown & Downtown Premier Venues",
     pointsCost: 400,
     description: "Skip the waiting queue and secure immediate table hold during peak weekend dinner slots.",
     category: "priority",
@@ -56,13 +56,13 @@ const AVAILABLE_PERKS: RewardPerk[] = [
   },
   {
     id: "perk-delivery-free",
-    title: "৳250 Off Next Delivery Order",
+    title: "$15 Off Next Delivery Order",
     restaurant: "Valid across all delivery kitchens",
     pointsCost: 450,
-    description: "Applies automatically at cart checkout for any order over ৳800.",
+    description: "Applies automatically at cart checkout for any order over $40.",
     category: "delivery",
     icon: "two_wheeler",
-    code: "DELIVER250SAVER",
+    code: "DELIVER15SAVER",
   },
 ];
 
@@ -410,10 +410,10 @@ export default function CustomerLoyaltyPage() {
                       </span>
                     </div>
                     <h3 className="font-headline-sm text-sm font-bold text-primary">
-                      Give ৳200, Get 500 Pts
+                      Give $15, Get 500 Pts
                     </h3>
                     <p className="font-body-sm text-xs text-on-surface-variant leading-relaxed">
-                      Share your unique referral code with friends in Dhaka. When they make their first booking or meal order, both of you earn dining rewards!
+                      Share your unique referral code with friends. When they make their first booking or meal order, both of you earn dining rewards!
                     </p>
                   </div>
 

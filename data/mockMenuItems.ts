@@ -4,7 +4,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 1. Special Mutton Kacchi Biryani (Full)
   {
     id: "item-1",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Special Mutton Kacchi Biryani (Full)",
     description:
       "Slow-cooked tender baby mutton layers with pure ghee basmati, saffron, and shahi spices.",
@@ -34,7 +34,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 2. Shahi Reshmi Kebab (4 pcs)
   {
     id: "item-2",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Shahi Reshmi Kebab (4 pcs)",
     description:
       "Velvety chicken mince marinated with clotted malai, crushed cashew paste, and white pepper.",
@@ -64,7 +64,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 3. Old Dhaka Beef Tehari
   {
     id: "item-3",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Old Dhaka Beef Tehari",
     description:
       "Aromatic chinigura rice infused with pure cold-pressed mustard oil, green chilies, and soft beef chunks.",
@@ -93,7 +93,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 4. Chicken Roast with Saffron Polao
   {
     id: "item-4",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Chicken Roast with Saffron Polao",
     description:
       "Classic Biye Bari style whole quarter leg braised in yogurt, poppy seeds, and golden fried onions.",
@@ -122,7 +122,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 5. Dhakai Paneer Tikka
   {
     id: "item-5",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Dhakai Paneer Tikka",
     description:
       "Fresh artisanal cottage cheese cubes roasted over live charcoal with bell peppers and roasted cumin.",
@@ -151,7 +151,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 6. Traditional Mishti Doi in Clay Pot
   {
     id: "item-6",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Traditional Mishti Doi in Clay Pot",
     description:
       "Authentic Bogra-style caramelized milk fermented slowly in unglazed terracotta cups.",
@@ -180,7 +180,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 7. Shahi Borhani (500ml)
   {
     id: "item-7",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Shahi Borhani (500ml)",
     description:
       "Spiced digestive yogurt beverage infused with roasted cumin, black salt, and freshly extracted mint puree.",
@@ -209,7 +209,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 8. Mutton Galaouti with Mini Sheermal
   {
     id: "item-8",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Mutton Galaouti with Mini Sheermal",
     description:
       "Melt-in-mouth smoked lamb patties prepared with papaya tenderizer and 32 aromatic herbs.",
@@ -239,7 +239,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 9. Saffron Zafrani Pulao with Tender Mutton Korma
   {
     id: "item-9",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Saffron Zafrani Pulao with Tender Mutton Korma",
     description:
       "Fragrant long-grain aged basmati layered with tender baby goat cuts, dried prunes, saffron-infused milk, and fried golden onions.",
@@ -269,7 +269,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 10. Chittagong Beef Kala Bhuna
   {
     id: "item-10",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Chittagong Beef Kala Bhuna",
     description:
       "Slow-braised dark caramelized prime beef shoulder with roasted radhuni, fried shallots, and spicy mustard oil.",
@@ -299,7 +299,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 11. Traditional Shahi Morog Polao
   {
     id: "item-11",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Traditional Shahi Morog Polao",
     description:
       "Country rooster braised gently in mawa and ghee-steamed chinigura rice, served with boiled spiced egg.",
@@ -328,7 +328,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 12. Royal Murgh Musallam (Whole)
   {
     id: "item-12",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Royal Murgh Musallam (Whole)",
     description:
       "Whole roasted spring chicken stuffed with spiced boiled eggs and minced meat, blanketed in rich almond-saffron gravy.",
@@ -358,7 +358,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 13. Mutton Nalli Nihari with Roghani Naan
   {
     id: "item-13",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Mutton Nalli Nihari with Roghani Naan",
     description:
       "12-hour simmered mutton shank stew with bone marrow, ginger juliennes, green chilies, and fresh tandoori roghani naan.",
@@ -387,7 +387,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 14. Hilsa Paturi in Banana Leaf
   {
     id: "item-14",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Hilsa Paturi in Banana Leaf",
     description:
       "Padma River Ilish steak smothered in pungent yellow and black mustard paste with green chilies, steam-wrapped in banana leaf.",
@@ -417,7 +417,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 15. Boti Kebab Platter
   {
     id: "item-15",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Boti Kebab Platter",
     description:
       "Charcoal-skewered spiced beef cubes marinated in raw papaya, toasted coriander, and hot smoked mustard glaze.",
@@ -446,7 +446,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 16. Chicken Malai Tikka
   {
     id: "item-16",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Chicken Malai Tikka (6 pcs)",
     description:
       "Boneless chicken breast pieces marinated in strained curd, cardamom, and fresh double cream, grilled in clay oven.",
@@ -475,7 +475,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 17. Sheekh Kebab Supreme
   {
     id: "item-17",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Sheekh Kebab Supreme (3 Skewers)",
     description:
       "Minced mutton and beef blend seasoned with crushed pomegranate seeds, fresh mint, and garam masala on iron skewers.",
@@ -504,7 +504,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 18. Shahi Firni in Earthen Bowl
   {
     id: "item-18",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Shahi Firni in Earthen Bowl",
     description:
       "Slow-reduced ground aromatic chinigura rice pudding scented with kewra water, crushed green cardamom, and silver leaf.",
@@ -533,7 +533,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 19. Malpua with Kheer Dipped (2 pcs)
   {
     id: "item-19",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Malpua with Kheer Dipped (2 pcs)",
     description:
       "Crispy-edged deep fried sweet semolina pancakes soaked in saffron sugar syrup and dipped in thick creamy rabri.",
@@ -562,7 +562,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 20. Gulab Jamun with Rose Rabri
   {
     id: "item-20",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Gulab Jamun with Rose Rabri",
     description:
       "Warm khoya dumplings stuffed with pistachios and soaked in rose water syrup, served on chilled malai rabri.",
@@ -591,7 +591,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 21. Nawab's Special Falooda
   {
     id: "item-21",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Nawab's Special Falooda",
     description:
       "Layered tall glass of chilled sweet rose milk, sabja basil seeds, handmade vermicelli, malai kulfi, and crushed pistachios.",
@@ -621,7 +621,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 22. Aam Panna Cooler
   {
     id: "item-22",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Aam Panna Cooler",
     description:
       "Fire-roasted green raw mango cooler with fresh mint, rock salt, roasted cumin powder, and cracked ice.",
@@ -650,7 +650,7 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
   // 23. Royal Heritage Tasting Platter
   {
     id: "item-23",
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: "Royal Heritage Tasting Platter",
     description:
       "A majestic sampler feast: mini portions of Mutton Kacchi Biryani, Beef Tehari, Shahi Reshmi Kebab, Chicken Roast, Borhani, and Mishti Doi.",
@@ -677,23 +677,23 @@ export const SEED_MENU_ITEMS: MenuItem[] = [
     updatedAt: "2026-10-15T10:00:00Z",
   },
 
-  // 24. Sultan's 5-Course Dastarkhwan
+  // 24. Maple & Vine 5-Course Tasting Experience
   {
     id: "item-24",
-    restaurantId: "sultans-heritage",
-    name: "Sultan's 5-Course Dastarkhwan",
+    restaurantId: "the-maple-and-vine",
+    name: "Maple & Vine 5-Course Tasting Experience",
     description:
-      "Chef Kabir's bespoke 5-course imperial banquet: Starters, Kebabs, Biryani Degchi, Choice of Kala Bhuna or Nihari, and Artisanal Desserts.",
+      "Executive Chef's bespoke 5-course seasonal tasting menu: Seared Scallops, Heritage Dry-Aged Ribeye, Truffle Risotto, and Artisanal Desserts.",
     category: "Chef's Tasting Sets",
-    price: 2200,
+    price: 125,
     image:
       "https://lh3.googleusercontent.com/aida-public/AB6AXuDyqiKymR9nzVdkrrPHgdv8_jjn6jxBnHo3LBcOh-eJUshWtObIQqokugr0L1tFEGdOmjhfRaIsEr1qU6PjET4mo728H9XJHXovb1uJMiN4IEA4JULT-tio4mkCTCwTte3o58pIspxZotRL2j9ZzW6j1iaS4HpN7yBS1QQUNtYW0f36qbYOKnbZdr1D461zZ7NKahXjThM5Tdv1TD68ArZgunboTWuF5-XQQeyvy7-BrwRRABq8Bd5TGQ",
-    imageAlt: "Opulent 5-course imperial Dastarkhwan banquet arrangement",
+    imageAlt: "Opulent 5-course imperial tasting menu banquet arrangement",
     isAvailable: true,
     prepTime: "45 mins",
     dailySales: 9,
     marginPercent: 73.5,
-    badge: "Chef Kabir Special",
+    badge: "Signature Tasting Set",
     tags: ["5-Course Banquet", "VIP Experience"],
     dietary: {
       halal: true,

@@ -145,7 +145,7 @@ export default function CheckoutPage() {
                   Total Paid
                 </p>
                 <p className="font-headline-sm text-primary font-bold">
-                  ৳{confirmedOrder.total.toLocaleString()}
+                  ${confirmedOrder.total.toLocaleString()}
                 </p>
               </div>
             </div>
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
                     {item.quantity}× {item.name}
                   </span>
                   <span className="font-semibold">
-                    ৳{(item.price * item.quantity).toLocaleString()}
+                    ${(item.price * item.quantity).toLocaleString()}
                   </span>
                 </div>
               ))}
@@ -732,7 +732,7 @@ export default function CheckoutPage() {
                     <div className="mt-space-sm flex items-center justify-between bg-primary-fixed text-on-primary-fixed px-space-sm py-1.5 rounded text-xs font-label-sm">
                       <span className="flex items-center gap-1 font-semibold">
                         <span className="material-symbols-outlined text-sm">local_offer</span>
-                        <span>FIRSTDINE applied (-৳200 discount!)</span>
+                        <span>FIRSTDINE applied (-$10 discount!)</span>
                       </span>
                       <button
                         aria-label="Remove coupon"
@@ -778,7 +778,7 @@ export default function CheckoutPage() {
                           )}
                         </div>
                         <span className="tabular-nums font-semibold text-on-surface">
-                          ৳{(item.price * item.quantity).toLocaleString()}
+                          ${(item.price * item.quantity).toLocaleString()}
                         </span>
                       </div>
                     ))}
@@ -788,26 +788,26 @@ export default function CheckoutPage() {
                   <div className="pt-space-md space-y-space-xs font-body-sm text-body-sm">
                     <div className="flex items-center justify-between text-on-surface-variant">
                       <span>Subtotal</span>
-                      <span className="tabular-nums">৳{cart.subtotal.toLocaleString()}</span>
+                      <span className="tabular-nums">${cart.subtotal.toLocaleString()}</span>
                     </div>
                     {fulfillmentMode === "delivery" && (
                       <div className="flex items-center justify-between text-on-surface-variant">
                         <span>Delivery Fee</span>
-                        <span className="tabular-nums">৳{cart.deliveryFee.toLocaleString()}</span>
+                        <span className="tabular-nums">${cart.deliveryFee.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between text-on-surface-variant">
                       <span>Restaurant Packaging</span>
-                      <span className="tabular-nums">৳{cart.packagingFee.toLocaleString()}</span>
+                      <span className="tabular-nums">${cart.packagingFee.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between text-on-surface-variant">
-                      <span>VAT / Govt Tax (5%)</span>
-                      <span className="tabular-nums">৳{cart.tax.toLocaleString()}</span>
+                      <span>State Sales Tax (6%)</span>
+                      <span className="tabular-nums">${cart.tax.toLocaleString()}</span>
                     </div>
                     {cart.appliedCoupon && (
                       <div className="flex items-center justify-between text-secondary font-medium">
                         <span>First Dine Voucher</span>
-                        <span className="tabular-nums">-৳{cart.discount.toLocaleString()}</span>
+                        <span className="tabular-nums">-${cart.discount.toLocaleString()}</span>
                       </div>
                     )}
                     <div className="pt-space-md mt-space-sm flex items-baseline justify-between text-on-surface">
@@ -820,11 +820,11 @@ export default function CheckoutPage() {
                       <div className="text-right">
                         {cart.discount > 0 && (
                           <span className="text-xs line-through text-on-surface-variant mr-1">
-                            ৳{(grandTotal + cart.discount).toLocaleString()}
+                            ${(grandTotal + cart.discount).toLocaleString()}
                           </span>
                         )}
                         <span className="font-headline-md text-headline-md font-bold text-primary-container tabular-nums">
-                          ৳{grandTotal.toLocaleString()}
+                          ${grandTotal.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -846,7 +846,7 @@ export default function CheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <span>Place Order &amp; Pay ৳{grandTotal.toLocaleString()}</span>
+                        <span>Place Order &amp; Pay ${grandTotal.toLocaleString()}</span>
                         <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
                           arrow_forward
                         </span>
@@ -877,8 +877,7 @@ export default function CheckoutPage() {
                       Fresh Preparation Notice
                     </p>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      Sultan&apos;s Heritage starts slow-cooking mutton batches at dawn. Every box is
-                      sealed under temperature check.
+                      The Maple &amp; Vine prepares all hearth cuts and seasonal entrees fresh to order. Every package is sealed under kitchen quality control.
                     </p>
                   </div>
                 </div>

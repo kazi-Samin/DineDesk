@@ -25,7 +25,7 @@ export default function VendorExecutiveDashboardPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const loadData = () => {
-    const o = getVendorOrders("sultans-heritage");
+    const o = getVendorOrders("the-maple-and-vine");
     const r = getVendorReservations();
     const t = getVendorTables();
     const m = getMenuItems();
@@ -43,7 +43,7 @@ export default function VendorExecutiveDashboardPage() {
     loadData();
   }, []);
 
-  const orderStats = useMemo(() => getOrderStatistics("sultans-heritage"), [orders]);
+  const orderStats = useMemo(() => getOrderStatistics("the-maple-and-vine"), [orders]);
   const reservationStats = useMemo(() => getReservationStats(reservations, tables), [reservations, tables]);
   const menuStats = useMemo(() => getMenuSummaryStats(menuItems), [menuItems]);
 
@@ -73,7 +73,7 @@ export default function VendorExecutiveDashboardPage() {
 
       {/* 2. Top Header with Outlet Switcher and Online Toggle */}
       <VendorHeader
-        restaurantName={profile?.name || "Sultan's Heritage Kitchen"}
+        restaurantName={profile?.name || "The Maple & Vine"}
         pendingCount={orderStats.newOrders}
         onRefresh={loadData}
         isSidebarOpen={isSidebarOpen}
@@ -94,10 +94,10 @@ export default function VendorExecutiveDashboardPage() {
                   </span>
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-on-surface mt-1">
-                  {profile?.name || "Sultan's Heritage Kitchen"}
+                  {profile?.name || "The Maple & Vine"}
                 </h1>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  Banani Outlet • License: {profile?.licenseReference || "BSTI-DHK-2024-98421"} • {profile?.phone || "+880 1711-209844"}
+                  Michigan Avenue, Detroit, MI • Health Inspection Grade A+ • (313) 555-0142
                 </p>
               </div>
 
@@ -108,7 +108,7 @@ export default function VendorExecutiveDashboardPage() {
                     Today Revenue
                   </span>
                   <span className="text-lg font-bold text-primary mt-0.5 block">
-                    ৳{orderStats.todayRevenue.toLocaleString()}
+                    ${orderStats.todayRevenue.toLocaleString()}
                   </span>
                 </div>
 
@@ -172,10 +172,10 @@ export default function VendorExecutiveDashboardPage() {
                   </div>
                   <div className="mt-4">
                     <h3 className="text-base font-bold text-primary group-hover:text-primary transition-colors">
-                      Live Kitchen Orders
+                      Live Orders &amp; Dispatch
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                      Accept incoming tickets, dispatch couriers, and generate KOT receipts.
+                      Accept incoming orders, dispatch couriers, and coordinate with kitchen team.
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-outline-variant flex items-center justify-between text-xs text-primary font-semibold">
@@ -230,14 +230,14 @@ export default function VendorExecutiveDashboardPage() {
                   </div>
                   <div className="mt-4">
                     <h3 className="text-base font-bold text-primary group-hover:text-primary transition-colors">
-                      Menu Catalog
+                      Menu &amp; Specials
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                      Update dishes, prices, daily portions, and 1-click availability toggles.
+                      Update dishes, seasonal prices, portion limits, and 1-click 86/sold-out toggles.
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-outline-variant flex items-center justify-between text-xs text-primary font-semibold">
-                    <span>Edit Dishes</span>
+                    <span>Manage Menu</span>
                     <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
                       arrow_forward
                     </span>
@@ -250,7 +250,7 @@ export default function VendorExecutiveDashboardPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center">
-                      <span className="material-symbols-outlined text-xl">storefront</span>
+                      <span className="material-symbols-outlined text-xl">settings</span>
                     </div>
                     <span className="px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed text-xs font-semibold">
                       Grade A+
@@ -258,14 +258,14 @@ export default function VendorExecutiveDashboardPage() {
                   </div>
                   <div className="mt-4">
                     <h3 className="text-base font-bold text-primary group-hover:text-primary transition-colors">
-                      Storefront Settings
+                      Restaurant &amp; Operations Settings
                     </h3>
                     <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                      Atmosphere photos, opening schedule, address pin, and contact profile.
+                      Dining room photos, shift schedules, service hours, and restaurant contact profile.
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-outline-variant flex items-center justify-between text-xs text-primary font-semibold">
-                    <span>Manage Profile</span>
+                    <span>Restaurant Settings</span>
                     <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
                       arrow_forward
                     </span>
@@ -278,15 +278,15 @@ export default function VendorExecutiveDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               {/* Left Column (7 cols): Live Tickets Stream */}
               <div className="lg:col-span-7 space-y-6">
-                {/* Active Kitchen Tickets Card */}
+                {/* Active Orders Queue Card */}
                 <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-2xs p-5">
                   <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-xl">
-                        local_fire_department
+                        receipt_long
                       </span>
                       <h3 className="text-base font-bold text-primary">
-                        Live Kitchen Queue ({activeOrders.length})
+                        Live Orders Queue ({activeOrders.length})
                       </h3>
                     </div>
                     <Link
@@ -335,7 +335,7 @@ export default function VendorExecutiveDashboardPage() {
                                 </span>
                               </div>
                               <span className="text-sm font-bold text-primary">
-                                ৳{ord.total.toLocaleString()}
+                                ${ord.total.toLocaleString()}
                               </span>
                             </div>
 
@@ -359,54 +359,54 @@ export default function VendorExecutiveDashboardPage() {
                   )}
                 </div>
 
-                {/* Revenue & Merchant Settlement Overview */}
+                {/* Daily Dining Room & Kitchen Sales Performance */}
                 <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-2xs p-5">
                   <div className="flex items-center justify-between pb-3 border-b border-outline-variant">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-primary text-xl">account_balance</span>
                       <h3 className="text-base font-bold text-primary">
-                        Weekly Settlement &amp; Payout
+                        Daily Dining Room &amp; Kitchen Performance
                       </h3>
                     </div>
                     <span className="text-xs text-on-surface-variant font-medium">
-                      Next Disbursement: <strong className="text-primary">Thursday</strong>
+                      Service Shift: <strong className="text-primary">Dinner Active</strong>
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 my-4">
                     <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant">
                       <span className="text-[11px] text-on-surface-variant block uppercase font-medium">
-                        Net Payout
+                        Net Sales Today
                       </span>
                       <span className="text-lg font-bold text-primary mt-0.5 block">
-                        ৳148,200
+                        $12,480
                       </span>
-                      <span className="text-[10px] text-emerald-800 font-semibold">Cleared to Bank</span>
+                      <span className="text-[10px] text-emerald-800 font-semibold">100% Reconciled</span>
                     </div>
 
                     <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant">
                       <span className="text-[11px] text-on-surface-variant block uppercase font-medium">
-                        Service Fee
+                        Food Cost Ratio
                       </span>
                       <span className="text-lg font-bold text-secondary mt-0.5 block">
-                        3.5%
+                        28.5%
                       </span>
-                      <span className="text-[10px] text-on-surface-variant font-medium">Standard Merchant</span>
+                      <span className="text-[10px] text-on-surface-variant font-medium">Target 30% Max</span>
                     </div>
 
                     <div className="p-3 bg-surface-container-low rounded-lg border border-outline-variant col-span-2 sm:col-span-1">
                       <span className="text-[11px] text-on-surface-variant block uppercase font-medium">
-                        Fulfillment Rate
+                        Order Fulfillment
                       </span>
                       <span className="text-lg font-bold text-primary mt-0.5 block">
-                        98.4%
+                        99.2%
                       </span>
-                      <span className="text-[10px] text-primary font-semibold">Gold Tier Partner</span>
+                      <span className="text-[10px] text-primary font-semibold">Gold Standard</span>
                     </div>
                   </div>
 
                   <p className="text-xs text-on-surface-variant leading-relaxed">
-                    Direct automated deposit to <strong>Eastern Bank PLC (Banani Corporate Branch)</strong>. Statements reconciled daily at midnight.
+                    Commercial operating account • Fifth Third Bank (Michigan Avenue Commercial Branch). Shift reconciliations recorded daily.
                   </p>
                 </div>
               </div>
@@ -487,29 +487,27 @@ export default function VendorExecutiveDashboardPage() {
                   <div className="mt-3 space-y-2 text-xs">
                     <div className="flex items-center justify-between py-1.5 border-b border-outline-variant">
                       <div className="flex items-center gap-2">
-                        <img
-                          src="/avatars/chef-kabir.svg"
-                          alt="Chef Kabir"
-                          className="w-6 h-6 rounded-full border border-outline-variant"
-                        />
-                        <span className="font-semibold text-on-surface">Chef Kabir</span>
+                        <div className="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-[10px]">
+                          MV
+                        </div>
+                        <span className="font-semibold text-on-surface">Marcus Vance</span>
                       </div>
-                      <span className="text-on-surface-variant">Head of Culinary &amp; GM</span>
+                      <span className="text-on-surface-variant">General Manager &amp; Operations Lead</span>
                     </div>
 
                     <div className="flex items-center justify-between py-1.5 border-b border-outline-variant">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-[10px]">
-                          SZ
+                          SJ
                         </div>
-                        <span className="font-semibold text-on-surface">Sarah Zaman</span>
+                        <span className="font-semibold text-on-surface">Sarah Jenkins</span>
                       </div>
-                      <span className="text-on-surface-variant">Head Front Hostess</span>
+                      <span className="text-on-surface-variant">Dining Room Host Lead</span>
                     </div>
 
                     <div className="flex items-center justify-between py-1.5">
-                      <span className="text-on-surface-variant">Kitchen Crew</span>
-                      <span className="font-semibold text-primary">4 Line Chefs • 6 Floor Stewards</span>
+                      <span className="text-on-surface-variant">Kitchen &amp; Floor Crew</span>
+                      <span className="font-semibold text-primary">4 Line Chefs • 6 Dining Stewards</span>
                     </div>
                   </div>
                 </div>

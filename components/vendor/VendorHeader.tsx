@@ -15,7 +15,7 @@ interface VendorHeaderProps {
 }
 
 export default function VendorHeader({
-  restaurantName = "Sultan's Heritage Kitchen",
+  restaurantName = "The Maple & Vine",
   pendingCount = 0,
   onRefresh,
   isSidebarOpen = false,
@@ -62,13 +62,13 @@ export default function VendorHeader({
               />
             </div>
             <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-[11px] font-semibold border border-outline-variant/60">
-              Merchant Console
+              Manager Console
             </span>
           </Link>
 
           <div className="h-6 w-px bg-outline-variant hidden md:block" />
 
-          {/* Restaurant Outlet Pill */}
+          {/* Restaurant Operations Pill */}
           <div className="hidden md:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-xl border border-outline-variant/70 shadow-2xs">
             <span className="material-symbols-outlined text-base text-primary">storefront</span>
             <div className="flex flex-col">
@@ -78,29 +78,29 @@ export default function VendorHeader({
                 </span>
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold">
                   <span className="material-symbols-outlined text-[11px]">verified</span>
-                  Verified
+                  Service Active
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Center: Restaurant Owner Page-Wise Operational Navigation (Matching Main Page Link Bar) */}
+        {/* Center: Executive Operations Navigation */}
         <nav className="hidden 2xl:flex items-center gap-1 bg-surface-container-low/80 p-1 rounded-xl border border-outline-variant/60">
           <Link href="/dashboard/vendor" className={linkClass(isOverview)}>
-            Overview
+            Operations Console
           </Link>
           <Link href="/dashboard/vendor/orders" className={linkClass(isOrders)}>
             Live Orders
           </Link>
           <Link href="/dashboard/vendor/reservations" className={linkClass(isReservations)}>
-            Reservations
+            Table Seating
           </Link>
           <Link href="/dashboard/vendor/manage-menu" className={linkClass(isMenu)}>
-            Menu Catalog
+            Menu &amp; Specials
           </Link>
           <Link href="/dashboard/vendor/manage-profile" className={linkClass(isProfile)}>
-            Storefront Settings
+            Restaurant Settings
           </Link>
         </nav>
 
@@ -134,15 +134,15 @@ export default function VendorHeader({
             </div>
           </button>
 
-          {/* Quick Link to Guest Storefront */}
+          {/* Quick Link to Guest Menu */}
           <Link
-            href="/restaurants/sultans-dine"
+            href="/explore"
             target="_blank"
             className="hidden xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-primary bg-primary-fixed/50 hover:bg-primary-fixed border border-primary-fixed-dim transition-colors"
-            title="Open live guest-facing storefront in new tab"
+            title="Open dining room menu in new tab"
           >
             <span className="material-symbols-outlined text-sm">open_in_new</span>
-            <span>View Guest Menu</span>
+            <span>View Dining Menu</span>
           </Link>
 
           {/* Refresh Button */}
@@ -175,7 +175,7 @@ export default function VendorHeader({
 
           <div className="h-6 w-px bg-outline-variant hidden sm:block" />
 
-          {/* Chef / Owner Profile Pill with Dropdown */}
+          {/* Management Profile Pill with Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -183,14 +183,14 @@ export default function VendorHeader({
               className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs shrink-0">
-                {user?.name ? user.name[0].toUpperCase() : "P"}
+                {user?.name ? user.name[0].toUpperCase() : "M"}
               </div>
               <div className="hidden sm:flex flex-col text-left">
                 <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight truncate max-w-[120px]">
-                  {user?.name || "Restaurant Partner"}
+                  {user?.name || "Marcus Vance"}
                 </span>
                 <span className="font-label-sm text-[11px] text-secondary font-medium leading-tight">
-                  Restaurant Partner
+                  General Manager
                 </span>
               </div>
               <span className="material-symbols-outlined text-base text-on-surface-variant hidden sm:block">
@@ -206,7 +206,7 @@ export default function VendorHeader({
                     Signed in as
                   </span>
                   <span className="text-xs font-bold text-primary block mt-0.5 truncate">
-                    {user?.name || "Restaurant Partner"}
+                    {user?.name || "Marcus Vance"}
                   </span>
                   <span className="text-[10px] text-on-surface-variant block truncate">
                     {user?.email || "owner@dinedesk.com"}
@@ -218,8 +218,8 @@ export default function VendorHeader({
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-primary">storefront</span>
-                    <span>Restaurant Profile &amp; Settings</span>
+                    <span className="material-symbols-outlined text-base text-primary">settings</span>
+                    <span>Restaurant &amp; Operating Settings</span>
                   </Link>
                   <Link
                     href="/dashboard/vendor/orders"
@@ -227,7 +227,7 @@ export default function VendorHeader({
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
                     <span className="material-symbols-outlined text-base text-primary">receipt_long</span>
-                    <span>Live Kitchen Orders</span>
+                    <span>Live Orders &amp; Kitchen Tickets</span>
                   </Link>
                   <Link
                     href="/dashboard/vendor/reservations"
@@ -235,7 +235,7 @@ export default function VendorHeader({
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
                     <span className="material-symbols-outlined text-base text-primary">table_restaurant</span>
-                    <span>Reservations &amp; Tables</span>
+                    <span>Dining Room Floor &amp; Tables</span>
                   </Link>
                   <Link
                     href="/"
@@ -243,7 +243,7 @@ export default function VendorHeader({
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
                     <span className="material-symbols-outlined text-base text-on-surface-variant">home</span>
-                    <span>Return to Marketplace</span>
+                    <span>Return to DineDesk Home</span>
                   </Link>
                   <button
                     type="button"

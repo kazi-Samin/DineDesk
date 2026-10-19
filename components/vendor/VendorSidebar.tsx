@@ -88,28 +88,28 @@ export default function VendorSidebar({
                 <div className="flex items-start justify-between">
                   <div className="flex flex-col">
                     <span className="font-label-md text-label-md text-on-surface font-semibold">
-                      Sultan&apos;s Heritage
+                      The Maple &amp; Vine
                     </span>
                     <span className="font-body-sm text-[12px] text-on-surface-variant">
-                      Banani Outlet • DHK
+                      Michigan Avenue • Detroit, MI
                     </span>
                   </div>
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                    Live
+                    Service Active
                   </span>
                 </div>
                 <div className="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between text-on-surface-variant">
                   <span className="font-label-sm text-[11px]">Floor Seating</span>
                   <span className="font-label-sm text-[11px] text-primary font-semibold">
-                    14 / 22 Active
+                    14 / 22 Tables
                   </span>
                 </div>
               </div>
             ) : (
               <div
                 className="bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-center relative"
-                title="Sultan's Heritage • Live"
+                title="The Maple & Vine • Active Service"
               >
                 <span className="material-symbols-outlined text-primary text-xl">storefront</span>
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
@@ -123,12 +123,12 @@ export default function VendorSidebar({
               href="/dashboard/vendor"
               onClick={handleNavClick}
               className={linkClass(isLiveConsole)}
-              title="Live Console"
+              title="Operations Console"
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">speed</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Live Console</span>
+                  <span className="font-label-lg text-label-lg font-medium">Operations Console</span>
                 )}
               </div>
             </Link>
@@ -170,7 +170,7 @@ export default function VendorSidebar({
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">table_restaurant</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Table Reservations</span>
+                  <span className="font-label-lg text-label-lg font-medium">Table Seating</span>
                 )}
               </div>
               {isOpen && (
@@ -190,12 +190,12 @@ export default function VendorSidebar({
               href="/dashboard/vendor/reservations#floorplan"
               onClick={handleNavClick}
               className={linkClass(false)}
-              title="Kitchen Floorplan"
+              title="Dining Room Floorplan"
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">grid_view</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Kitchen Floorplan</span>
+                  <span className="font-label-lg text-label-lg font-medium">Dining Room Floorplan</span>
                 )}
               </div>
             </Link>
@@ -204,12 +204,12 @@ export default function VendorSidebar({
               href="/dashboard/vendor/manage-menu"
               onClick={handleNavClick}
               className={linkClass(isMenu)}
-              title="Menu & Inventory"
+              title="Menu & Daily Specials"
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">restaurant_menu</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Menu & Inventory</span>
+                  <span className="font-label-lg text-label-lg font-medium">Menu &amp; Specials</span>
                 )}
               </div>
             </Link>
@@ -218,19 +218,19 @@ export default function VendorSidebar({
               href="/dashboard/vendor/manage-profile"
               onClick={handleNavClick}
               className={linkClass(isProfile)}
-              title="Merchant Profile"
+              title="Restaurant Settings"
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">settings</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Merchant Profile</span>
+                  <span className="font-label-lg text-label-lg font-medium">Restaurant Settings</span>
                 )}
               </div>
             </Link>
           </nav>
         </div>
 
-        {/* Back to Marketplace Link */}
+        {/* Back to DineDesk Home Link */}
         <div className={`border-t border-outline-variant ${isOpen ? "p-3 sm:p-4" : "p-2"}`}>
           <Link
             href="/"
@@ -238,12 +238,12 @@ export default function VendorSidebar({
             className={`flex items-center ${
               isOpen ? "justify-between px-3 py-2.5" : "justify-center px-2 py-2.5"
             } rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all`}
-            title="Back to Marketplace"
+            title="Back to DineDesk Home"
           >
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-xl">open_in_new</span>
               {isOpen && (
-                <span className="font-label-md text-label-md font-medium">Back to Marketplace</span>
+                <span className="font-label-md text-label-md font-medium">Back to DineDesk Home</span>
               )}
             </div>
           </Link>

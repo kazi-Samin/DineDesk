@@ -54,7 +54,7 @@ export default function ManualWalkInModal({
 
     onSubmit({
       guestName: guestName.trim(),
-      phone: phone.trim() || "+880 1700-000000",
+      phone: phone.trim() || "(313) 555-0100",
       partySize: Number(partySize),
       reservationDate,
       reservationTime,
@@ -112,7 +112,7 @@ export default function ManualWalkInModal({
                 required
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                placeholder="e.g. Asaduzzaman Noor"
+                placeholder="e.g. Jordan Smith"
                 className="w-full bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest"
               />
             </div>
@@ -124,7 +124,7 @@ export default function ManualWalkInModal({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+880 17..."
+                placeholder="(313) 555-..."
                 className="w-full bg-surface-container-low px-3 py-2 rounded-lg border border-outline-variant text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest"
               />
             </div>

@@ -3,11 +3,11 @@ export interface Restaurant {
   name: string;
   cuisine: string;
   cuisineCategory: string; // 'desi' | 'burger' | 'italian' | 'japanese' | 'asian' | 'dessert' | 'continental'
-  priceTier: '৳' | '৳৳' | '৳৳৳' | '৳৳৳৳';
+  priceTier: '$' | '$$' | '$$$' | '$$$$';
   rating: number;
   reviewCount: number;
   deliveryTime: string; // e.g. '30 min', '25-35 min'
-  deliveryFee: string; // e.g. '৳60 delivery', 'Free delivery over ৳800'
+  deliveryFee: string; // e.g. '$5 delivery', 'Free delivery over $35'
   image: string;
   imageAlt: string;
   badge?: string;

@@ -235,7 +235,7 @@ export default function VendorReservationsPage() {
   };
 
   const handlePageHost = () => {
-    addToast("Hostess Paged", "Sarah Zaman alerted on floor headset for front desk check-in.", "info");
+    addToast("Hostess Paged", "Sarah Jenkins alerted on floor headset for front desk check-in.", "info");
   };
 
   const handleResetFilters = () => {
@@ -256,7 +256,7 @@ export default function VendorReservationsPage() {
 
       {/* Vendor Top Header */}
       <VendorHeader
-        restaurantName="Sultan's Heritage Kitchen"
+        restaurantName="The Maple & Vine"
         pendingCount={pendingCount}
         onRefresh={handleRefresh}
         isSidebarOpen={isSidebarOpen}

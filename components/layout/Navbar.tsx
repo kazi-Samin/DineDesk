@@ -7,7 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useReservation } from "@/context/ReservationContext";
 import { motion, AnimatePresence } from "framer-motion";
 import NavLinks from "../NavLinks";
-import Image from "next/image";
+import Logo from "../Logo";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
@@ -62,24 +62,7 @@ export default function Navbar() {
       >
         {/* Brand Logo Image & Desktop Navigation Links */}
         <div className="flex items-center gap-8 shrink-0">
-          <Link
-            className="flex items-center group transition-transform duration-300 hover:scale-105"
-            href="/"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="h-16 sm:h-18 w-auto flex items-center justify-center overflow-hidden py-1"
-            >
-              <Image
-                alt="DineDesk Logo"
-                className="h-full w-auto object-contain"
-                src="/assets/DineDesk Monogram.png"
-                width={220}
-                height={51}
-              />
-            </motion.div>
-          </Link>
+          <Logo size="lg" />
 
           <NavLinks openReservationModal={openReservationModal} />
         </div>

@@ -56,7 +56,7 @@ export function addMenuItem(input: MenuItemFormInput): MenuItem[] {
   const items = getMenuItems();
   const newItem: MenuItem = {
     id: `item-${Date.now()}`,
-    restaurantId: "sultans-heritage",
+    restaurantId: "the-maple-and-vine",
     name: input.name,
     description: input.description,
     category: input.category,

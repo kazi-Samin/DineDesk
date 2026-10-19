@@ -17,7 +17,7 @@ export default function VendorSummaryCards({ stats }: VendorSummaryCardsProps) {
         </div>
         <div className="flex items-baseline gap-space-xs">
           <span className="font-headline-lg text-2xl lg:text-3xl text-primary tracking-tight font-display font-medium">
-            ৳ {stats.todayRevenue.toLocaleString()}
+            $ {stats.todayRevenue.toLocaleString()}
           </span>
           <span className="inline-flex items-center font-label-sm text-[11px] text-emerald-800 bg-surface-container px-1.5 py-0.5 rounded-lg font-semibold">
             <span className="material-symbols-outlined text-xs mr-0.5">trending_up</span>+14%
