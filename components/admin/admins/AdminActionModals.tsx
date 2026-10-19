@@ -85,10 +85,12 @@ export function ManagePrivilegesModal({
               onChange={(e) => setRole(e.target.value as PlatformAdminRole)}
               className="w-full bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant text-on-surface font-semibold focus:outline-primary disabled:opacity-60 cursor-pointer"
             >
-              <option value="Super Admin">Super Admin</option>
+              <option value="Super Admin">Super Admin (Proprietor)</option>
+              <option value="General Manager">General Manager (Restaurant Operations)</option>
+              <option value="Dining Room Lead">Dining Room Lead (Host Stand &amp; Seating)</option>
+              <option value="Head Cashier &amp; Finance">Head Cashier &amp; Finance</option>
               <option value="Operations Admin">Operations Admin</option>
-              <option value="Finance & Treasury Admin">Finance & Treasury Admin</option>
-              <option value="Compliance & Audit Admin">Compliance & Audit Admin</option>
+              <option value="Compliance &amp; Audit Admin">Compliance &amp; Audit Admin</option>
               <option value="Customer Support Lead">Customer Support Lead</option>
             </select>
           </div>

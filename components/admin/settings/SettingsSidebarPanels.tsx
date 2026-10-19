@@ -58,7 +58,7 @@ export default function SettingsSidebarPanels({
             />
           </div>
           <div className="flex items-center justify-between font-label-sm text-[11px] text-on-surface-variant">
-            <span>Dhaka Metropolitan Hub</span>
+            <span>Detroit Hospitality Network</span>
             <span className="font-semibold text-secondary">
               {remainingSlots} {remainingSlots === 1 ? "Slot" : "Slots"} Available
             </span>
@@ -83,7 +83,7 @@ export default function SettingsSidebarPanels({
             <div className="flex flex-col">
               <span className="font-bold text-on-surface">Multi-Admin Consensus</span>
               <span className="text-on-surface-variant text-[11px]">
-                Critical rate changes notify Super Admin circle via encrypted Slack dispatch.
+                Critical rate changes notify Super Admin circle via encrypted dispatch.
               </span>
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function SettingsSidebarPanels({
             <div className="flex flex-col">
               <span className="font-bold text-on-surface">Edge Invalidation</span>
               <span className="text-on-surface-variant text-[11px]">
-                Settings sync to regional Redis nodes within 450ms of saving.
+                Settings sync to regional edge nodes within 450ms of saving.
               </span>
             </div>
           </div>
@@ -134,11 +134,11 @@ export default function SettingsSidebarPanels({
         </div>
         <p className="text-xs text-on-surface-variant leading-relaxed">
           During maintenance windows or urgent triage, high-priority partner inquiries are routed
-          directly to the Central Operations Desk in Gulshan.
+          directly to the Operations Lead Desk at The Maple &amp; Vine.
         </p>
         <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant flex items-center justify-between text-xs shadow-2xs">
           <span className="text-on-surface-variant font-medium">Priority Ops Line:</span>
-          <span className="font-mono font-bold text-primary text-sm">+880 (2) 988-4421</span>
+          <span className="font-mono font-bold text-primary text-sm">(313) 555-0142</span>
         </div>
       </div>
     </div>

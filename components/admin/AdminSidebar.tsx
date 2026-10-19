@@ -171,23 +171,20 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Manage Restaurants */}
+            {/* Venue & Floor Stations */}
             <Link
               href="/dashboard/admin/restaurants"
               onClick={handleNavClick}
               className={linkClass(isRestaurants)}
-              title="Manage Restaurants"
+              title="Venue & Floor Stations"
             >
               <div className="flex items-center gap-2.5 relative">
                 <span className="material-symbols-outlined text-xl">storefront</span>
-                {!isOpen && pendingApprovalsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-secondary" />
-                )}
-                {isOpen && <span>Manage Restaurants</span>}
+                {isOpen && <span>Venue &amp; Stations</span>}
               </div>
-              {isOpen && pendingApprovalsCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full font-label-sm text-[10px] font-bold bg-secondary text-on-secondary">
-                  +{pendingApprovalsCount}
+              {isOpen && (
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-primary-fixed text-on-primary-fixed">
+                  4 Zones
                 </span>
               )}
             </Link>
@@ -197,11 +194,11 @@ export default function AdminSidebar({
               href="/dashboard/admin/transactions"
               onClick={handleNavClick}
               className={linkClass(isTransactions)}
-              title="All Transactions"
+              title="Financial Ledger"
             >
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-xl">receipt_long</span>
-                {isOpen && <span>All Transactions</span>}
+                {isOpen && <span>Financial Ledger</span>}
               </div>
             </Link>
           </div>
@@ -210,7 +207,7 @@ export default function AdminSidebar({
           <div className="space-y-1 pt-2 border-t border-outline-variant/60">
             {isOpen ? (
               <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
-                Super Admin
+                Executive Governance
               </span>
             ) : (
               <div className="h-px bg-outline-variant/60 mx-1 my-2" />
@@ -221,12 +218,15 @@ export default function AdminSidebar({
               href="/dashboard/admin/admins"
               onClick={handleNavClick}
               className={linkClass(isAdmins)}
-              title="Manage Admins"
+              title="Staff & Leadership"
             >
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
-                {isOpen && <span>Manage Admins</span>}
+                {isOpen && <span>Staff &amp; Leadership</span>}
               </div>
+              {isOpen && (
+                <span className="text-[11px] text-on-surface-variant font-mono">8 Staff</span>
+              )}
             </Link>
 
             {/* Platform Settings */}
@@ -234,24 +234,44 @@ export default function AdminSidebar({
               href="/dashboard/admin/settings"
               onClick={handleNavClick}
               className={linkClass(isSettings)}
-              title="Platform Settings"
+              title="Venue Settings"
             >
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-xl">tune</span>
-                {isOpen && <span>Platform Settings</span>}
+                {isOpen && <span>Venue Settings</span>}
               </div>
             </Link>
           </div>
 
-          {/* 3. System & Support Section */}
+          {/* 3. System & Operations Section */}
           <div className="space-y-1 pt-2 border-t border-outline-variant/60">
             {isOpen ? (
               <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
-                System &amp; Support
+                Operations &amp; Floor
               </span>
             ) : (
               <div className="h-px bg-outline-variant/60 mx-1 my-2" />
             )}
+
+            {/* GM Live Floor Console */}
+            <Link
+              href="/dashboard/vendor"
+              onClick={handleNavClick}
+              className={`flex items-center ${
+                isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
+              } rounded-xl text-xs font-semibold text-secondary hover:bg-secondary-fixed/30 transition-all`}
+              title="GM Live Floor Console"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-xl text-secondary">room_service</span>
+                {isOpen && <span>GM Floor Console</span>}
+              </div>
+              {isOpen && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-[10px] font-bold">
+                  Live
+                </span>
+              )}
+            </Link>
 
             {/* Audit Logs */}
             <Link
@@ -262,22 +282,22 @@ export default function AdminSidebar({
             >
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-xl">history</span>
-                {isOpen && <span>Audit Logs</span>}
+                {isOpen && <span>Audit &amp; Telemetry</span>}
               </div>
             </Link>
 
-            {/* Back to Marketplace */}
+            {/* Live Guest Experience */}
             <Link
               href="/"
               onClick={handleNavClick}
               className={`flex items-center ${
                 isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
               } rounded-xl text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all`}
-              title="Back to Marketplace"
+              title="Live Guest View"
             >
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-xl">open_in_new</span>
-                {isOpen && <span>Back to Marketplace</span>}
+                {isOpen && <span>Guest View</span>}
               </div>
             </Link>
           </div>
@@ -290,7 +310,7 @@ export default function AdminSidebar({
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                 <span className="font-label-sm text-[11px] text-on-surface font-semibold">
-                  Cluster DHK-1
+                  Cluster DET-1
                 </span>
               </div>
               <span className="font-mono text-[11px] text-on-surface-variant">v2.14.0</span>
@@ -298,7 +318,7 @@ export default function AdminSidebar({
           ) : (
             <div
               className="bg-surface-container p-2 rounded-lg flex items-center justify-center"
-              title="Cluster DHK-1 • v2.14.0"
+              title="Cluster DET-1 • v2.14.0"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />
             </div>

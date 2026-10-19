@@ -5,12 +5,12 @@ import { useState } from "react";
 export default function NetworkDensityRetentionChart() {
   const [activeTab, setActiveTab] = useState<"density" | "cohorts">("density");
 
-  // Simulated 6-month data for network density
+  // Simulated 6-month data for patron density
   const months = ["May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-  const dinerCounts = [38500, 43200, 48900, 54100, 59800, 64280];
-  const nodeCounts = [98, 106, 114, 122, 134, 142];
+  const dinerCounts = [2850, 3200, 3600, 4100, 4500, 4820];
+  const nodeCounts = [84, 84, 84, 84, 84, 84];
 
-  const maxDiners = 70000;
+  const maxDiners = 5500;
   const chartHeight = 180;
   const chartWidth = 400;
   const paddingX = 30;
@@ -42,7 +42,7 @@ export default function NetworkDensityRetentionChart() {
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant font-label-sm">
-            Ecosystem Scale
+            Guest Loyalty &amp; Retention
           </span>
           <div className="flex items-center gap-1 bg-surface-container p-0.5 rounded-lg text-[11px]">
             <button
@@ -54,7 +54,7 @@ export default function NetworkDensityRetentionChart() {
                   : "text-on-surface-variant hover:text-on-surface"
               }`}
             >
-              Density
+              Retention
             </button>
             <button
               type="button"
@@ -71,10 +71,10 @@ export default function NetworkDensityRetentionChart() {
         </div>
 
         <h3 className="font-headline-sm text-base sm:text-lg font-bold text-primary">
-          Network Density & Active Diners
+          Patron Retention &amp; Table Turns
         </h3>
         <p className="text-xs text-on-surface-variant mt-0.5">
-          Active diners versus verified commercial kitchen outlets.
+          Active dining guests versus floor table turnaround pacing.
         </p>
       </div>
 
@@ -82,21 +82,21 @@ export default function NetworkDensityRetentionChart() {
       <div className="grid grid-cols-2 gap-3 my-4 p-3 bg-surface-container-low rounded-xl">
         <div>
           <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-            Active Diners (30D)
+            Active Patrons (30D)
           </span>
           <div className="flex items-baseline gap-1.5 mt-0.5">
-            <span className="text-xl font-bold font-headline-sm text-primary">64,280</span>
-            <span className="text-[11px] font-semibold text-secondary">+28.4%</span>
+            <span className="text-xl font-bold font-headline-sm text-primary">4,820</span>
+            <span className="text-[11px] font-semibold text-secondary">+18.4%</span>
           </div>
         </div>
 
         <div>
           <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-            Verified Bistro Nodes
+            Floor Capacity
           </span>
           <div className="flex items-baseline gap-1.5 mt-0.5">
-            <span className="text-xl font-bold font-headline-sm text-primary">142</span>
-            <span className="text-[11px] font-semibold text-primary">+16 new</span>
+            <span className="text-xl font-bold font-headline-sm text-primary">84 Seats</span>
+            <span className="text-[11px] font-semibold text-primary">4 Zones</span>
           </div>
         </div>
       </div>
@@ -198,8 +198,8 @@ export default function NetworkDensityRetentionChart() {
 
       {/* Footer Insight Note */}
       <div className="pt-3 border-t border-outline-variant/60 flex items-center justify-between text-[11px] text-on-surface-variant">
-        <span>Average Dinner Covers / Day:</span>
-        <span className="font-bold text-primary">1,488 seats</span>
+        <span>Average Dinner Covers / Night:</span>
+        <span className="font-bold text-primary">168 covers (94% Seat Turn)</span>
       </div>
     </div>
   );

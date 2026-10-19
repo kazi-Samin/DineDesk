@@ -230,20 +230,41 @@ export default function VendorSidebar({
           </nav>
         </div>
 
-        {/* Back to DineDesk Home Link */}
-        <div className={`border-t border-outline-variant ${isOpen ? "p-3 sm:p-4" : "p-2"}`}>
+        {/* Executive Admin & Back to Home */}
+        <div className={`border-t border-outline-variant ${isOpen ? "p-3 sm:p-4 space-y-1.5" : "p-2 space-y-1"}`}>
+          <Link
+            href="/dashboard/admin"
+            onClick={handleNavClick}
+            className={`flex items-center ${
+              isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2"
+            } rounded-xl text-primary font-semibold hover:bg-primary-fixed/30 transition-all`}
+            title="Executive Admin Hub"
+          >
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-xl text-primary">shield_person</span>
+              {isOpen && (
+                <span className="font-label-md text-label-md font-semibold">Admin Governance</span>
+              )}
+            </div>
+            {isOpen && (
+              <span className="font-label-sm text-[10px] uppercase font-bold text-secondary bg-secondary-fixed px-1.5 py-0.2 rounded">
+                Super Admin
+              </span>
+            )}
+          </Link>
+
           <Link
             href="/"
             onClick={handleNavClick}
             className={`flex items-center ${
-              isOpen ? "justify-between px-3 py-2.5" : "justify-center px-2 py-2.5"
+              isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2"
             } rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all`}
             title="Back to DineDesk Home"
           >
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-xl">open_in_new</span>
               {isOpen && (
-                <span className="font-label-md text-label-md font-medium">Back to DineDesk Home</span>
+                <span className="font-label-md text-label-md font-medium">Guest Storefront</span>
               )}
             </div>
           </Link>

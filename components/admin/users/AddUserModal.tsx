@@ -17,9 +17,9 @@ export default function AddUserModal({
 }: AddUserModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+880 ");
+  const [phone, setPhone] = useState("(313) ");
   const [role, setRole] = useState<UserRole>("diner");
-  const [location, setLocation] = useState("Dhaka");
+  const [location, setLocation] = useState("Detroit, MI");
   const [accountStatus, setAccountStatus] = useState<UserAccountStatus>("active");
   const [error, setError] = useState<string | null>(null);
 
@@ -49,9 +49,9 @@ export default function AddUserModal({
     // Reset fields
     setName("");
     setEmail("");
-    setPhone("+880 ");
+    setPhone("(313) ");
     setRole("diner");
-    setLocation("Dhaka");
+    setLocation("Detroit, MI");
     setAccountStatus("active");
     onClose();
   };
@@ -128,7 +128,7 @@ export default function AddUserModal({
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+880 1711-000000"
+                placeholder="(313) 555-0100"
                 className="w-full px-3 py-2 text-xs sm:text-sm bg-surface-container-low border border-outline-variant rounded-lg text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:bg-surface-container-lowest transition-colors"
               />
             </div>
@@ -145,9 +145,9 @@ export default function AddUserModal({
                 className="w-full px-3 py-2 text-xs sm:text-sm bg-surface-container-low border border-outline-variant rounded-lg text-on-surface focus:outline-hidden focus:border-primary focus:bg-surface-container-lowest transition-colors cursor-pointer"
               >
                 <option value="diner">Diner (Patron)</option>
-                <option value="restaurant_owner">Restaurant Owner</option>
-                <option value="support_admin">Staff / Support</option>
-                <option value="admin">Super Admin</option>
+                <option value="restaurant_owner">Restaurant General Manager</option>
+                <option value="support_admin">Staff / Dining Room Lead</option>
+                <option value="admin">Super Admin (Operations Lead)</option>
               </select>
             </div>
             <div>
@@ -168,13 +168,13 @@ export default function AddUserModal({
 
           <div>
             <label className="block text-xs font-semibold text-on-surface mb-1">
-              Location / Neighborhood
+              Location / Area
             </label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. Banani, Dhaka"
+              placeholder="e.g. Corktown, Detroit"
               className="w-full px-3 py-2 text-xs sm:text-sm bg-surface-container-low border border-outline-variant rounded-lg text-on-surface placeholder:text-on-surface-variant/60 focus:outline-hidden focus:border-primary focus:bg-surface-container-lowest transition-colors"
             />
           </div>

@@ -34,9 +34,9 @@ export default function UserFiltersBar({
 }: UserFiltersBarProps) {
   const tabs: { id: RoleFilterTab; label: string; count: number }[] = [
     { id: "all", label: "All Users", count: tabCounts.all },
-    { id: "diner", label: "Diners", count: tabCounts.diner },
-    { id: "restaurant_owner", label: "Restaurant Owners", count: tabCounts.restaurant_owner },
-    { id: "admin_staff", label: "Admins & Staff", count: tabCounts.admin_staff },
+    { id: "diner", label: "Patrons", count: tabCounts.diner },
+    { id: "restaurant_owner", label: "Floor & Operations", count: tabCounts.restaurant_owner },
+    { id: "admin_staff", label: "Executive & Admins", count: tabCounts.admin_staff },
   ];
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "all" || activeTab !== "all";

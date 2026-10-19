@@ -29,11 +29,13 @@ export default function AdminFilterBar({
 }: AdminFilterBarProps) {
   const roles: { value: string; label: string }[] = [
     { value: "All", label: "All Roles" },
-    { value: "Super Admin", label: "Super Admins" },
+    { value: "Super Admin", label: "Super Admin (Proprietor)" },
+    { value: "General Manager", label: "General Manager" },
+    { value: "Dining Room Lead", label: "Dining Room Lead" },
+    { value: "Head Cashier & Finance", label: "Head Cashier & Finance" },
+    { value: "Compliance & Audit Admin", label: "Compliance & Audit" },
+    { value: "Customer Support Lead", label: "Customer Concierge" },
     { value: "Operations Admin", label: "Operations Admin" },
-    { value: "Finance & Treasury Admin", label: "Finance & Treasury Admin" },
-    { value: "Compliance & Audit Admin", label: "Compliance & Audit Admin" },
-    { value: "Customer Support Lead", label: "Customer Support Lead" },
   ];
 
   const statuses = ["All", "Active", "Pending", "Suspended"];

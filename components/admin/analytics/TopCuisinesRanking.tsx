@@ -17,10 +17,10 @@ export default function TopCuisinesRanking({
       <div className="lg:col-span-5 bg-surface-container-lowest p-5 sm:p-6 rounded-xl border border-outline-variant shadow-2xs flex flex-col justify-between">
         <div className="pb-3 border-b border-outline-variant/40">
           <h2 className="font-headline-sm text-lg sm:text-xl font-bold text-primary tracking-tight">
-            Leading Culinary Genres
+            Menu Departments &amp; Specialties
           </h2>
           <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-            Share of platform order volume and year-over-year category growth
+            Share of venue dining revenue and category pacing for The Maple &amp; Vine
           </p>
         </div>
 
@@ -30,7 +30,7 @@ export default function TopCuisinesRanking({
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-on-surface truncate">{c.name}</span>
                 <span className="font-mono font-semibold text-primary">
-                  ${(c.revenue / 1000000).toFixed(2)}M ({c.orderSharePct}%)
+                  ${c.revenue >= 1000000 ? `${(c.revenue / 1000000).toFixed(2)}M` : `${(c.revenue / 1000).toFixed(1)}k`} ({c.orderSharePct}%)
                 </span>
               </div>
 
@@ -56,25 +56,25 @@ export default function TopCuisinesRanking({
         <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
           <div>
             <h2 className="font-headline-sm text-lg sm:text-xl font-bold text-primary tracking-tight">
-              Top Commercial Establishments
+              Dining Room Floor Performance
             </h2>
             <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-              Ranked by fulfilled gross revenue and patron satisfaction rating
+              Station revenue yield, guest feedback, and table turnover SLA
             </p>
           </div>
-          <span className="text-xs text-primary font-semibold hover:underline cursor-pointer">
-            View All Merchants →
-          </span>
+          <a href="/dashboard/admin/restaurants" className="text-xs text-primary font-semibold hover:underline cursor-pointer">
+            Floor Stations →
+          </a>
         </div>
 
         <div className="overflow-x-auto mt-2">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-outline-variant/50 text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-                <th className="py-2.5 px-3">Merchant</th>
+                <th className="py-2.5 px-3">Dining Station</th>
                 <th className="py-2.5 px-3">Gross Sales</th>
                 <th className="py-2.5 px-3">Rating</th>
-                <th className="py-2.5 px-3 text-right">SLA</th>
+                <th className="py-2.5 px-3 text-right">Turn SLA</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/30 text-xs">
@@ -92,10 +92,10 @@ export default function TopCuisinesRanking({
                   <td className="py-3 px-3">
                     <div className="flex flex-col">
                       <span className="font-mono font-bold text-primary">
-                        ${(v.revenue / 1000000).toFixed(2)}M
+                        ${v.revenue >= 1000000 ? `${(v.revenue / 1000000).toFixed(2)}M` : `${(v.revenue / 1000).toFixed(1)}k`}
                       </span>
                       <span className="text-[10px] text-on-surface-variant">
-                        {v.orders.toLocaleString()} orders
+                        {v.orders.toLocaleString()} covers
                       </span>
                     </div>
                   </td>

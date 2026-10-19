@@ -193,8 +193,8 @@ export default function CustomerHeader({
                     onClick={() => setProfileDropdownOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >
-                    <span className="material-symbols-outlined text-base text-secondary">storefront</span>
-                    <span>Switch to Restaurant Owner</span>
+                    <span className="material-symbols-outlined text-base text-secondary">room_service</span>
+                    <span>GM Operations Console</span>
                   </Link>
                   <Link
                     href="/dashboard/admin"

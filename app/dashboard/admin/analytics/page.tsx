@@ -47,7 +47,7 @@ export default function AdminAnalyticsPage() {
     const headers = [
       "Time Interval",
       "Date",
-      "Gross Revenue (BDT)",
+      "Gross Revenue (USD)",
       "Orders",
       "Reservations",
       "New Registered Users",
