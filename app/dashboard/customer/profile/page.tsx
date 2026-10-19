@@ -23,6 +23,7 @@ import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
+import { uploadImageToCloudinary, formatFileSize } from "@/services/cloudinaryService";
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
@@ -51,6 +52,12 @@ export default function CustomerProfilePage() {
     INITIAL_CUSTOMER_PROFILE.dietaryPreferences
   );
   const [avatarUrl, setAvatarUrl] = useState(INITIAL_CUSTOMER_PROFILE.avatarUrl);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadStats, setPhotoUploadStats] = useState<{
+    original: string;
+    compressed: string;
+    savings: number;
+  } | null>(null);
 
   const [profileErrors, setProfileErrors] = useState<{
     fullName?: string;
@@ -130,45 +137,60 @@ export default function CustomerProfilePage() {
     savedSnapshot,
   ]);
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
+    // Accept all valid image types
+    if (!file.type.startsWith("image/")) {
       setProfileErrors((prev) => ({
         ...prev,
-        avatar: "Please select a JPG, PNG, or WebP image.",
+        avatar: "Please select an image file (JPG, PNG, WebP).",
       }));
       showToast("Invalid format. Please select an image.", "error");
       return;
     }
 
-    const maxSize = 4 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setProfileErrors((prev) => ({
-        ...prev,
-        avatar: "File size exceeds 4MB limit.",
-      }));
-      showToast("Image is too large. Maximum size is 4MB.", "error");
-      return;
-    }
+    try {
+      setIsUploadingPhoto(true);
+      setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
+      showToast("Optimizing & compressing image...", "info");
 
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const dataUrl = uploadEvent.target?.result as string;
-      if (dataUrl) {
-        setAvatarUrl(dataUrl);
-        setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
-        showToast("Photo updated.", "info");
+      const result = await uploadImageToCloudinary(file, {
+        folder: "dinedesk/avatars",
+        maxWidth: 600,
+        maxHeight: 600,
+        quality: 0.85,
+        targetMaxMB: 0.5,
+      });
+
+      if (result.success && result.url) {
+        setAvatarUrl(result.url);
+        setPhotoUploadStats({
+          original: formatFileSize(result.originalSize),
+          compressed: formatFileSize(result.compressedSize),
+          savings: result.savingsPercent,
+        });
+
+        const savingsText = result.savingsPercent > 0
+          ? ` (${formatFileSize(result.originalSize)} -> ${formatFileSize(result.compressedSize)}, ${result.savingsPercent}% smaller)`
+          : "";
+        showToast(`Profile photo optimized & uploaded!${savingsText}`, "success");
+      } else {
+        showToast("Could not process photo. Please try again.", "error");
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      console.error("Photo upload error:", err);
+      showToast(err?.message || "Failed to upload photo.", "error");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const handleRemovePhoto = () => {
     setAvatarUrl(INITIAL_CUSTOMER_PROFILE.avatarUrl);
+    setPhotoUploadStats(null);
     setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
     showToast("Photo reset to default.", "info");
   };
@@ -512,31 +534,49 @@ export default function CustomerProfilePage() {
                   </div>
 
                   {/* Photo Edit */}
-                  <div className="flex items-center gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant">
-                    <img
-                      alt={fullName}
-                      className="w-16 h-16 rounded-full object-cover ring-2 ring-primary-container/20 shrink-0 bg-surface-container"
-                      src={avatarUrl || "/avatars/tahmid-avatar.svg"}
-                      onError={(e) => {
-                        e.currentTarget.src = "/avatars/tahmid-avatar.svg";
-                      }}
-                    />
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-on-surface">
-                        Profile Photo
-                      </span>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant">
+                    <div className="relative shrink-0">
+                      <img
+                        alt={fullName}
+                        className="w-16 h-16 rounded-full object-cover ring-2 ring-primary-container/20 bg-surface-container"
+                        src={avatarUrl || "/avatars/tahmid-avatar.svg"}
+                        onError={(e) => {
+                          e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                        }}
+                      />
+                      {isUploadingPhoto && (
+                        <div className="absolute inset-0 bg-black/50 rounded-full flex flex-col items-center justify-center">
+                          <span className="material-symbols-outlined text-white animate-spin text-base">
+                            progress_activity
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-on-surface">
+                          Profile Photo
+                        </span>
+                        {photoUploadStats && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-xs">
+                            ⚡ {photoUploadStats.original} → {photoUploadStats.compressed} ({photoUploadStats.savings}% smaller)
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          disabled={isUploadingPhoto}
                           onClick={() => fileInputRef.current?.click()}
-                          className="px-3 py-1 bg-surface-container-lowest hover:bg-surface-container rounded-lg text-xs text-primary font-medium border border-outline-variant cursor-pointer shadow-xs"
+                          className="px-3 py-1 bg-surface-container-lowest hover:bg-surface-container rounded-lg text-xs text-primary font-medium border border-outline-variant cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center gap-1"
                         >
-                          Change
+                          {isUploadingPhoto ? "Optimizing..." : "Change Photo"}
                         </button>
                         <button
                           type="button"
+                          disabled={isUploadingPhoto}
                           onClick={handleRemovePhoto}
-                          className="px-3 py-1 text-xs text-secondary hover:text-error font-medium cursor-pointer"
+                          className="px-3 py-1 text-xs text-secondary hover:text-error font-medium cursor-pointer disabled:opacity-50"
                         >
                           Reset
                         </button>
@@ -544,7 +584,7 @@ export default function CustomerProfilePage() {
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/*"
                         className="hidden"
                         onChange={handlePhotoSelect}
                       />

@@ -125,6 +125,20 @@ export function saveCustomerProfile(
   if (isClient()) {
     try {
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated));
+
+      // Also synchronize updated avatar and name into current auth session
+      const authRaw = localStorage.getItem("dinedesk_auth_user");
+      if (authRaw) {
+        const authUser = JSON.parse(authRaw);
+        if (updated.avatarUrl) {
+          authUser.avatarUrl = updated.avatarUrl;
+        }
+        if (updated.fullName) {
+          authUser.name = updated.fullName;
+        }
+        localStorage.setItem("dinedesk_auth_user", JSON.stringify(authUser));
+      }
+
       window.dispatchEvent(new Event("dinedesk_profile_updated"));
     } catch (err) {
       console.error("Error saving customer profile to localStorage:", err);
