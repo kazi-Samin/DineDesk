@@ -306,25 +306,102 @@ export default function AuthView({
 
       {/* Main Split Layout */}
       <main className="flex-1 flex flex-col lg:flex-row w-full max-w-[1440px] mx-auto">
-        {/* Left Visual Panel: Clean dining photo, no heavy overlay, one serif quote at bottom */}
-        <section className="hidden lg:flex lg:w-1/2 p-6 lg:p-8 xl:p-12 flex-col justify-end">
-          <div className="relative w-full h-full min-h-[580px] max-h-[760px] rounded-2xl overflow-hidden shadow-sm border border-neutral-200/60">
+        {/* Left Visual Panel: Rich Information & Atmosphere inside Photo */}
+        <section className="hidden lg:flex lg:w-1/2 p-6 lg:p-8 xl:p-10 flex-col justify-center">
+          <div className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-neutral-200/60 min-h-[580px] max-h-[720px] flex flex-col justify-between p-6 sm:p-8">
             <Image
               src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1400&auto=format&fit=crop"
-              alt="Dining room table setting"
+              alt="The Maple & Vine Dining Room"
               fill
               priority
               unoptimized
               sizes="50vw"
               className="object-cover object-center"
             />
-            {/* Subtle bottom gradient strictly for quote readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent pointer-events-none" />
+            {/* Elegant dark gradient overlay for crisp readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/65 pointer-events-none" />
 
-            <div className="relative z-10 p-8 xl:p-10">
-              <p className="font-serif text-white text-2xl sm:text-3xl font-normal leading-snug max-w-sm drop-shadow-sm">
-                &ldquo;Reserve a table. Order in. Eat well, Michigan.&rdquo;
-              </p>
+            {/* Top Info Bar inside Photo */}
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15">
+                <span className="material-symbols-outlined text-amber-400 text-sm">restaurant</span>
+                <span className="text-white text-xs font-semibold tracking-wide">
+                  The Maple &amp; Vine • Detroit
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-emerald-300 text-[11px] font-semibold border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Service Active
+              </span>
+            </div>
+
+            {/* Middle Feature Highlights Cards */}
+            <div className="relative z-10 my-auto py-5 space-y-3">
+              <div>
+                <span className="text-[11px] uppercase tracking-widest text-amber-300/90 font-bold block mb-1">
+                  Wood-Fired Hearth &amp; Cellar
+                </span>
+                <h2 className="font-serif text-white text-2xl sm:text-3xl font-normal leading-tight">
+                  Reserve your table. Savor every detail.
+                </h2>
+                <p className="text-neutral-300 text-xs sm:text-sm mt-1 max-w-md leading-relaxed">
+                  Authentic Michigan wood-fired prime steaks, hand-crafted pastas, and sommelier reserve flights in historic Corktown.
+                </p>
+              </div>
+
+              {/* 3 Frosted Highlights inside the photo */}
+              <div className="grid grid-cols-1 gap-2.5 pt-1">
+                <div className="flex items-center gap-3 bg-white/10 hover:bg-white/15 backdrop-blur-md p-3 rounded-xl border border-white/10 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-300 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-lg">table_restaurant</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white text-xs font-bold">4 Curated Dining Rooms</h3>
+                    <p className="text-neutral-300 text-[11px]">
+                      Main Hearth, Wine Cellar Reserve, Garden Patio, &amp; Chef&apos;s Tasting Counter.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white/10 hover:bg-white/15 backdrop-blur-md p-3 rounded-xl border border-white/10 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-lg">local_fire_department</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white text-xs font-bold">Live Kitchen Pacing</h3>
+                    <p className="text-neutral-300 text-[11px]">
+                      Track order preparation in real-time from the kitchen hearth to your table.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-white/10 hover:bg-white/15 backdrop-blur-md p-3 rounded-xl border border-white/10 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-300 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-lg">workspace_premium</span>
+                  </div>
+                  <div>
+                    <h3 className="text-white text-xs font-bold">VIP Concierge &amp; Rewards</h3>
+                    <p className="text-neutral-300 text-[11px]">
+                      Earn dining loyalty points on every cover and unlock sommelier cellar holds.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Telemetry & Trust Badges */}
+            <div className="relative z-10 pt-3 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-[11px] text-neutral-300">
+              <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
+                <span className="material-symbols-outlined text-sm">star</span>
+                <span>4.96 Rating (640+ Reviews)</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-emerald-400">verified</span>
+                <span>Health Grade A (98/100)</span>
+              </div>
+              <div className="text-neutral-400 font-mono text-[10px]">
+                2414 Michigan Ave
+              </div>
             </div>
           </div>
         </section>
