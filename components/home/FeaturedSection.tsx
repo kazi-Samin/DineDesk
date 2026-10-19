@@ -90,12 +90,16 @@ export default function FeaturedSection() {
             className="shrink-0"
           >
             <Link
-              className="group relative overflow-hidden inline-flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-2xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/30"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2.5 sm:gap-3 px-5 py-3 sm:px-8 sm:py-4 bg-primary text-on-primary rounded-2xl text-sm sm:text-base font-bold shadow-lg shadow-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/30 active:scale-95"
               href="/explore"
             >
-              <span className="relative z-10">Explore Full Collection</span>
-              <span className="relative z-10 w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1">
-                <span className="material-symbols-outlined text-lg">
+              {/* Responsive Text: Short on mobile, full text on tablets/desktops */}
+              <span className="relative z-10 sm:hidden">Explore All</span>
+              <span className="relative z-10 hidden sm:inline">Explore Full Collection</span>
+
+              {/* Animated Arrow Icon Box */}
+              <span className="relative z-10 w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/10 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1">
+                <span className="material-symbols-outlined text-base sm:text-lg">
                   arrow_forward
                 </span>
               </span>
