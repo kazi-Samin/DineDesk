@@ -55,11 +55,11 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                 viewport={{ once: true }}
                 transition={{ duration: 0.3 }}
                 whileHover={{ y: -3 }}
-                className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary/60 rounded-3xl flex flex-col md:flex-row transition-all duration-300 overflow-hidden shadow-sm hover:shadow-xl ${!isOpen ? "opacity-90" : ""
+                className={`group bg-surface-container-lowest border border-outline-variant hover:border-primary/60 rounded-3xl flex flex-col md:flex-row transition-all duration-300 overflow-hidden shadow-sm hover:shadow-xl md:h-[220px] w-full ${!isOpen ? "opacity-90" : ""
                     }`}
             >
-                {/* Left Image Section */}
-                <div className="relative w-full md:w-80 aspect-[16/10] md:aspect-auto shrink-0 bg-surface-container-high overflow-hidden">
+                {/* Left Image Section - Fixed rigid dimensions for uniform shape */}
+                <div className="relative w-full h-56 md:h-full md:w-[320px] shrink-0 bg-surface-container-high overflow-hidden">
                     <img
                         className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${!isOpen ? "grayscale-[30%]" : ""
                             }`}
@@ -101,7 +101,7 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                 </div>
 
                 {/* Right Info Section */}
-                <div className="p-6 flex flex-col flex-1 justify-between gap-4">
+                <div className="p-6 flex flex-col flex-1 justify-between gap-4 overflow-hidden">
                     <div>
                         <div className="flex items-start justify-between gap-2">
                             <div>
@@ -109,16 +109,15 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-container text-primary uppercase tracking-widest border border-outline-variant/40">
                                         {itemSerialTag}
                                     </span>
-                                    <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
+                                    <span className="text-xs text-secondary uppercase tracking-widest font-extrabold truncate max-w-[200px]">
                                         {item.restaurantName}
                                     </span>
                                 </div>
-                                <h3 className="font-heading font-bold text-lg sm:text-xl text-on-surface group-hover:text-primary transition-colors mt-0.5">
+                                <h3 className="font-heading font-bold text-lg sm:text-xl text-on-surface group-hover:text-primary transition-colors mt-0.5 truncate max-w-md">
                                     {cleanDishName}
                                 </h3>
                             </div>
-                            {/* Replaced priceTier $ symbol with actual dish price */}
-                            <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary text-sm font-extrabold tracking-tight">
+                            <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary text-sm font-extrabold tracking-tight shrink-0">
                                 ${itemPrice}
                             </span>
                         </div>
@@ -128,7 +127,7 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                         </p>
                     </div>
 
-                    <div className="pt-4 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-semibold">
+                    <div className="pt-3 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-semibold">
                         <span className="flex items-center gap-1.5 text-primary">
                             <span className="material-symbols-outlined text-sm">schedule</span>
                             {item.deliveryTime || "25 mins"}
