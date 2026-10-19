@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { TableEntity } from "@/types/reservation";
 
 interface FloorPlanMatrixProps {
@@ -190,8 +191,8 @@ export default function FloorPlanMatrix({
         </div>
       </div>
 
-      {/* Open Interactive Floor Manager Button */}
-      <div className="pt-space-xs">
+      {/* Open Interactive Floor Manager Button & Full Page Link */}
+      <div className="pt-space-xs space-y-2">
         <button
           onClick={onOpenFloorManager}
           className="w-full py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
@@ -200,6 +201,13 @@ export default function FloorPlanMatrix({
           <span className="material-symbols-outlined text-base">zoom_out_map</span>
           <span>Open Interactive Floor Manager</span>
         </button>
+        <Link
+          href="/dashboard/vendor/floor"
+          className="w-full py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-center"
+        >
+          <span className="material-symbols-outlined text-sm">grid_view</span>
+          <span>Full Dining Room Floor Console →</span>
+        </Link>
       </div>
     </div>
   );

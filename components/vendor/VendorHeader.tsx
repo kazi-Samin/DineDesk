@@ -29,6 +29,7 @@ export default function VendorHeader({
   const isOverview = pathname === "/dashboard/vendor";
   const isOrders = pathname?.startsWith("/dashboard/vendor/orders");
   const isReservations = pathname?.startsWith("/dashboard/vendor/reservations");
+  const isFloor = pathname?.startsWith("/dashboard/vendor/floor");
   const isMenu = pathname?.startsWith("/dashboard/vendor/manage-menu");
   const isProfile = pathname?.startsWith("/dashboard/vendor/manage-profile");
 
@@ -95,6 +96,9 @@ export default function VendorHeader({
           </Link>
           <Link href="/dashboard/vendor/reservations" className={linkClass(isReservations)}>
             Table Seating
+          </Link>
+          <Link href="/dashboard/vendor/floor" className={linkClass(isFloor || false)}>
+            Dining Room Floor
           </Link>
           <Link href="/dashboard/vendor/manage-menu" className={linkClass(isMenu)}>
             Menu &amp; Specials
@@ -230,7 +234,7 @@ export default function VendorHeader({
                     <span>Live Orders &amp; Kitchen Tickets</span>
                   </Link>
                   <Link
-                    href="/dashboard/vendor/reservations"
+                    href="/dashboard/vendor/floor"
                     onClick={() => setRoleMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
                   >

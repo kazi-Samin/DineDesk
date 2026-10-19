@@ -21,6 +21,7 @@ export default function VendorSidebar({
   const isLiveConsole = pathname === "/dashboard/vendor";
   const isLiveOrders = pathname === "/dashboard/vendor/orders";
   const isReservations = pathname === "/dashboard/vendor/reservations";
+  const isFloor = pathname === "/dashboard/vendor/floor" || pathname === "/dashboard/vendor/floorplan";
   const isMenu = pathname === "/dashboard/vendor/manage-menu";
   const isProfile = pathname === "/dashboard/vendor/manage-profile";
 
@@ -94,9 +95,9 @@ export default function VendorSidebar({
                       Michigan Avenue • Detroit, MI
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-semibold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                    Service Active
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-[11px] font-semibold whitespace-nowrap shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shrink-0" />
+                    Service
                   </span>
                 </div>
                 <div className="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between text-on-surface-variant">
@@ -187,15 +188,15 @@ export default function VendorSidebar({
             </Link>
 
             <Link
-              href="/dashboard/vendor/reservations#floorplan"
+              href="/dashboard/vendor/floor"
               onClick={handleNavClick}
-              className={linkClass(false)}
-              title="Dining Room Floorplan"
+              className={linkClass(isFloor)}
+              title="Dining Room Floor"
             >
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-xl">grid_view</span>
                 {isOpen && (
-                  <span className="font-label-lg text-label-lg font-medium">Dining Room Floorplan</span>
+                  <span className="font-label-lg text-label-lg font-medium">Dining Room Floor</span>
                 )}
               </div>
             </Link>
