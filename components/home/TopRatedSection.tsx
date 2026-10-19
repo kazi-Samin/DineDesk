@@ -1,177 +1,209 @@
 "use client";
 
 import Link from "next/link";
-import { TOP_RATED_RESTAURANTS } from "@/data/restaurants";
+import { motion } from "framer-motion";
 import { useReservation } from "@/context/ReservationContext";
 
 export default function TopRatedSection() {
   const { openReservationModal } = useReservation();
+
   return (
-    <section className="w-full py-space-xl bg-surface-container-low">
-      <div className="max-w-[1440px] mx-auto px-margin">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md pb-space-lg mb-space-lg">
+    <section className="w-full py-20 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+
+        {/* Section Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-10 mb-12 border-b border-outline-variant/40"
+        >
           <div>
-            <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
+            <span className="text-xs uppercase tracking-widest text-secondary font-extrabold">
               Highest Rated
             </span>
-            <h2 className="font-headline-lg text-headline-lg text-primary tracking-tight">
-              Top Rated Restaurants
+            <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-primary tracking-tight mt-1">
+              Top Rated Items
             </h2>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
-              Top-rated dining institutions with consistently excellent reviews and dining experiences.
+            <p className="text-sm sm:text-base text-on-surface-variant mt-2 max-w-xl font-medium">
+              Top-rated Michelin-starred dining institutions with consistently excellent reviews and unforgettable culinary experiences.
             </p>
           </div>
-          <div className="flex items-center gap-space-sm text-on-surface-variant font-body-sm text-body-sm">
-            <span className="material-symbols-outlined text-secondary">verified_user</span>
+          <div className="flex items-center gap-2 text-on-surface-variant text-xs sm:text-sm font-semibold bg-surface-container-lowest px-4 py-2.5 rounded-2xl border border-outline-variant/60 shadow-2xs">
+            <span className="material-symbols-outlined text-secondary text-lg">verified_user</span>
             <span>Verified diner reviews &amp; ratings</span>
           </div>
-        </div>
-        <div className="flex flex-col gap-space-lg">
-          {/* Standout 1: Izumi Japanese Kitchen */}
-          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-0">
+        </motion.div>
+
+        {/* Restaurant Cards Container */}
+        <div className="flex flex-col gap-10">
+
+          {/* Standout 1: Izumi Japanese Kitchen (Animates from LEFT to RIGHT) */}
+          <motion.div
+            initial={{ opacity: 0, x: -70 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            whileHover={{ y: -4 }}
+            className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-outline-variant/80 shadow-md hover:shadow-2xl transition-all duration-500 grid grid-cols-1 lg:grid-cols-12 items-stretch group"
+          >
             <Link
               href="/explore?q=Izumi"
-              className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden block cursor-pointer group"
+              className="lg:col-span-6 relative h-72 lg:h-auto min-h-[340px] overflow-hidden block cursor-pointer"
             >
               <img
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                alt="Zen Japanese courtyard dining room at dusk with bonsai garden views, candle-lit wooden dining tables, and delicate ceramic dinnerware in a serene luxury atmosphere."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwR7Fo5YJjNmW_NKP5D14s88pIB4JQ_I6MoJ8lb1oqr9vwIybya15y0go_w-i_PHTqmVe8JthIaSmw66qGh6UUvWaq8JKAj37X60PhTz2VABbcymBNMUPjcVuDDwNnugDPshPIMmqJFZqltz4ESdIrx1eMTOnLpKF-QFlrXL2HsRRbzzI2AYJ-ZylkMcgdWbSW_WtjHvIcMKiOUsAuVLCFpFgmbcccsIMa1JzxXTaAoR-XvxrKOoMtFg"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt="Japanese Omakase Sushi & Sashimi Platter"
+                src="https://images.unsplash.com/photo-1579871494447-9811cf80d66c?q=80&w=1000&auto=format&fit=crop"
               />
-              <div className="absolute top-space-md left-space-md bg-primary/90 backdrop-blur-xs text-on-primary px-2.5 py-1 rounded-sm font-medium text-xs">
-                #1 Fine Dining 2025
+              <div className="absolute top-4 left-4 bg-primary/95 backdrop-blur-md text-on-primary px-3 py-1.5 rounded-xl font-bold text-xs tracking-wide shadow-md">
+                #1 Paris Fine Dining 2026
               </div>
             </Link>
-            <div className="lg:col-span-6 p-space-xl flex flex-col justify-between">
-              <div className="flex flex-col gap-space-sm">
+
+            <div className="lg:col-span-6 p-8 lg:p-10 flex flex-col justify-between">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Downtown Detroit · Woodward Ave
+                  <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
+                    Paris, France · Rue de Faubourg Saint-Honoré
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    $$$$ · Fine Dining
+                  <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-lg">
+                    $$$$ · 3-Star Michelin
                   </span>
                 </div>
                 <Link href="/explore?q=Izumi">
-                  <h3 className="font-headline-lg text-headline-lg text-primary hover:text-secondary transition-colors cursor-pointer">
+                  <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-primary group-hover:text-secondary transition-colors cursor-pointer">
                     Izumi Courtyard &amp; Robata Grill
                   </h3>
                 </Link>
-                <p className="font-body-md text-body-md text-on-surface-variant">
-                  Master Chef Hiroshi’s seasonal omakase, binchotan charcoal robatayaki skewers, and Detroit’s freshest hamachi nigiri imports.
+                <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                  Master Chef Hiroshi’s seasonal omakase, binchotan charcoal robatayaki skewers, and Europe’s freshest hamachi nigiri imports.
                 </p>
-                {/* Star breakdown bar */}
-                <div className="bg-surface-container p-3.5 rounded-lg border border-outline-variant/60 my-space-xs flex items-center gap-space-md">
+
+                {/* Rating Bar */}
+                <div className="bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/60 my-2 flex items-center gap-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-headline-lg text-headline-lg text-primary font-bold">4.95</span>
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">/ 5.0</span>
+                    <span className="font-heading text-2xl text-primary font-black">4.95</span>
+                    <span className="text-xs text-on-surface-variant font-bold">/ 5.0</span>
                   </div>
-                  <div className="h-8 w-px bg-outline-variant"></div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex justify-between font-label-sm text-label-sm text-on-surface">
+                  <div className="h-8 w-px bg-outline-variant/60"></div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex justify-between text-xs font-bold text-on-surface">
                       <span>Culinary Consistency</span>
-                      <span className="font-bold">99%</span>
+                      <span className="text-primary font-black">99%</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
                       <div className="bg-primary h-full w-[99%] rounded-full"></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-                <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+
+              <div className="pt-6 flex flex-wrap items-center justify-between gap-4 border-t border-outline-variant/50">
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
                   <span className="material-symbols-outlined text-primary text-base">check_circle</span>
                   <span>Table reservations booking 3 days ahead</span>
                 </div>
-                <div className="flex items-center gap-space-sm">
-                  <button
-                    onClick={() =>
-                      openReservationModal({
-                        id: "izumi-courtyard",
-                        name: "Izumi Courtyard & Robata Grill",
-                        neighborhood: "Gulshan 2 · Park Road",
-                      })
-                    }
-                    className="px-5 py-2.5 bg-primary text-on-primary rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
-                    type="button"
-                  >
-                    Book Table or Order
-                  </button>
-                </div>
+                <button
+                  onClick={() =>
+                    openReservationModal({
+                      id: "izumi-courtyard",
+                      name: "Izumi Courtyard & Robata Grill",
+                      neighborhood: "Paris · Faubourg Saint-Honoré",
+                    })
+                  }
+                  className="px-6 py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                  type="button"
+                >
+                  Book Table or Order
+                </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Standout 2: Star Kabab & Biryani Heritage */}
-          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-0">
+          {/* Standout 2: Midtown Grille (Animates from RIGHT to LEFT) */}
+          <motion.div
+            initial={{ opacity: 0, x: 70 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            whileHover={{ y: -4 }}
+            className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-outline-variant/80 shadow-md hover:shadow-2xl transition-all duration-500 grid grid-cols-1 lg:grid-cols-12 items-stretch group"
+          >
             <Link
               href="/explore?q=Star+Kabab"
-              className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden lg:order-2 block cursor-pointer group"
+              className="lg:col-span-6 relative h-72 lg:h-auto min-h-[340px] overflow-hidden lg:order-2 block cursor-pointer"
             >
               <img
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                alt="Generous platter of authentic spicy mutton leg roast, flaky parathas, aromatic korma gravy, and steaming rumali roti served in a vibrant traditional South Asian banquet setting."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD5FN-_BR45jsuDhvdSshnAr2pEit2Tq4aRrAllopeGVmfAjAn3ud92R-chU6Oj40F_OS4mJ1TnT5RG4-HI11E3lkDAilyXDyC1hVL1M-_vovopzH9D80s9ovcsRn4Kl5yCwSfPtoKxPoHGIqe3k2YG1YKzn5buabgqd7h4uCcIcYgwX5MtT9lqEYK5SkwDwJM21-_5NJGe8aHaynuY2QgSLHI24sdREqRAxaDfTI6JPQuV36RfP8RNSQ"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt="Texas-Style Hickory Smoked BBQ Pork Ribs & Brisket"
+                src="https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1000&auto=format&fit=crop"
               />
-              <div className="absolute top-space-md right-space-md bg-secondary text-on-primary px-2.5 py-1 rounded-sm font-medium text-xs">
-                Heritage Legend · Est. 1971
+              <div className="absolute top-4 right-4 bg-secondary text-on-primary px-3 py-1.5 rounded-xl font-bold text-xs tracking-wide shadow-md">
+                Bologna Tradition · Est. 1971
               </div>
             </Link>
-            <div className="lg:col-span-6 p-space-xl flex flex-col justify-between lg:order-1">
-              <div className="flex flex-col gap-space-sm">
+
+            <div className="lg:col-span-6 p-8 lg:p-10 flex flex-col justify-between lg:order-1">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Midtown Detroit
+                  <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
+                    Bologna, Italy · Via dell'Indipendenza
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    $$ · Prime Smokehouse
+                  <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-lg">
+                    $$ · Prime Trattoria
                   </span>
                 </div>
                 <Link href="/explore?q=Midtown+Grille">
-                  <h3 className="font-headline-lg text-headline-lg text-primary hover:text-secondary transition-colors cursor-pointer">
+                  <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-primary group-hover:text-secondary transition-colors cursor-pointer">
                     Midtown Grille &amp; Smokehouse
                   </h3>
                 </Link>
-                <p className="font-body-md text-body-md text-on-surface-variant">
-                  Uncompromising post-oak smoked brisket, tender baby back ribs, and fresh cast-iron skillet cornbread.
+                <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                  Uncompromising slow-roasted regional meats, tender heritage ribs, and fresh Italian artisan focaccia.
                 </p>
-                <div className="bg-surface-container p-3.5 rounded-lg border border-outline-variant/60 my-space-xs flex items-center gap-space-md">
+
+                {/* Rating Bar */}
+                <div className="bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/60 my-2 flex items-center gap-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-headline-lg text-headline-lg text-primary font-bold">4.88</span>
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">/ 5.0</span>
+                    <span className="font-heading text-2xl text-primary font-black">4.88</span>
+                    <span className="text-xs text-on-surface-variant font-bold">/ 5.0</span>
                   </div>
-                  <div className="h-8 w-px bg-outline-variant"></div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex justify-between font-label-sm text-label-sm text-on-surface">
+                  <div className="h-8 w-px bg-outline-variant/60"></div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex justify-between text-xs font-bold text-on-surface">
                       <span>Authentic Flavor Score</span>
-                      <span className="font-bold">98%</span>
+                      <span className="text-secondary font-black">98%</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
                       <div className="bg-secondary h-full w-[98%] rounded-full"></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-                <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
+
+              <div className="pt-6 flex flex-wrap items-center justify-between gap-4 border-t border-outline-variant/50">
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
                   <span className="material-symbols-outlined text-secondary text-base">local_shipping</span>
                   <span>Direct rapid insulated dispatch available</span>
                 </div>
-                <div className="flex items-center gap-space-sm">
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() =>
                       openReservationModal({
                         id: "star-kabab-heritage",
                         name: "Star Kabab & Heritage Biryani",
-                        neighborhood: "Dhanmondi 2",
+                        neighborhood: "Bologna · Via Indipendenza",
                       })
                     }
-                    className="px-4 py-2.5 border border-outline-variant text-primary rounded-lg font-medium text-sm hover:bg-surface-container transition-colors cursor-pointer"
+                    className="px-4 py-3 border border-outline-variant text-primary rounded-2xl font-bold text-xs sm:text-sm hover:bg-surface-container transition-all cursor-pointer"
+                    type="button"
                   >
                     Reserve Table
                   </button>
                   <Link
-                    className="px-5 py-2.5 bg-primary text-on-primary rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors shadow-xs"
+                    className="px-5 py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all shadow-md active:scale-95"
                     href="/explore"
                   >
                     Order Now
@@ -179,76 +211,91 @@ export default function TopRatedSection() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Standout 3: Le Sourdough Bistro */}
-          <div className="bg-surface-container-lowest rounded-2xl overflow-hidden border border-outline-variant shadow-xs grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-6 relative h-64 lg:h-auto min-h-[300px] overflow-hidden">
+          {/* Standout 3: Manhattan Prime Steakhouse (Items-stretch enforced - Animates from LEFT to RIGHT) */}
+          <motion.div
+            initial={{ opacity: 0, x: -70 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            whileHover={{ y: -4 }}
+            className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-outline-variant/80 shadow-md hover:shadow-2xl transition-all duration-500 grid grid-cols-1 lg:grid-cols-12 items-stretch group"
+          >
+            <Link
+              href="/explore"
+              className="lg:col-span-6 relative h-72 lg:h-auto min-h-[340px] overflow-hidden block cursor-pointer"
+            >
               <img
-                className="w-full h-full object-cover"
-                alt="Rustic wooden table showcasing woodfired blistered sourdough pizza topped with burrata, prosciutto, fresh basil leaves, and balsamic reduction in an airy natural daylight trattoria."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuADTtnoBGSlHW_dmf0GQpaiJojCC_ywFbfy8626ID1Z376SakdGAgJaWsFaYiktM8TLLNQYaZQQQn6Pdb7alsRXY7tQtycePfyWviLfpHdfMdjaW1Dqyq0FSwdaLzNcIbxdoErzfYU95l3t2ANB43arYzU-ZQoBLTDkseIX--rSxfJPs82dhoIIUsgsBv7fbwqJSXAjwtj-Lzi1lwNep1waXDkALofdMhCFHUTefC5_3_y4LvkFWK7rxg"
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt="American Prime Dry-Aged Ribeye Steak"
+                src="https://images.unsplash.com/photo-1558030006-450675393462?q=80&w=1000&auto=format&fit=crop"
               />
-              <div className="absolute top-space-md left-space-md bg-primary/90 backdrop-blur-xs text-on-primary px-2.5 py-1 rounded-sm font-medium text-xs">
-                Dhaka Gastronomy Choice
+              <div className="absolute top-4 left-4 bg-primary/95 backdrop-blur-md text-on-primary px-3 py-1.5 rounded-xl font-bold text-xs tracking-wide shadow-md">
+                New York Steakhouse Legend
               </div>
-            </div>
-            <div className="lg:col-span-6 p-space-xl flex flex-col justify-between">
-              <div className="flex flex-col gap-space-sm">
+            </Link>
+
+            <div className="lg:col-span-6 p-8 lg:p-10 flex flex-col justify-between">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-wider font-semibold">
-                    Corktown · Michigan Ave
+                  <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
+                    New York, USA · Broadway &amp; 46th St
                   </span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    $$$ · Mediterranean Bistro
+                  <span className="text-xs font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-lg">
+                    $$$$ · Prime American Steakhouse
                   </span>
                 </div>
-                <h3 className="font-headline-lg text-headline-lg text-primary">
-                  Le Sourdough Bistro &amp; Woodfire
-                </h3>
-                <p className="font-body-md text-body-md text-on-surface-variant">
-                  72-hour naturally fermented sourdough pizzas, handmade tagliatelle with porcini mushrooms, and garden terrace seating.
+                <Link href="/explore">
+                  <h3 className="font-heading font-extrabold text-2xl sm:text-3xl text-primary group-hover:text-secondary transition-colors cursor-pointer">
+                    Manhattan Prime Dry-Aged Steakhouse
+                  </h3>
+                </Link>
+                <p className="text-sm text-on-surface-variant font-medium leading-relaxed">
+                  45-day dry-aged USDA Prime bone-in ribeye, charred over mesquite wood, served with truffle butter and cast-iron creamed spinach.
                 </p>
-                <div className="bg-surface-container p-3.5 rounded-lg border border-outline-variant/60 my-space-xs flex items-center gap-space-md">
+
+                {/* Rating Bar */}
+                <div className="bg-surface-container/60 p-4 rounded-2xl border border-outline-variant/60 my-2 flex items-center gap-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="font-headline-lg text-headline-lg text-primary font-bold">4.91</span>
-                    <span className="font-body-sm text-body-sm text-on-surface-variant">/ 5.0</span>
+                    <span className="font-heading text-2xl text-primary font-black">4.96</span>
+                    <span className="text-xs text-on-surface-variant font-bold">/ 5.0</span>
                   </div>
-                  <div className="h-8 w-px bg-outline-variant"></div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="flex justify-between font-label-sm text-label-sm text-on-surface">
-                      <span>Ingredient Provenance</span>
-                      <span className="font-bold">96%</span>
+                  <div className="h-8 w-px bg-outline-variant/60"></div>
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex justify-between text-xs font-bold text-on-surface">
+                      <span>Steak Perfection Score</span>
+                      <span className="text-primary font-black">99%</span>
                     </div>
-                    <div className="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-primary h-full w-[96%] rounded-full"></div>
+                    <div className="w-full bg-surface-container-highest rounded-full h-2 overflow-hidden">
+                      <div className="bg-primary h-full w-[99%] rounded-full"></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="pt-space-md flex flex-wrap items-center justify-between gap-space-md">
-                <div className="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm">
-                  <span className="material-symbols-outlined text-primary text-base">deck</span>
-                  <span>Open garden patio tables available tonight</span>
+
+              <div className="pt-6 flex flex-wrap items-center justify-between gap-4 border-t border-outline-variant/50">
+                <div className="flex items-center gap-2 text-on-surface-variant text-xs font-semibold">
+                  <span className="material-symbols-outlined text-primary text-base">local_fire_department</span>
+                  <span>Chef's reserve tables available tonight</span>
                 </div>
-                <div className="flex items-center gap-space-sm">
-                  <button
-                    onClick={() =>
-                      openReservationModal({
-                        id: "le-sourdough-bistro",
-                        name: "Le Sourdough Bistro & Woodfire",
-                        neighborhood: "Banani Rd 10",
-                      })
-                    }
-                    className="px-5 py-2.5 bg-primary text-on-primary rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer shadow-xs"
-                    type="button"
-                  >
-                    Book Table or Order
-                  </button>
-                </div>
+                <button
+                  onClick={() =>
+                    openReservationModal({
+                      id: "manhattan-prime-steakhouse",
+                      name: "Manhattan Prime Dry-Aged Steakhouse",
+                      neighborhood: "New York · Broadway",
+                    })
+                  }
+                  className="px-6 py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs sm:text-sm hover:bg-primary/90 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+                  type="button"
+                >
+                  Book Table or Order
+                </button>
               </div>
             </div>
-          </div>
+          </motion.div>
+
         </div>
       </div>
     </section>
