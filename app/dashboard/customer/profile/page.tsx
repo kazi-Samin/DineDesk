@@ -23,13 +23,40 @@ import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
-import { uploadImageToCloudinary, formatFileSize } from "@/services/cloudinaryService";
+import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
   { id: "nut_allergy", label: "Nut Allergy", icon: "warning" },
   { id: "mild_spice", label: "Mild Spice" },
   { id: "no_shellfish", label: "No Shellfish" },
+];
+
+const AVAILABLE_LANGUAGES: { code: string; label: string; nativeName: string; flag: string }[] = [
+  { code: "en", label: "English", nativeName: "English", flag: "🇺🇸" },
+  { code: "bn", label: "Bengali", nativeName: "বাংলা", flag: "🇧🇩" },
+  { code: "es", label: "Spanish", nativeName: "Español", flag: "🇪🇸" },
+  { code: "fr", label: "French", nativeName: "Français", flag: "🇫🇷" },
+  { code: "ar", label: "Arabic", nativeName: "العربية", flag: "🇸🇦" },
+  { code: "de", label: "German", nativeName: "Deutsch", flag: "🇩🇪" },
+  { code: "hi", label: "Hindi", nativeName: "हिन्दी", flag: "🇮🇳" },
+  { code: "zh", label: "Chinese (Simplified)", nativeName: "简体中文", flag: "🇨🇳" },
+  { code: "ja", label: "Japanese", nativeName: "日本語", flag: "🇯🇵" },
+  { code: "it", label: "Italian", nativeName: "Italiano", flag: "🇮🇹" },
+  { code: "pt", label: "Portuguese", nativeName: "Português", flag: "🇧🇷" },
+  { code: "ru", label: "Russian", nativeName: "Русский", flag: "🇷🇺" },
+  { code: "ko", label: "Korean", nativeName: "한국어", flag: "🇰🇷" },
+  { code: "tr", label: "Turkish", nativeName: "Türkçe", flag: "🇹🇷" },
+  { code: "ur", label: "Urdu", nativeName: "اردو", flag: "🇵🇰" },
+  { code: "vi", label: "Vietnamese", nativeName: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "nl", label: "Dutch", nativeName: "Nederlands", flag: "🇳🇱" },
+  { code: "pl", label: "Polish", nativeName: "Polski", flag: "🇵🇱" },
+  { code: "th", label: "Thai", nativeName: "ไทย", flag: "🇹🇭" },
+  { code: "ms", label: "Malay", nativeName: "Bahasa Melayu", flag: "🇲🇾" },
+  { code: "id", label: "Indonesian", nativeName: "Bahasa Indonesia", flag: "🇮🇩" },
+  { code: "fa", label: "Persian", nativeName: "فারসি", flag: "🇮🇷" },
+  { code: "sv", label: "Swedish", nativeName: "Svenska", flag: "🇸🇪" },
+  { code: "el", label: "Greek", nativeName: "Ελληνικά", flag: "🇬🇷" },
 ];
 
 export default function CustomerProfilePage() {
@@ -53,11 +80,6 @@ export default function CustomerProfilePage() {
   );
   const [avatarUrl, setAvatarUrl] = useState(INITIAL_CUSTOMER_PROFILE.avatarUrl);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [photoUploadStats, setPhotoUploadStats] = useState<{
-    original: string;
-    compressed: string;
-    savings: number;
-  } | null>(null);
 
   const [profileErrors, setProfileErrors] = useState<{
     fullName?: string;
@@ -167,16 +189,23 @@ export default function CustomerProfilePage() {
 
       if (result.success && result.url) {
         setAvatarUrl(result.url);
-        setPhotoUploadStats({
-          original: formatFileSize(result.originalSize),
-          compressed: formatFileSize(result.compressedSize),
-          savings: result.savingsPercent,
-        });
 
-        const savingsText = result.savingsPercent > 0
-          ? ` (${formatFileSize(result.originalSize)} -> ${formatFileSize(result.compressedSize)}, ${result.savingsPercent}% smaller)`
-          : "";
-        showToast(`Profile photo optimized & uploaded!${savingsText}`, "success");
+        // Immediately persist to customer profile storage
+        const saved = saveCustomerProfile({
+          ...profile,
+          avatarUrl: result.url,
+        });
+        syncFormWithProfile(saved);
+
+        // Persist avatar per user email permanently so subsequent logins retain this photo
+        if (typeof window !== "undefined") {
+          const userEmail = (user?.email || profile.email || "").toLowerCase();
+          if (userEmail) {
+            localStorage.setItem(`dinedesk_avatar_${userEmail}`, result.url);
+          }
+        }
+
+        showToast("Profile photo updated successfully.", "success");
       } else {
         showToast("Could not process photo. Please try again.", "error");
       }
@@ -189,9 +218,23 @@ export default function CustomerProfilePage() {
   };
 
   const handleRemovePhoto = () => {
-    setAvatarUrl(INITIAL_CUSTOMER_PROFILE.avatarUrl);
-    setPhotoUploadStats(null);
+    const defaultAvatar = INITIAL_CUSTOMER_PROFILE.avatarUrl;
+    setAvatarUrl(defaultAvatar);
     setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
+
+    const saved = saveCustomerProfile({
+      ...profile,
+      avatarUrl: defaultAvatar,
+    });
+    syncFormWithProfile(saved);
+
+    if (typeof window !== "undefined") {
+      const userEmail = (user?.email || profile.email || "").toLowerCase();
+      if (userEmail) {
+        localStorage.removeItem(`dinedesk_avatar_${userEmail}`);
+      }
+    }
+
     showToast("Photo reset to default.", "info");
   };
 
@@ -213,8 +256,14 @@ export default function CustomerProfilePage() {
       errors.email = "Please enter a valid email.";
     }
 
-    const phoneRegex = /^[+0-9\s-]{8,18}$/;
-    if (!phone.trim() || !phoneRegex.test(phone.trim())) {
+    const digitsOnly = phone.replace(/[^0-9]/g, "");
+    const phoneAllowedCharsRegex = /^[+0-9\s\-().]{7,25}$/;
+    if (
+      !phone.trim() ||
+      !phoneAllowedCharsRegex.test(phone.trim()) ||
+      digitsOnly.length < 7 ||
+      digitsOnly.length > 16
+    ) {
       errors.phone = "Please enter a valid phone number.";
     }
 
@@ -436,12 +485,12 @@ export default function CustomerProfilePage() {
                     </div>
 
                     {/* Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-outline-variant/20">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-outline-variant/20">
                       <div className="p-3.5 bg-surface-container-low/40 rounded-xl border border-outline-variant/20">
                         <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
                           Email
                         </span>
-                        <span className="text-sm font-medium text-on-surface">
+                        <span className="text-sm font-medium text-on-surface truncate block">
                           {profile.email}
                         </span>
                       </div>
@@ -450,8 +499,22 @@ export default function CustomerProfilePage() {
                         <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
                           Phone
                         </span>
-                        <span className="text-sm font-medium text-on-surface">
+                        <span className="text-sm font-medium text-on-surface truncate block">
                           {profile.phone}
+                        </span>
+                      </div>
+
+                      <div className="p-3.5 bg-surface-container-low/40 rounded-xl border border-outline-variant/20">
+                        <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
+                          Language
+                        </span>
+                        <span className="text-sm font-medium text-on-surface flex items-center gap-1.5 truncate">
+                          <span>
+                            {AVAILABLE_LANGUAGES.find((l) => l.code === profile.language)?.flag || "🌐"}
+                          </span>
+                          <span>
+                            {AVAILABLE_LANGUAGES.find((l) => l.code === profile.language)?.label || "English"}
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -553,16 +616,9 @@ export default function CustomerProfilePage() {
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold text-on-surface">
-                          Profile Photo
-                        </span>
-                        {photoUploadStats && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-xs">
-                            ⚡ {photoUploadStats.original} → {photoUploadStats.compressed} ({photoUploadStats.savings}% smaller)
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-xs font-semibold text-on-surface">
+                        Profile Photo
+                      </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
@@ -669,33 +725,29 @@ export default function CustomerProfilePage() {
 
                   {/* Language */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-on-surface">
-                      Language
+                    <label className="text-xs font-semibold text-on-surface" htmlFor="language">
+                      Language Preference
                     </label>
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-surface-container rounded-lg max-w-xs border border-outline-variant/60">
-                      <button
-                        type="button"
-                        onClick={() => setLanguage("en")}
-                        className={`py-1.5 px-3 rounded-md text-xs text-center transition-all cursor-pointer ${
-                          language === "en"
-                            ? "bg-surface-container-lowest shadow-xs text-primary font-bold"
-                            : "text-on-surface-variant hover:text-on-surface"
-                        }`}
+                    <div className="relative max-w-sm">
+                      <select
+                        id="language"
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-surface-container-low rounded-md text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-xs appearance-none cursor-pointer pr-10"
                       >
-                        English
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setLanguage("bn")}
-                        className={`py-1.5 px-3 rounded-md text-xs text-center transition-all cursor-pointer ${
-                          language === "bn"
-                            ? "bg-surface-container-lowest shadow-xs text-primary font-bold"
-                            : "text-on-surface-variant hover:text-on-surface"
-                        }`}
-                      >
-                        বাংলা
-                      </button>
+                        {AVAILABLE_LANGUAGES.map((lang) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.flag} {lang.label} ({lang.nativeName})
+                          </option>
+                        ))}
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-3 text-base text-on-surface-variant pointer-events-none">
+                        unfold_more
+                      </span>
                     </div>
+                    <span className="text-[11px] text-on-surface-variant">
+                      Scroll to pick your preferred language for menus, notifications, and dining service.
+                    </span>
                   </div>
 
                   {/* Dietary Preferences */}

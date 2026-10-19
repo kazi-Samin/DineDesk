@@ -32,6 +32,11 @@ export function getCustomerProfile(): CustomerProfileData {
   if (!isClient()) return INITIAL_CUSTOMER_PROFILE;
   try {
     const authUser = getAuthUser();
+    const userEmail = (authUser?.email || "").toLowerCase();
+    const cachedUserAvatar = userEmail && typeof window !== "undefined"
+      ? localStorage.getItem(`dinedesk_avatar_${userEmail}`)
+      : null;
+
     const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
     let parsed: CustomerProfileData;
 
@@ -41,7 +46,7 @@ export function getCustomerProfile(): CustomerProfileData {
       phone: authUser?.phone || "",
       language: "en",
       dietaryPreferences: ["halal_only"],
-      avatarUrl: authUser?.avatarUrl || "/avatars/tahmid-avatar.svg",
+      avatarUrl: cachedUserAvatar || authUser?.avatarUrl || "/avatars/tahmid-avatar.svg",
       isEmailVerified: true,
       isPhoneVerified: Boolean(authUser?.phone),
       roleBadge:
@@ -99,8 +104,11 @@ export function getCustomerProfile(): CustomerProfileData {
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed));
     }
 
-    // Auto-migrate broken external avatar URL if previously cached in localStorage
-    if (
+    // Always honor user custom uploaded avatar if available
+    if (cachedUserAvatar) {
+      parsed.avatarUrl = cachedUserAvatar;
+      localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(parsed));
+    } else if (
       !parsed.avatarUrl ||
       parsed.avatarUrl.includes("lh3.googleusercontent.com/aida/AEtj") ||
       parsed.avatarUrl.includes("friendly_portrait_headshot")
@@ -125,6 +133,11 @@ export function saveCustomerProfile(
   if (isClient()) {
     try {
       localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(updated));
+
+      // Persist per-user avatar permanently across logins
+      if (updated.avatarUrl && updated.email) {
+        localStorage.setItem(`dinedesk_avatar_${updated.email.toLowerCase()}`, updated.avatarUrl);
+      }
 
       // Also synchronize updated avatar and name into current auth session
       const authRaw = localStorage.getItem("dinedesk_auth_user");

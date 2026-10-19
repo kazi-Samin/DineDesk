@@ -48,8 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Verify and refresh with live backend /api/v1/auth/me
           const meResult = await getMeApi();
           if (meResult.success && meResult.data) {
-            setUser(meResult.data);
-            setStoredUser(meResult.data);
+            const meUser = meResult.data;
+            if (!meUser.avatarUrl && meUser.email && typeof window !== "undefined") {
+              const cachedAvatar = localStorage.getItem(`dinedesk_avatar_${meUser.email.toLowerCase()}`);
+              if (cachedAvatar) {
+                meUser.avatarUrl = cachedAvatar;
+              }
+            }
+            setUser(meUser);
+            setStoredUser(meUser);
           } else if (!storedUser) {
             // Token invalid or expired
             clearStoredAuth();
