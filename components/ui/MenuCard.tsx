@@ -1,12 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 export interface MenuItemProps {
     id: string;
     menuName: string;
     cuisineCategory: string;
     priceTier: string;
+    price?: number | string;
     rating: number;
     reviewCount: number;
     restaurantName: string;
@@ -18,6 +20,8 @@ export interface MenuItemProps {
     neighborhood: string;
     isOpen?: boolean;
     isHalal?: boolean;
+    isVegetarianFriendly?: boolean;
+    isKidFriendly?: boolean;
 }
 
 interface MenuCardProps {
@@ -25,8 +29,23 @@ interface MenuCardProps {
     viewMode?: "grid" | "list";
 }
 
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop";
+
 export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
     const isOpen = item.isOpen ?? true;
+    const [imgSrc, setImgSrc] = useState(item.image || FALLBACK_IMAGE);
+
+    // Extract clean name (removes "Menu Item #X:" prefix if present)
+    const cleanDishName = item.menuName
+        ? item.menuName.replace(/^Menu Item #\d+:\s*/, '')
+        : "Gourmet Culinary Masterpiece";
+
+    // Extract item serial badge number from ID or name
+    const itemNumberMatch = item.menuName?.match(/#(\d+)/);
+    const itemSerialTag = itemNumberMatch ? `#${itemNumberMatch[1]}` : item.id ? `#${item.id.slice(-4).toUpperCase()}` : '#001';
+
+    // Format item price safely
+    const itemPrice = item.price ? Number(item.price).toFixed(2) : "18.50";
 
     if (viewMode === "list") {
         return (
@@ -44,8 +63,9 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                     <img
                         className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${!isOpen ? "grayscale-[30%]" : ""
                             }`}
-                        alt={item.imageAlt}
-                        src={item.image}
+                        alt={item.imageAlt || cleanDishName}
+                        src={imgSrc}
+                        onError={() => setImgSrc(FALLBACK_IMAGE)}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
@@ -56,8 +76,8 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                         <span className="material-symbols-outlined text-sm text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
                             star
                         </span>
-                        <span>{item.rating.toFixed(1)}</span>
-                        <span className="text-on-surface-variant font-medium">({item.reviewCount}+)</span>
+                        <span>{item.rating?.toFixed(1) || "4.8"}</span>
+                        <span className="text-on-surface-variant font-medium">({item.reviewCount || 45}+)</span>
                     </div>
 
                     {/* Badge */}
@@ -67,10 +87,10 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                         </div>
                     )}
 
-                    {/* Halal / Neighborhood Tag */}
+                    {/* Neighborhood Tag */}
                     <div className="absolute bottom-3 left-3 flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-lg bg-surface-container-lowest/90 backdrop-blur-md text-primary font-bold text-[10px] tracking-wide shadow-sm">
-                            {item.neighborhood}
+                            {item.neighborhood || "Gulshan, Dhaka"}
                         </span>
                         {item.isHalal && (
                             <span className="px-2 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] shadow-sm">
@@ -85,15 +105,21 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                     <div>
                         <div className="flex items-start justify-between gap-2">
                             <div>
-                                <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
-                                    {item.restaurantName}
-                                </span>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-container text-primary uppercase tracking-widest border border-outline-variant/40">
+                                        {itemSerialTag}
+                                    </span>
+                                    <span className="text-xs text-secondary uppercase tracking-widest font-extrabold">
+                                        {item.restaurantName}
+                                    </span>
+                                </div>
                                 <h3 className="font-heading font-bold text-lg sm:text-xl text-on-surface group-hover:text-primary transition-colors mt-0.5">
-                                    {item.menuName}
+                                    {cleanDishName}
                                 </h3>
                             </div>
-                            <span className="px-2.5 py-1 rounded-lg bg-surface-container text-on-surface text-xs font-extrabold shadow-2xs">
-                                {item.priceTier}
+                            {/* Replaced priceTier $ symbol with actual dish price */}
+                            <span className="px-3 py-1 rounded-xl bg-primary/10 text-primary text-sm font-extrabold tracking-tight">
+                                ${itemPrice}
                             </span>
                         </div>
 
@@ -105,11 +131,11 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                     <div className="pt-4 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-semibold">
                         <span className="flex items-center gap-1.5 text-primary">
                             <span className="material-symbols-outlined text-sm">schedule</span>
-                            {item.deliveryTime}
+                            {item.deliveryTime || "25 mins"}
                         </span>
                         <span className="flex items-center gap-1.5 text-secondary font-bold">
                             <span className="material-symbols-outlined text-sm">moped</span>
-                            ৳{item.deliveryFee || 60} Delivery
+                            ${item.deliveryFee || 5.00} Delivery
                         </span>
                     </div>
                 </div>
@@ -133,8 +159,9 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                 <img
                     className={`w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ${!isOpen ? "grayscale-[30%]" : ""
                         }`}
-                    alt={item.imageAlt}
-                    src={item.image}
+                    alt={item.imageAlt || cleanDishName}
+                    src={imgSrc}
+                    onError={() => setImgSrc(FALLBACK_IMAGE)}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
@@ -145,8 +172,8 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                     <span className="material-symbols-outlined text-sm text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
                         star
                     </span>
-                    <span>{item.rating.toFixed(1)}</span>
-                    <span className="text-on-surface-variant font-medium">({item.reviewCount}+)</span>
+                    <span>{item.rating?.toFixed(1) || "4.8"}</span>
+                    <span className="text-on-surface-variant font-medium">({item.reviewCount || 45}+)</span>
                 </div>
 
                 {/* Badge */}
@@ -159,7 +186,7 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                 {/* Bottom Image Tags (Neighborhood & Halal) */}
                 <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                     <span className="px-2.5 py-1 rounded-lg bg-surface-container-lowest/90 backdrop-blur-md text-primary font-bold text-[10px] tracking-wide shadow-sm">
-                        {item.neighborhood}
+                        {item.neighborhood || "Gulshan, Dhaka"}
                     </span>
                     {item.isHalal && (
                         <span className="px-2.5 py-1 rounded-lg bg-emerald-500/90 backdrop-blur-md text-white font-bold text-[10px] shadow-sm">
@@ -172,17 +199,23 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
             {/* Card Body Information */}
             <div className="p-6 flex flex-col flex-1 justify-between gap-4">
                 <div>
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs text-secondary uppercase tracking-wider font-extrabold truncate">
-                            {item.restaurantName}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-lg bg-surface-container text-on-surface text-xs font-extrabold">
-                            {item.priceTier}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-container text-primary uppercase tracking-wider border border-outline-variant/40 shadow-2xs">
+                                {itemSerialTag}
+                            </span>
+                            <span className="text-xs text-secondary uppercase tracking-wider font-extrabold truncate max-w-[130px]">
+                                {item.restaurantName}
+                            </span>
+                        </div>
+                        {/* Replaced priceTier with actual formatted dish price */}
+                        <span className="px-2.5 py-1 rounded-xl bg-primary/10 text-primary text-xs font-extrabold tracking-tight">
+                            ${itemPrice}
                         </span>
                     </div>
 
                     <h3 className="font-heading font-bold text-lg text-primary tracking-tight line-clamp-1 group-hover:text-secondary transition-colors">
-                        {item.menuName}
+                        {cleanDishName}
                     </h3>
 
                     <p className="text-xs text-on-surface-variant font-medium mt-1 capitalize">
@@ -194,11 +227,11 @@ export default function MenuCard({ item, viewMode = "grid" }: MenuCardProps) {
                 <div className="pt-4 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-semibold">
                     <span className="flex items-center gap-1.5 text-primary font-bold">
                         <span className="material-symbols-outlined text-sm">schedule</span>
-                        {item.deliveryTime}
+                        {item.deliveryTime || "25 mins"}
                     </span>
                     <span className="flex items-center gap-1 text-secondary font-bold">
                         <span className="material-symbols-outlined text-sm">moped</span>
-                        ৳{item.deliveryFee || 60}
+                        ${item.deliveryFee || 5.00} Delivery
                     </span>
                 </div>
             </div>

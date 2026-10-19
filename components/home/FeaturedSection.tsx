@@ -1,122 +1,147 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FEATURED_RESTAURANTS } from "@/data/restaurants";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
+import MenuCard, { MenuItemProps } from "@/components/ui/MenuCard";
 
 export default function FeaturedSection() {
+  const [mounted, setMounted] = useState(false);
+  const [featuredMenus, setFeaturedMenus] = useState<MenuItemProps[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setMounted(true);
+    fetch("/api/menus/featured")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setFeaturedMenus(data);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load featured menus:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Prevent server/client markup mismatch during initial hydration
+  if (!mounted) {
+    return (
+      <section className="w-full py-28 bg-surface-container-low overflow-hidden">
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-16 xl:px-24">
+          <div className="h-96" />
+        </div>
+      </section>
+    );
+  }
+
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15,
+      },
+    },
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    },
+  };
+
   return (
-    <section className="w-full py-20 bg-surface-container-low">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <section className="w-full py-28 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1600px] mx-auto px-6 lg:px-16 xl:px-24">
 
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-8 mb-12 border-b border-outline-variant/60">
-          <div>
-            <span className="text-xs text-secondary uppercase tracking-widest font-bold">
-              Popular Spots
+        {/* Premium Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 mb-16 relative">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="max-w-2xl"
+          >
+            <span className="text-sm text-secondary uppercase tracking-[0.25em] font-bold bg-secondary-container/30 px-3 py-1 rounded-full">
+              Gastronomy
             </span>
-            <h2 className="font-heading font-extrabold text-3xl sm:text-4xl text-primary tracking-tight mt-1">
-              Featured Menus
+            <h2 className="font-heading font-extrabold text-4xl sm:text-5xl text-primary tracking-tighter mt-5 leading-[1.1]">
+              Curated Culinary Masterpieces
             </h2>
-            <p className="text-sm text-on-surface-variant mt-2">
-              Top restaurants and popular items to eat this week.
+            <p className="text-lg text-on-surface-variant mt-6 font-medium max-w-xl">
+              Indulge in an exquisite selection of top-tier restaurants and most celebrated dishes.
             </p>
-          </div>
+          </motion.div>
 
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            className="shrink-0"
+          >
             <Link
-              className="group inline-flex items-center gap-3 px-5 py-2.5 bg-surface-container-lowest hover:bg-primary text-primary hover:text-on-primary border border-outline-variant/80 hover:border-primary rounded-2xl text-xs sm:text-sm font-bold shadow-sm transition-all duration-300"
+              className="group relative overflow-hidden inline-flex items-center gap-3 px-8 py-4 bg-primary text-on-primary rounded-2xl text-base font-bold shadow-lg shadow-primary/20 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/30"
               href="/explore"
             >
-              <span>Explore all menus</span>
-              <span className="w-6 h-6 rounded-xl bg-surface-container group-hover:bg-white/20 flex items-center justify-center transition-colors">
-                <span className="material-symbols-outlined text-xs transform group-hover:translate-x-1 transition-transform">
+              <span className="relative z-10">Explore Full Collection</span>
+              <span className="relative z-10 w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1">
+                <span className="material-symbols-outlined text-lg">
                   arrow_forward
                 </span>
               </span>
             </Link>
           </motion.div>
+
+          <div className="absolute -bottom-px left-0 right-0 h-[1px] bg-gradient-to-r from-amber-500/50 via-outline-variant to-transparent" />
         </div>
 
-        {/* 6 Card Grid (3 columns x 2 rows) with Framer Motion */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        
-          {/*  eikhane kaj korte hbe eitu por  */}
-
-          {FEATURED_RESTAURANTS.map((restaurant, index) => (
-            <motion.article
-              key={restaurant.id}
-              initial={false}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -8, scale: 1.02 }}
-              className="bg-surface-container-lowest rounded-3xl overflow-hidden border border-outline-variant shadow-lg flex flex-col group h-full justify-between transition-all hover:border-primary/40 hover:shadow-xl"
-            >
-              {/* Image Banner */}
-              <Link
-                href={`/explore?q=${encodeURIComponent(restaurant.name)}`}
-                className="relative aspect-[16/10] w-full overflow-hidden bg-surface-container block cursor-pointer"
-              >
-                <img
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  alt={restaurant.imageAlt}
-                  src={restaurant.image}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
-                <div className="absolute top-3 left-3 bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1 rounded-xl text-primary font-bold text-xs border border-outline-variant/60 shadow-sm">
-                  {restaurant.badge}
-                </div>
-
-                <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-md text-on-primary px-3 py-1 rounded-xl font-bold text-xs flex items-center gap-1 shadow-sm">
-                  <span className="material-symbols-outlined text-xs text-secondary-fixed">star</span>
-                  <span>{restaurant.rating.toFixed(1)}</span>
-                </div>
-              </Link>
-
-              {/* Card Body */}
-              <div className="p-6 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs text-secondary uppercase tracking-wider font-extrabold">
-                      {restaurant.neighborhood}
-                    </span>
-                    <span className="text-xs text-on-surface-variant font-bold px-2 py-0.5 rounded-lg bg-surface-container">
-                      {restaurant.priceTier}
-                    </span>
+        {/* 6 Card Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="flex flex-col h-[520px] rounded-3xl bg-surface-container overflow-hidden shadow-xl animate-pulse">
+                <div className="h-64 bg-surface-container-high w-full" />
+                <div className="p-7 flex flex-col justify-between flex-1">
+                  <div className="space-y-4">
+                    <div className="h-7 bg-surface-container-high rounded-md w-3/4" />
+                    <div className="h-5 bg-surface-container-high rounded-sm w-1/2" />
                   </div>
-
-                  <Link href={`/explore?q=${encodeURIComponent(restaurant.name)}`}>
-                    <h3 className="font-heading font-bold text-lg text-primary tracking-tight line-clamp-1 hover:text-secondary transition-colors">
-                      {restaurant.name}
-                    </h3>
-                  </Link>
-
-                  <p className="text-xs text-on-surface-variant mt-1 line-clamp-1 font-medium">
-                    {restaurant.cuisine}
-                  </p>
-                </div>
-
-                {/* Footer Meta */}
-                <div className="pt-4 mt-5 border-t border-outline-variant/60 flex items-center justify-between text-xs text-on-surface-variant font-semibold">
-                  <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm text-primary">
-                      {restaurant.deliveryTime.includes("Reservation") ? "table_bar" : "schedule"}
-                    </span>
-                    <span>{restaurant.deliveryTime}</span>
-                  </div>
-                  <div>
-                    <span className="text-on-surface font-bold">
-                      {restaurant.reviewCount}+
-                    </span>{" "}
-                    <span className="text-on-surface-variant">reviews</span>
-                  </div>
+                  <div className="h-12 bg-surface-container-high rounded-2xl w-full mt-6" />
                 </div>
               </div>
-            </motion.article>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : featuredMenus.length === 0 ? (
+          <div className="text-center py-24 text-on-surface-variant/80 font-semibold text-base border-2 border-dashed border-outline-variant rounded-3xl">
+            <span className="material-symbols-outlined text-5xl mb-4 block opacity-60">restaurant_menu</span>
+            Currently, No menus are being featured. Please check back later.
+          </div>
+        ) : (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10"
+          >
+            {featuredMenus.map((item) => (
+              <motion.div key={item.id} variants={itemVariants}>
+                <MenuCard item={item} viewMode="grid" />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
       </div>
     </section>
   );
