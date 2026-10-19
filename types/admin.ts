@@ -151,6 +151,9 @@ export interface AdminAnalyticsData {
 
 export type PlatformAdminRole =
   | "Super Admin"
+  | "General Manager"
+  | "Dining Room Lead"
+  | "Head Cashier & Finance"
   | "Operations Admin"
   | "Finance & Treasury Admin"
   | "Compliance & Audit Admin"

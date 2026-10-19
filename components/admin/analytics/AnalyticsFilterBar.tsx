@@ -51,18 +51,18 @@ export default function AnalyticsFilterBar({
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="font-label-sm text-[11px] font-bold uppercase tracking-widest text-secondary">
-              Platform Telemetry
+              The Maple &amp; Vine • Business Intelligence
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-surface-tint animate-pulse" />
             <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-              Real-Time Engine
+              Corktown, Detroit
             </span>
           </div>
           <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-            System-Wide Performance
+            Performance Analytics &amp; Revenue Trends
           </h1>
           <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-1 max-w-2xl">
-            Consolidated GMV, network throughput, and merchant economics across all active culinary hubs.
+            Gross revenue trajectory, dining room station throughput, covers fulfilled, and operational economics for 2414 Michigan Ave.
           </p>
         </div>
 

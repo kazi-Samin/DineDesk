@@ -100,7 +100,7 @@ export default function AccessMatrixModal({ isOpen, onClose }: AccessMatrixModal
                 Role-Based Access Control (RBAC) Matrix
               </h3>
               <p className="text-xs text-on-surface-variant">
-                Enforced privilege separation across Dhaka platform clusters
+                Enforced privilege separation across The Maple &amp; Vine operations
               </p>
             </div>
           </div>

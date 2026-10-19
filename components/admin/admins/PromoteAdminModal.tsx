@@ -146,14 +146,14 @@ export default function PromoteAdminModal({
           {/* Corporate Email Address */}
           <div className="flex flex-col gap-1.5">
             <label className="font-bold text-on-surface">
-              Corporate Email (@dinedesk.corp) <span className="text-secondary">*</span>
+              Restaurant Corporate Email <span className="text-secondary">*</span>
             </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="e.g. samiul.ops@dinedesk.corp"
+              placeholder="e.g. staff@mapleandvine.com"
               className="w-full bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant text-on-surface focus:outline-primary font-mono text-[11px]"
             />
           </div>
@@ -168,11 +168,13 @@ export default function PromoteAdminModal({
               onChange={(e) => setRole(e.target.value as PlatformAdminRole)}
               className="w-full bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant text-on-surface font-semibold focus:outline-primary cursor-pointer"
             >
-              <option value="Operations Admin">Operations Admin (Zone Specific)</option>
-              <option value="Finance & Treasury Admin">Finance & Treasury Admin</option>
-              <option value="Compliance & Audit Admin">Compliance & Audit Admin</option>
-              <option value="Customer Support Lead">Customer Support Lead</option>
-              <option value="Super Admin">Super Admin (Requires Second Approver)</option>
+              <option value="General Manager">General Manager (Restaurant Operations Lead)</option>
+              <option value="Dining Room Lead">Dining Room Lead (Host Stand &amp; Seating)</option>
+              <option value="Head Cashier &amp; Finance">Head Cashier &amp; Finance</option>
+              <option value="Operations Admin">Operations &amp; Floor Supervisor</option>
+              <option value="Compliance &amp; Audit Admin">Compliance &amp; Quality Audit Admin</option>
+              <option value="Customer Support Lead">Guest Concierge &amp; Support Lead</option>
+              <option value="Super Admin">Super Admin (Proprietor / Managing Partner)</option>
             </select>
           </div>
 
@@ -180,14 +182,14 @@ export default function PromoteAdminModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
               <label className="font-bold text-on-surface">
-                Territory Scope <span className="text-secondary">*</span>
+                Department / Station Scope <span className="text-secondary">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={territory}
                 onChange={(e) => setTerritory(e.target.value)}
-                placeholder="e.g. Dhanmondi & Lalmatia Zone"
+                placeholder="e.g. Dining Room &amp; Floor Operations"
                 className="w-full bg-surface-container-low px-3 py-2 rounded-xl border border-outline-variant text-on-surface focus:outline-primary"
               />
             </div>

@@ -42,14 +42,14 @@ export default function TopPerformingRestaurantsTable({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-headline-sm text-base sm:text-lg font-bold text-primary">
-              Top Performing Culinary Hubs
+              Top Performing Dining Stations &amp; Zones
             </h3>
             <span className="text-[11px] font-semibold text-secondary bg-secondary-fixed px-2 py-0.5 rounded-full">
-              Tier 1 Merchants
+              Venue Floor Stations
             </span>
           </div>
           <p className="text-xs text-on-surface-variant mt-0.5">
-            Merchant-level GMV contribution, operational fidelity, and guest review sentiment.
+            Station-level revenue yield, table turn pacing, covers completed, and guest review sentiment.
           </p>
         </div>
 
@@ -61,9 +61,9 @@ export default function TopPerformingRestaurantsTable({
             onChange={(e) => setSortBy(e.target.value as "gmv" | "rating" | "volume")}
             className="bg-surface-container-low border border-outline-variant text-on-surface text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-primary cursor-pointer"
           >
-            <option value="gmv">Highest GMV Yield</option>
-            <option value="rating">Top Customer Rating</option>
-            <option value="volume">Highest Order Volume</option>
+            <option value="gmv">Highest Revenue Yield</option>
+            <option value="rating">Top Guest Rating</option>
+            <option value="volume">Highest Covers / Volume</option>
           </select>
         </div>
       </div>
@@ -73,12 +73,12 @@ export default function TopPerformingRestaurantsTable({
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="border-b border-outline-variant/60 bg-surface-container-low/50 text-[11px] uppercase font-bold text-on-surface-variant tracking-wider">
-              <th className="py-3 px-4 sm:px-6">Merchant & Hub</th>
+              <th className="py-3 px-4 sm:px-6">Dining Station &amp; Zone</th>
               <th className="py-3 px-4">Service Profile</th>
-              <th className="py-3 px-4 text-right">Volume</th>
-              <th className="py-3 px-4 text-right">GMV Contribution</th>
+              <th className="py-3 px-4 text-right">Covers</th>
+              <th className="py-3 px-4 text-right">Revenue Contribution</th>
               <th className="py-3 px-4 text-center">Guest Rating</th>
-              <th className="py-3 px-4">Fulfillment</th>
+              <th className="py-3 px-4">Turn Rate</th>
               <th className="py-3 px-4 text-center">Status</th>
               <th className="py-3 px-4 sm:px-6 text-right">Action</th>
             </tr>
@@ -212,8 +212,8 @@ export default function TopPerformingRestaurantsTable({
 
       {/* Footer Info Bar */}
       <div className="p-4 bg-surface-container-low/40 border-t border-outline-variant/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-on-surface-variant">
-        <span>Showing top 5 Tier-1 high-density commercial partners</span>
-        <span className="font-medium text-on-surface">Total Group Yield: $12,200,000 (82.1% of sector total)</span>
+        <span>Showing all 4 core dining room zones &amp; tasting stations</span>
+        <span className="font-medium text-on-surface">Total Venue Monthly Yield: $428,045 (100% Floor Pacing)</span>
       </div>
 
       {/* Quick Vendor Detail Modal */}

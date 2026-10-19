@@ -202,7 +202,7 @@ export default function AdminSettingsPage() {
       })} at ${now.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
-      })} BDT`;
+      })} EST`;
 
       const nextSettings: PlatformGlobalSettings = {
         commissionRate,

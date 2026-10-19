@@ -27,12 +27,12 @@ export default function UserSummaryCards({ stats }: UserSummaryCardsProps) {
       badge: "Patrons",
     },
     {
-      title: "Venues & Owners",
-      value: stats.venuesAndOwners.toLocaleString(),
-      subtext: stats.venuesOnboarding,
+      title: "Primary Venue",
+      value: "The Maple & Vine",
+      subtext: "Corktown, Detroit (4 Zones)",
       subtextColor: "text-secondary",
       icon: Store,
-      badge: "Venues",
+      badge: "Venue",
     },
     {
       title: "Staff & Admins",

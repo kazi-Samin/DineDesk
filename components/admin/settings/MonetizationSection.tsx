@@ -26,10 +26,10 @@ export default function MonetizationSection({
   onPayoutScheduleChange,
 }: MonetizationSectionProps) {
   const payoutOptions = [
-    "Automated Daily Settlement (T+1 at midnight BDT)",
-    "Weekly Bulk Settlement (Every Monday 06:00 BDT)",
+    "Automated Daily Settlement (T+1 at midnight EST)",
+    "Weekly Bulk Settlement (Every Monday 06:00 EST)",
     "Bi-weekly Clearing Schedule (1st & 15th of month)",
-    "Real-Time Instant Clearance (Direct BEFTN / NPSB API)",
+    "Real-Time Instant Clearance (Direct FedNow / ACH API)",
   ];
 
   return (

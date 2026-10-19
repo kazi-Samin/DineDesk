@@ -232,19 +232,18 @@ export default function AdminAdminsPage() {
               <div className="flex flex-col gap-1.5 max-w-3xl">
                 <div className="flex items-center gap-2">
                   <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-secondary">
-                    Governance & RBAC Layer
+                    Governance &amp; RBAC Layer
                   </span>
                   <span className="text-outline-variant">•</span>
                   <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-                    Dhaka Regional Node
+                    The Maple &amp; Vine Operations Node
                   </span>
                 </div>
                 <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  Super Admin: Manage Admins & Privileges
+                  Super Admin: Manage Admins &amp; Staff Roles
                 </h1>
                 <p className="font-body-md text-xs sm:text-sm text-on-surface-variant">
-                  Configure access controls, designate system administrators, or delegate supervisory
-                  permissions across Dhaka operations.
+                  Configure access controls, designate system administrators, and manage managerial permissions across restaurant operations.
                 </p>
               </div>
 

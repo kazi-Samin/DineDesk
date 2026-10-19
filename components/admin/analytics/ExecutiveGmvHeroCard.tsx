@@ -43,7 +43,7 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
             </div>
 
             <p className="text-xs sm:text-sm text-on-surface-variant mt-2 flex items-center gap-2">
-              <span className="font-semibold text-on-surface">Platform Target: $140.00M</span>
+              <span className="font-semibold text-on-surface">{isYtd ? "Annual Venue Target: $4.80M" : "Monthly Target: $420,000"}</span>
               <span>•</span>
               <span className="text-secondary font-medium">Outperforming baseline by +6.0%</span>
             </p>
@@ -51,20 +51,20 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
 
           {/* Quick Operational Pulse Pill */}
           <div className="flex md:flex-col items-center md:items-end justify-between gap-2 border-t md:border-t-0 border-outline-variant/50 pt-3 md:pt-0">
-            <span className="text-xs font-semibold text-on-surface-variant">Real-Time Take Rate</span>
-            <span className="font-headline-sm text-lg font-bold text-primary">12.5% Effective</span>
-            <span className="text-[11px] text-on-surface-variant">Audited & reconciled hourly</span>
+            <span className="text-xs font-semibold text-on-surface-variant">Prime Cost Margin</span>
+            <span className="font-headline-sm text-lg font-bold text-primary">58.4% Healthy</span>
+            <span className="text-[11px] text-on-surface-variant">Food &amp; Beverage + Labor</span>
           </div>
         </div>
       </div>
 
       {/* 4-Stat Grid Below Hero */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-outline-variant/60">
-        {/* Stat 1: Net Platform Take */}
+        {/* Stat 1: Net Operating Profit */}
         <div className="p-5 sm:p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-              Net Platform Take
+              Net Operating Yield
             </span>
             <span className="material-symbols-outlined text-primary text-lg">account_balance_wallet</span>
           </div>
@@ -72,7 +72,7 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
             {netTakeDisplay}
           </div>
           <p className="text-[11px] text-on-surface-variant mt-1.5">
-            12.5% avg take rate across platform fees & commissions
+            Operating margin after purveyor and operational costs
           </p>
         </div>
 

@@ -84,18 +84,18 @@ export default function AdminOverviewPage() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">
-                    Platform Telemetry
+                    The Maple &amp; Vine • Executive Telemetry
                   </span>
                   <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
                   <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-                    Real-Time Sync
+                    Corktown, Detroit
                   </span>
                 </div>
                 <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  Overview &amp; Analytics
+                  Overview &amp; Floor Analytics
                 </h1>
                 <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                  Real-time operational summaries and platform governance metrics for DineDesk.
+                  Executive governance, dining room pacing, and transactional ledgers for 2414 Michigan Ave.
                 </p>
               </div>
 
@@ -133,7 +133,7 @@ export default function AdminOverviewPage() {
             {/* Top 4 Primary Metric Stat Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
               <AdminStatCard
-                title="Total Patrons & Users"
+                title="Registered Patrons"
                 value={kpis.totalUsers.toLocaleString()}
                 changeText={`+${kpis.userGrowthPct}%`}
                 changeNote={kpis.userGrowthNote}
@@ -144,18 +144,18 @@ export default function AdminOverviewPage() {
               />
 
               <AdminStatCard
-                title="Active Establishments"
-                value={kpis.activeRestaurants.toString()}
-                changeText={`+${kpis.onboardingRestaurants} onboarding`}
-                changeNote={kpis.onboardingNote}
+                title="Dining Floor Stations"
+                value="4 Active Zones"
+                changeText="84 Seats / 22 Tables"
+                changeNote="100% floor capacity"
                 isPositive={true}
                 progressPct={kpis.restaurantProgressPct}
-                icon="storefront"
+                icon="table_restaurant"
                 accent="secondary"
               />
 
               <AdminStatCard
-                title="Completed Orders"
+                title="Completed Covers"
                 value={kpis.completedOrders.toLocaleString()}
                 changeText={`${kpis.fulfillmentRatePct}%`}
                 changeNote={kpis.fulfillmentNote}
@@ -166,7 +166,7 @@ export default function AdminOverviewPage() {
               />
 
               <AdminStatCard
-                title="Platform Gross GMV"
+                title="Monthly Venue Revenue"
                 value={`$${kpis.grossGmv.toLocaleString()}`}
                 changeText={`+${kpis.gmvGrowthPct}%`}
                 changeNote={kpis.gmvGrowthNote}
