@@ -544,3 +544,40 @@ export function getReservationStats(
     heritageCount: 4,
   };
 }
+
+export function updateTableStatus(
+  tableId: string,
+  newStatus: TableEntity["status"],
+  currentGuest?: string
+): { success: boolean; tables: TableEntity[] } {
+  const tables = getVendorTables();
+  const index = tables.findIndex((t) => t.id === tableId);
+  if (index === -1) {
+    return { success: false, tables };
+  }
+
+  tables[index] = {
+    ...tables[index],
+    status: newStatus,
+    currentGuest: newStatus === "available" ? undefined : (currentGuest || tables[index].currentGuest),
+    reservationId: newStatus === "available" ? undefined : tables[index].reservationId,
+  };
+
+  saveVendorTables(tables);
+  return { success: true, tables };
+}
+
+export function toggleTableStatus(tableId: string): { success: boolean; tables: TableEntity[] } {
+  const tables = getVendorTables();
+  const table = tables.find((t) => t.id === tableId);
+  if (!table) return { success: false, tables };
+
+  const nextStatus: TableEntity["status"] =
+    table.status === "available"
+      ? "occupied"
+      : table.status === "occupied"
+      ? "reserved"
+      : "available";
+
+  return updateTableStatus(tableId, nextStatus);
+}

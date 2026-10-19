@@ -32,6 +32,7 @@ import {
 } from "@/services/mockProfileService";
 import { INITIAL_RESTAURANT_PROFILE } from "@/data/mockRestaurantProfile";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { uploadImageToCloudinary, formatFileSize } from "@/services/cloudinaryService";
 
 export default function RestaurantProfilePage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_vendor_sidebar");
@@ -128,38 +129,52 @@ export default function RestaurantProfilePage() {
   };
 
   // Media Handlers
-  const handleCoverFileSelected = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
+  const handleCoverFileSelected = async (file: File) => {
+    showToast("Optimizing Cover Image...", "Compressing high-resolution photo for fast loading.");
+    try {
+      const result = await uploadImageToCloudinary(file, {
+        folder: "dinedesk/covers",
+        maxWidth: 1600,
+        maxHeight: 900,
+        quality: 0.82,
+      });
+      if (result.success && result.url) {
         setProfile((prev) => ({
           ...prev,
-          coverImage: reader.result as string,
+          coverImage: result.url,
         }));
         showToast(
           "Cover Image Updated",
-          "Preview updated for marketplace storefront."
+          `Optimized: ${formatFileSize(result.originalSize)} -> ${formatFileSize(result.compressedSize)} (${result.savingsPercent}% saved).`
         );
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      showToast("Upload Error", err?.message || "Failed to process cover image.");
+    }
   };
 
-  const handleLogoFileSelected = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
+  const handleLogoFileSelected = async (file: File) => {
+    showToast("Optimizing Brand Avatar...", "Compressing badge image.");
+    try {
+      const result = await uploadImageToCloudinary(file, {
+        folder: "dinedesk/logos",
+        maxWidth: 600,
+        maxHeight: 600,
+        quality: 0.85,
+      });
+      if (result.success && result.url) {
         setProfile((prev) => ({
           ...prev,
-          logoImage: reader.result as string,
+          logoImage: result.url,
         }));
         showToast(
           "Brand Avatar Updated",
-          "New logo avatar updated on listing badge."
+          `Optimized: ${formatFileSize(result.originalSize)} -> ${formatFileSize(result.compressedSize)} (${result.savingsPercent}% saved).`
         );
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      showToast("Upload Error", err?.message || "Failed to process logo image.");
+    }
   };
 
   const handleAddGalleryMedia = () => {

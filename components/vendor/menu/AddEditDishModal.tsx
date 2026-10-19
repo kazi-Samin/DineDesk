@@ -6,6 +6,7 @@ import {
   MenuItemFormInput,
   MenuCategory,
 } from "@/types/menu";
+import { uploadImageToCloudinary, formatFileSize } from "@/services/cloudinaryService";
 
 interface AddEditDishModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ export default function AddEditDishModal({
   const [imageUrl, setImageUrl] = useState(DEFAULT_IMAGE);
   const [imageFileName, setImageFileName] = useState("zafrani-mutton-korma-hq.jpg");
   const [imageFileSize, setImageFileSize] = useState("2.4 MB");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Dietary checkboxes
   const [dietary, setDietary] = useState({
@@ -100,7 +102,7 @@ export default function AddEditDishModal({
 
   if (!isOpen) return null;
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -109,26 +111,36 @@ export default function AddEditDishModal({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({ ...prev, image: "Image size must be less than 5MB." }));
-      return;
-    }
+    try {
+      setIsUploading(true);
+      const result = await uploadImageToCloudinary(file, {
+        folder: "dinedesk/dishes",
+        maxWidth: 1000,
+        maxHeight: 1000,
+        quality: 0.85,
+      });
 
-    setImageFileName(file.name);
-    setImageFileSize(`${(file.size / (1024 * 1024)).toFixed(1)} MB`);
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setImageUrl(event.target.result as string);
+      if (result.success && result.url) {
+        setImageUrl(result.url);
+        setImageFileName(file.name);
+        setImageFileSize(
+          result.savingsPercent > 0
+            ? `${formatFileSize(result.compressedSize)} (${result.savingsPercent}% reduced)`
+            : formatFileSize(result.compressedSize)
+        );
         setErrors((prev) => {
           const next = { ...prev };
           delete next.image;
           return next;
         });
+      } else {
+        setErrors((prev) => ({ ...prev, image: "Could not optimize image. Please try again." }));
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setErrors((prev) => ({ ...prev, image: err?.message || "Failed to upload image." }));
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleRemoveImage = () => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { TableEntity, SeatingZone } from "@/types/reservation";
 
 interface InteractiveFloorManagerModalProps {
@@ -14,6 +15,7 @@ export default function InteractiveFloorManagerModal({
   isOpen,
   onClose,
   tables,
+  onUpdateTableStatus,
 }: InteractiveFloorManagerModalProps) {
   const [filterZone, setFilterZone] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -122,19 +124,53 @@ export default function InteractiveFloorManagerModal({
                   </span>
                 </div>
 
-                <div className="pt-2 border-t border-outline-variant/30 space-y-1">
+                <div className="pt-2 border-t border-outline-variant/30 space-y-2">
                   <div className="flex items-center justify-between text-xs text-on-surface-variant">
                     <span>Capacity:</span>
                     <span className="font-semibold text-on-surface">{table.capacity} Guests</span>
                   </div>
                   {table.currentGuest && (
                     <div className="text-[11px] text-secondary font-medium truncate">
-                      {table.currentGuest}
+                      👤 {table.currentGuest}
                     </div>
                   )}
                   {table.reservationId && (
                     <div className="text-[10px] text-on-surface-variant font-mono">
                       Ref: {table.reservationId}
+                    </div>
+                  )}
+
+                  {onUpdateTableStatus && (
+                    <div className="pt-1 flex items-center gap-1.5">
+                      {table.status === "available" ? (
+                        <button
+                          type="button"
+                          onClick={() => onUpdateTableStatus(table.id, "occupied")}
+                          className="flex-1 py-1 px-2 rounded bg-primary text-on-primary text-[11px] font-semibold hover:bg-primary/90 cursor-pointer"
+                        >
+                          Seat
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onUpdateTableStatus(table.id, "available")}
+                          className="flex-1 py-1 px-2 rounded bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-700 cursor-pointer"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdateTableStatus(
+                            table.id,
+                            table.status === "reserved" ? "available" : "reserved"
+                          )
+                        }
+                        className="py-1 px-2 rounded bg-surface-container text-on-surface text-[11px] font-medium hover:bg-surface-container-high cursor-pointer"
+                      >
+                        {table.status === "reserved" ? "Unhold" : "Hold"}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -148,13 +184,23 @@ export default function InteractiveFloorManagerModal({
           <span className="text-xs text-on-surface-variant">
             Showing {filteredTables.length} of {tables.length} tables in inventory
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-colors cursor-pointer"
-          >
-            Done
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/dashboard/vendor/floor"
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary text-xs font-semibold transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-sm">grid_view</span>
+              <span>Open Dedicated Floor Page</span>
+            </Link>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-1.5 rounded-lg bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-colors cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
         </div>
       </div>
     </div>

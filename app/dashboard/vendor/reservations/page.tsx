@@ -32,6 +32,7 @@ import {
   sendGuestMessage,
   resetReservationData,
   getReservationStats,
+  updateTableStatus,
 } from "@/services/mockVendorReservationService";
 
 interface ToastMessage {
@@ -348,7 +349,7 @@ export default function VendorReservationsPage() {
                 </section>
 
                 {/* Secondary Column: Floor Plan Quick Glance & Live Matrix (4 Cols) */}
-                <aside className="xl:col-span-4 space-y-space-md">
+                <aside id="floorplan" className="xl:col-span-4 space-y-space-md scroll-mt-24">
                   <FloorPlanMatrix
                     tables={tables}
                     onOpenFloorManager={() => setIsFloorManagerOpen(true)}
@@ -376,6 +377,11 @@ export default function VendorReservationsPage() {
         isOpen={isFloorManagerOpen}
         onClose={() => setIsFloorManagerOpen(false)}
         tables={tables}
+        onUpdateTableStatus={(tableId, newStatus) => {
+          const res = updateTableStatus(tableId, newStatus);
+          setTables(res.tables);
+          addToast("Table Updated", `Table status changed to ${newStatus}.`);
+        }}
       />
 
       <RejectReservationDialog
