@@ -68,10 +68,10 @@ export default function GmvGrowthTrajectoryChart({
 
   // Y-axis tick intervals
   const yTicks = [
-    { label: "৳20M", val: 20000000 },
-    { label: "৳15M", val: 15000000 },
-    { label: "৳10M", val: 10000000 },
-    { label: "৳5M", val: 5000000 },
+    { label: "$20M", val: 20000000 },
+    { label: "$15M", val: 15000000 },
+    { label: "$10M", val: 10000000 },
+    { label: "$5M", val: 5000000 },
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function GmvGrowthTrajectoryChart({
               GMV Growth Trajectory
             </h3>
             <span className="text-[11px] font-semibold text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-md">
-              Monthly BDT
+              Monthly USD
             </span>
           </div>
           <p className="text-xs text-on-surface-variant mt-0.5">
@@ -237,7 +237,7 @@ export default function GmvGrowthTrajectoryChart({
                 fill="#f7f7f4"
                 className="text-[9px] font-bold tracking-tight"
               >
-                PEAK ৳{(peakCoord.point.revenue / 1000000).toFixed(1)}M
+                PEAK ${(peakCoord.point.revenue / 1000000).toFixed(1)}M
               </text>
             </g>
           )}
@@ -256,7 +256,7 @@ export default function GmvGrowthTrajectoryChart({
               {coords2025[hoveredIdx].point.label} 2025
             </p>
             <p className="text-secondary-fixed text-xs font-semibold">
-              ৳{coords2025[hoveredIdx].point.revenue.toLocaleString()}
+              ${coords2025[hoveredIdx].point.revenue.toLocaleString()}
             </p>
             <p className="text-[10px] text-white/70">
               {coords2025[hoveredIdx].point.orders.toLocaleString()} orders • {coords2025[hoveredIdx].point.reservations.toLocaleString()} covers
@@ -271,25 +271,25 @@ export default function GmvGrowthTrajectoryChart({
           <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
             Q1 Run Rate
           </span>
-          <span className="text-xs font-bold text-primary block mt-0.5">৳29.10M</span>
+          <span className="text-xs font-bold text-primary block mt-0.5">$29.10M</span>
         </div>
         <div className="bg-surface-container-low p-2.5 rounded-xl text-center">
           <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
             Q2 Run Rate
           </span>
-          <span className="text-xs font-bold text-primary block mt-0.5">৳41.50M</span>
+          <span className="text-xs font-bold text-primary block mt-0.5">$41.50M</span>
         </div>
         <div className="bg-surface-container-low p-2.5 rounded-xl text-center">
           <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider block">
             Q3 Run Rate
           </span>
-          <span className="text-xs font-bold text-primary block mt-0.5">৳51.30M</span>
+          <span className="text-xs font-bold text-primary block mt-0.5">$51.30M</span>
         </div>
         <div className="bg-surface-container-low p-2.5 rounded-xl text-center">
           <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider block">
             Oct Peak Momentum
           </span>
-          <span className="text-xs font-bold text-secondary block mt-0.5">৳18.45M</span>
+          <span className="text-xs font-bold text-secondary block mt-0.5">$18.45M</span>
         </div>
       </div>
     </div>

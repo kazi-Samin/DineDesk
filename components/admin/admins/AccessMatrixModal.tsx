@@ -36,7 +36,7 @@ export default function AccessMatrixModal({ isOpen, onClose }: AccessMatrixModal
       note: "Secondary co-signoff mandatory",
     },
     {
-      module: "Financial Payouts (> ৳50K)",
+      module: "Financial Payouts (> $50K)",
       superAdmin: true,
       operations: false,
       finance: true,

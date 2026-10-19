@@ -10,12 +10,12 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
   const isYtd = analytics.timeRange === "ytd";
 
   // Derive display values based on active period
-  const gmvDisplay = `৳${analytics.summary.totalRevenue.toLocaleString()}`;
+  const gmvDisplay = `$${analytics.summary.totalRevenue.toLocaleString()}`;
   const netPlatformTake = Math.round(analytics.summary.totalRevenue * 0.125);
-  const netTakeDisplay = `৳${netPlatformTake.toLocaleString()}`;
+  const netTakeDisplay = `$${netPlatformTake.toLocaleString()}`;
   const mealsDisplay = analytics.summary.totalOrders.toLocaleString();
   const coversDisplay = analytics.summary.totalReservations.toLocaleString();
-  const aovDisplay = `৳${analytics.summary.avgOrderValue}`;
+  const aovDisplay = `$${analytics.summary.avgOrderValue}`;
 
   const gmvGrowthText = `+${analytics.summary.revenueGrowthPct || 24.8}% YoY`;
   const mealsGrowthText = `+${analytics.summary.ordersGrowthPct || 19.4}% YoY`;
@@ -43,7 +43,7 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
             </div>
 
             <p className="text-xs sm:text-sm text-on-surface-variant mt-2 flex items-center gap-2">
-              <span className="font-semibold text-on-surface">Platform Target: ৳140.00M</span>
+              <span className="font-semibold text-on-surface">Platform Target: $140.00M</span>
               <span>•</span>
               <span className="text-secondary font-medium">Outperforming baseline by +6.0%</span>
             </p>
@@ -124,7 +124,7 @@ export default function ExecutiveGmvHeroCard({ analytics }: ExecutiveGmvHeroCard
             {aovDisplay}
           </div>
           <p className="text-[11px] text-on-surface-variant mt-1.5">
-            +৳42 delta vs baseline • Peak dinner basket ৳1,140
+            +$4 delta vs baseline • Peak dinner basket $85
           </p>
         </div>
       </div>

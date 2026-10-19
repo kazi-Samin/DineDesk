@@ -71,7 +71,7 @@ export default function RevenueOrdersTrendChart({
           </h2>
           <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
             {metricMode === "revenue"
-              ? "Calculated in Bangladesh Taka (BDT) across food delivery and reserved dining"
+              ? "Calculated in US Dollars (USD) across food delivery and reserved dining"
               : "Completed order volumes disbursed to active restaurant merchants"}
           </p>
         </div>
@@ -87,7 +87,7 @@ export default function RevenueOrdersTrendChart({
                 : "text-on-surface-variant hover:text-on-surface"
             }`}
           >
-            Revenue (৳)
+            Revenue ($)
           </button>
           <button
             type="button"
@@ -120,7 +120,7 @@ export default function RevenueOrdersTrendChart({
               </span>
               <span className="text-xs font-bold text-on-primary font-mono">
                 {metricMode === "revenue"
-                  ? `৳${activePoint.revenue.toLocaleString()}`
+                  ? `$${activePoint.revenue.toLocaleString()}`
                   : `${activePoint.orders.toLocaleString()} orders`}
               </span>
               <span className="text-[10px] text-on-surface-variant/80">
@@ -255,7 +255,7 @@ export default function RevenueOrdersTrendChart({
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-sm text-primary">insights</span>
           <span className="text-on-surface-variant font-medium">
-            Average transaction ticket: <strong className="text-on-surface">৳774</strong>
+            Average transaction ticket: <strong className="text-on-surface">$28.50</strong>
           </span>
         </div>
         <span className="text-on-surface-variant font-mono text-[11px]">

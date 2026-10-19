@@ -196,7 +196,7 @@ export default function OrderDetailDrawer({
           <span className="material-symbols-outlined text-secondary text-lg mt-0.5">announcement</span>
           <div className="flex flex-col">
             <span className="font-label-sm text-[11px] font-bold text-on-surface uppercase tracking-wider">
-              Chef &amp; Dispatch Note
+              Kitchen &amp; Operations Note
             </span>
             <p className="font-body-sm text-[12px] text-on-surface-variant mt-0.5 italic">
               &ldquo;{order.specialInstructions}&rdquo;

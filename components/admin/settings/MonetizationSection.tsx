@@ -92,7 +92,7 @@ export default function MonetizationSection({
           ) : (
             <p className="text-xs text-on-surface-variant leading-relaxed">
               Applied automatically to all verified restaurant food sales and take-away pickups across
-              Dhaka Metropolitan & suburban zones.
+              Detroit Metropolitan &amp; suburban zones.
             </p>
           )}
         </div>
@@ -108,7 +108,7 @@ export default function MonetizationSection({
           </label>
           <div className="relative flex items-center">
             <span className="absolute left-4 text-sm text-on-surface font-bold select-none pointer-events-none">
-              ৳
+              $
             </span>
             <input
               id="deposit-fee"
