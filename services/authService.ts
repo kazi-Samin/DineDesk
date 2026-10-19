@@ -50,7 +50,14 @@ export const getStoredUser = (): AuthUser | null => {
   const userJson = localStorage.getItem(USER_KEY);
   if (!userJson) return null;
   try {
-    return JSON.parse(userJson) as AuthUser;
+    const user = JSON.parse(userJson) as AuthUser;
+    if (user && user.email && !user.avatarUrl) {
+      const cachedAvatar = localStorage.getItem(`dinedesk_avatar_${user.email.toLowerCase()}`);
+      if (cachedAvatar) {
+        user.avatarUrl = cachedAvatar;
+      }
+    }
+    return user;
   } catch {
     return null;
   }
@@ -58,6 +65,20 @@ export const getStoredUser = (): AuthUser | null => {
 
 export const setStoredUser = (user: AuthUser): void => {
   if (typeof window === "undefined") return;
+
+  // Preserve user custom uploaded avatar across logins
+  if (user.email) {
+    const avatarKey = `dinedesk_avatar_${user.email.toLowerCase()}`;
+    if (user.avatarUrl) {
+      localStorage.setItem(avatarKey, user.avatarUrl);
+    } else {
+      const cachedAvatar = localStorage.getItem(avatarKey);
+      if (cachedAvatar) {
+        user.avatarUrl = cachedAvatar;
+      }
+    }
+  }
+
   localStorage.setItem(USER_KEY, JSON.stringify(user));
   document.cookie = `role=${user.role}; path=/; max-age=604800; SameSite=Lax`;
 };
@@ -77,6 +98,13 @@ export async function loginApi(credentials: LoginCredentials): Promise<AuthRespo
   if (response.ok && data.success && data.token) {
     setStoredToken(data.token);
     if (data.data) {
+      // Merge cached avatar before saving
+      if (!data.data.avatarUrl && data.data.email) {
+        const cached = localStorage.getItem(`dinedesk_avatar_${data.data.email.toLowerCase()}`);
+        if (cached) {
+          data.data.avatarUrl = cached;
+        }
+      }
       setStoredUser(data.data);
     }
   }

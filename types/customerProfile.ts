@@ -4,7 +4,7 @@ export type DietaryPreference =
   | "mild_spice"
   | "no_shellfish";
 
-export type PreferredLanguage = "en" | "bn";
+export type PreferredLanguage = string;
 
 export interface CustomerStats {
   totalOrders: number;
