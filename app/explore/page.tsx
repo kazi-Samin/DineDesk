@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import MenuCard, { MenuItemProps } from "@/components/ui/MenuCard";
 import ExploreHeader from "@/components/explore/ExploreHeader";
 import ExploreToolbar from "@/components/explore/ExploreToolbar";
@@ -36,6 +37,9 @@ function ExploreContent() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
+
+  // State for clicked menu card instant preview modal
+  const [selectedMenuPreview, setSelectedMenuPreview] = useState<MenuItemProps | null>(null);
 
   // Backend Menus State
   const [menus, setMenus] = useState<MenuItemProps[]>([]);
@@ -147,6 +151,25 @@ function ExploreContent() {
     const start = (currentPage - 1) * 10;
     return filteredMenus.slice(start, start + 10);
   }, [filteredMenus, currentPage]);
+
+  // Auto-scroll and highlight target card when returning from details page via hash
+  useEffect(() => {
+    if (!loading && paginatedMenus.length > 0) {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith("#card-")) {
+        const element = document.getElementById(hash.replace("#", ""));
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.classList.add("ring-4", "ring-primary", "transition-all", "duration-700");
+            setTimeout(() => {
+              element.classList.remove("ring-4", "ring-primary");
+            }, 2000);
+          }, 300);
+        }
+      }
+    }
+  }, [loading, paginatedMenus]);
 
   const activeFilterCount =
     (openKitchensOnly ? 1 : 0) +
@@ -273,7 +296,12 @@ function ExploreContent() {
                 }
               >
                 {paginatedMenus.map((item) => (
-                  <MenuCard key={item.id} item={item} viewMode={viewMode} />
+                  <MenuCard
+                    key={item.id}
+                    item={item}
+                    viewMode={viewMode}
+                    onCardClick={(clickedItem) => setSelectedMenuPreview(clickedItem)}
+                  />
                 ))}
               </div>
             ) : (
@@ -309,6 +337,89 @@ function ExploreContent() {
           </div>
         </div>
       </div>
+
+      {/* Instant Click Menu Preview Modal (Fixed Cross Overlap, Separated Serial Tag, Image Fallback) */}
+      {selectedMenuPreview && (() => {
+        const rawName = selectedMenuPreview.menuName || "Gourmet Dish";
+        const serialMatch = rawName.match(/#(\d+)/);
+        const serialTag = serialMatch ? `Item #${serialMatch[1]}` : `#001`;
+        const cleanName = rawName.replace(/^Menu Item #\d+:\s*/, '');
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+            <div className="w-full max-w-lg bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-6 relative border border-outline-variant mt-6">
+
+              {/* Safe Non-Overlapping Close Button */}
+              <button
+                onClick={() => setSelectedMenuPreview(null)}
+                className="absolute -top-3 -right-3 md:top-4 md:right-4 w-9 h-9 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant flex items-center justify-center font-bold hover:text-primary cursor-pointer transition-colors shadow-lg z-20"
+                type="button"
+              >
+                ✕
+              </button>
+
+              {/* Modal Header Image with Error Fallback */}
+              <div className="relative w-full h-52 md:h-60 rounded-2xl overflow-hidden bg-surface-container shadow-sm border border-outline-variant/40">
+                <img
+                  src={selectedMenuPreview.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop"}
+                  alt={cleanName}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop";
+                  }}
+                />
+              </div>
+
+              {/* Modal Info & Separated Smaller Serial Tag */}
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-secondary uppercase tracking-widest">
+                    {selectedMenuPreview.restaurantName}
+                  </span>
+                  <span className="text-xs text-on-surface-variant font-semibold">
+                    Location: <span className="text-on-surface font-bold">{selectedMenuPreview.neighborhood || "Gulshan, Dhaka"}</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1 mt-1">
+                  <span className="w-fit text-[10px] font-extrabold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider">
+                    {serialTag}
+                  </span>
+                  <h3 className="font-heading font-extrabold text-lg md:text-xl text-on-surface leading-snug tracking-tight">
+                    {cleanName}
+                  </h3>
+                </div>
+
+                <p className="text-xs text-on-surface-variant font-medium capitalize mt-0.5">
+                  Cuisine Specialty: <span className="text-on-surface font-semibold">{selectedMenuPreview.cuisineCategory}</span>
+                </p>
+              </div>
+
+              {/* Structured Footer with Price and Full-Width Action Button */}
+              <div className="flex flex-col gap-4 pt-4 border-t border-outline-variant/60">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider font-extrabold text-on-surface-variant">
+                    Gourmet Price
+                  </span>
+                  <span className="text-2xl font-black text-primary tracking-tight">
+                    ${Number(selectedMenuPreview.price || 18.50).toFixed(2)}
+                  </span>
+                </div>
+
+                {/* Full-Width Premium Action Button */}
+                <Link
+                  href={`/menus/${selectedMenuPreview.id}`}
+                  className="w-full py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Full Details Page</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </Link>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
