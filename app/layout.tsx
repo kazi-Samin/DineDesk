@@ -7,6 +7,7 @@ import CookieConsent from "@/components/ui/CookieConsent";
 import TableMateAIBadge from "@/components/ui/TableMateAIBadge";
 import CartDrawer from "@/components/cart/CartDrawer";
 import ReserveTableModal from "@/components/reservations/ReserveTableModal";
+import GlobalLoader from "@/components/ui/GlobalLoader";
 import { CartProvider } from "@/context/CartContext";
 import { ReservationProvider } from "@/context/ReservationContext";
 import { AuthProvider } from "@/context/AuthContext";
@@ -46,6 +47,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-surface font-body-md text-on-surface antialiased min-h-screen">
+        <GlobalLoader />
         <AuthProvider>
           <CartProvider>
             <ReservationProvider>
