@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import NavLinks from "../NavLinks";
 import Logo from "../Logo";
 import { useAuth } from "@/context/AuthContext";
+import UserProfileDropdown from "./UserProfileDropdown";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -28,7 +29,6 @@ export default function Navbar() {
     updateCount();
     window.addEventListener("storage", updateCount);
 
-    // Custom listener for instant state refresh across components
     const handleCartUpdate = () => updateCount();
     window.addEventListener("open-cart-drawer", handleCartUpdate);
 
@@ -48,7 +48,6 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   // Dynamic scroll listener for liquid glass effect
   useEffect(() => {
@@ -129,92 +128,9 @@ export default function Navbar() {
             )}
           </motion.button>
 
-          {/* Direct Role Dashboard Shortcut Button when Authenticated */}
-          {isAuthenticated && user && (
-            <Link
-              href={
-                user.role === "ADMIN" || user.role === "SUPERADMIN"
-                  ? "/dashboard/admin"
-                  : user.role === "VENDOR"
-                    ? "/dashboard/vendor"
-                    : "/dashboard/customer"
-              }
-              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-primary-container text-on-primary text-xs font-semibold hover:bg-primary transition-all shadow-xs"
-            >
-              <span className="material-symbols-outlined text-sm">dashboard</span>
-              <span>
-                {user.role === "ADMIN" || user.role === "SUPERADMIN"
-                  ? "Admin Console"
-                  : user.role === "VENDOR"
-                    ? "Partner Portal"
-                    : "My Dashboard"}
-              </span>
-            </Link>
-          )}
-
-          {/* Authentication CTA or User Profile Menu */}
+          {/* Authentication CTA or Ultra-Premium Animated Profile Dropdown */}
           {isAuthenticated && user ? (
-            <div className="relative hidden md:block">
-              <button
-                type="button"
-                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-surface-container hover:bg-surface-container-high border border-outline-variant rounded-2xl text-xs font-semibold text-on-surface transition-all shadow-xs cursor-pointer"
-              >
-                <div className="w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-[11px]">
-                  {user.name ? user.name[0].toUpperCase() : "U"}
-                </div>
-                <span className="max-w-[100px] truncate">{user.name || "Diner"}</span>
-                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed">
-                  {user.role}
-                </span>
-                <span className="material-symbols-outlined text-sm">
-                  {userMenuOpen ? "expand_less" : "expand_more"}
-                </span>
-              </button>
-
-              <AnimatePresence>
-                {userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl py-2 z-50 overflow-hidden"
-                  >
-                    <div className="px-4 py-2 border-b border-outline-variant">
-                      <p className="text-xs font-bold text-on-surface truncate">{user.name}</p>
-                      <p className="text-[11px] text-on-surface-variant truncate">{user.email}</p>
-                    </div>
-
-                    <Link
-                      href={
-                        user.role === "ADMIN" || user.role === "SUPERADMIN"
-                          ? "/dashboard/admin"
-                          : user.role === "VENDOR"
-                            ? "/dashboard/vendor"
-                            : "/dashboard/customer"
-                      }
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-on-surface hover:bg-surface-container transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-base text-primary">dashboard</span>
-                      <span>Go to Dashboard</span>
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        logout();
-                      }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-error hover:bg-error-container/20 transition-colors text-left cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-base">logout</span>
-                      <span>Sign Out</span>
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            <UserProfileDropdown user={user} logout={logout} />
           ) : (
             <Link
               className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
@@ -277,21 +193,21 @@ export default function Navbar() {
               </form>
             </div>
 
-            {/* Mobile Authentication Button */}
+            {/* Mobile Authentication Section */}
             <div className="pt-2">
               {isAuthenticated && user ? (
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between p-3 rounded-2xl bg-surface-container border border-outline-variant">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
+                  <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-container border border-outline-variant">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shadow-sm">
                         {user.name ? user.name[0].toUpperCase() : "U"}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-semibold text-xs text-on-surface">{user.name}</span>
+                        <span className="font-bold text-xs text-on-surface">{user.name}</span>
                         <span className="text-[10px] text-on-surface-variant">{user.email}</span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed uppercase tracking-wider">
                       {user.role}
                     </span>
                   </div>
@@ -305,10 +221,10 @@ export default function Navbar() {
                           : "/dashboard/customer"
                     }
                     onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-2.5 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full py-3 bg-primary text-on-primary rounded-2xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm"
                   >
+                    <span className="material-symbols-outlined text-sm">dashboard</span>
                     <span>Open Dashboard</span>
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </Link>
 
                   <button
@@ -317,7 +233,7 @@ export default function Navbar() {
                       setMobileMenuOpen(false);
                       logout();
                     }}
-                    className="w-full py-2 border border-outline-variant text-error rounded-2xl font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-error-container/20 transition-colors cursor-pointer"
+                    className="w-full py-2.5 border border-outline-variant text-error rounded-2xl font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-error-container/20 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">logout</span>
                     <span>Sign Out</span>
