@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useReservation } from "@/context/ReservationContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
@@ -25,6 +27,8 @@ const SEATING_AREAS = [
 ];
 
 export default function ReservationsPage() {
+    const router = useRouter();
+    const { isAuthenticated } = useAuth();
     const {
         restaurantInfo,
         guests,
@@ -38,10 +42,20 @@ export default function ReservationsPage() {
     } = useReservation() as any;
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
+
     const currentRestaurant = restaurantInfo?.name || "Sultan's Heritage Kitchen, Dhaka";
 
     const handleConfirmReservation = async (e: React.FormEvent) => {
         e.preventDefault();
+        setAuthRestrictionMessage(null);
+
+        // Authentication restriction check
+        if (!isAuthenticated) {
+            setAuthRestrictionMessage("Authentication required! Please sign in first to confirm your table reservation.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         // Simulate secure API confirmation delay
@@ -260,6 +274,23 @@ export default function ReservationsPage() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Restricted Light Red State Banner */}
+                    {authRestrictionMessage && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-between gap-2.5">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-base shrink-0 text-red-500">lock_person</span>
+                                <span>{authRestrictionMessage}</span>
+                            </div>
+                            <button
+                                onClick={() => router.push("/sign-in")}
+                                className="text-[11px] font-bold underline text-red-800 hover:text-red-950 shrink-0 cursor-pointer"
+                                type="button"
+                            >
+                                Sign In →
+                            </button>
+                        </div>
+                    )}
 
                     {/* Confirmation Submit Button with Dynamic Loading State */}
                     <button
