@@ -6,14 +6,17 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import toast from "react-hot-toast";
+import { initiateStripeCheckout } from "../services/stripeService";
 
 export default function CartDrawer() {
   const cartContext = useCart() as any;
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
 
   const [isOpen, setIsOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +63,7 @@ export default function CartDrawer() {
     }
   };
 
-  const handleCheckoutClick = () => {
+  const handleCheckoutClick = async () => {
     setAuthRestrictionMessage(null);
 
     // Authentication restriction check
@@ -69,8 +72,38 @@ export default function CartDrawer() {
       return;
     }
 
-    alert("Proceeding to secure checkout!");
-    handleClose();
+    setIsCheckingOut(true);
+
+    try {
+      // Explicitly typed line items array to prevent TS property mismatch errors
+      const lineItems: Array<{ name: string; price: number; quantity: number; image?: string }> = cartItems.map((item: any) => ({
+        name: item.name,
+        price: Number(item.price || 0),
+        quantity: item.quantity || 1,
+        image: item.image,
+      }));
+
+      if (deliveryFee > 0) {
+        lineItems.push({ name: "Delivery Fee", price: deliveryFee, quantity: 1 });
+      }
+      if (packagingFee > 0) {
+        lineItems.push({ name: "Restaurant Packaging", price: packagingFee, quantity: 1 });
+      }
+      if (tax > 0) {
+        lineItems.push({ name: "State & Local Tax (6%)", price: Number(tax.toFixed(2)), quantity: 1 });
+      }
+
+      // Automatically clear cart storage upon initiating checkout redirect
+      localStorage.removeItem("dine_desk_cart");
+      setCartItems([]);
+      window.dispatchEvent(new Event("storage"));
+
+      // Pass user?.email so Stripe pre-fills the customer's email automatically
+      await initiateStripeCheckout(lineItems, user?.email);
+    } catch (error) {
+      toast.error("Stripe checkout session failed.");
+      setIsCheckingOut(false);
+    }
   };
 
   const subtotal = cartItems.reduce((acc, i) => acc + Number(i.price || 0) * Number(i.quantity || 0), 0);
@@ -255,11 +288,21 @@ export default function CartDrawer() {
 
                 <button
                   onClick={handleCheckoutClick}
-                  className="w-full mt-2 py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isCheckingOut}
+                  className="w-full mt-2 py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                   type="button"
                 >
-                  <span>Proceed to Checkout</span>
-                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                  {isCheckingOut ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Redirecting to Stripe...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Proceed to Checkout</span>
+                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </>
+                  )}
                 </button>
               </div>
             )}
