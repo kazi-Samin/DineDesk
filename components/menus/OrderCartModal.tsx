@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { initiateStripeCheckout } from "../services/stripeService";
 
 interface OrderCartModalProps {
     item?: {
@@ -17,14 +18,16 @@ interface OrderCartModalProps {
 
 export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const { isAuthenticated } = useAuth();
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const { isAuthenticated, user } = useAuth();
     const router = useRouter();
 
     // Fallback item details if props aren't passed directly
     const rawDishName = item?.name || "Menu Item #7: Slow-Braised Lamb Shank with Rosemary Jus";
     const unitPrice = item?.price ? Number(item.price) : 36.50;
     const qty = quantity > 0 ? quantity : 1;
-    const totalPrice = (unitPrice * qty).toFixed(2);
+    const totalPrice = Number((unitPrice * qty).toFixed(2));
+    const grandTotalWithTax = Number((totalPrice * 1.05).toFixed(2));
 
     // Extract serial tag (e.g. "#7") and clean item name
     const itemNumberMatch = rawDishName.match(/#(\d+)/);
@@ -40,6 +43,26 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
         setIsOpen(true);
     };
 
+    const handleStripePayment = async () => {
+        setIsCheckingOut(true);
+        try {
+            await initiateStripeCheckout(
+                [
+                    {
+                        name: cleanDishName,
+                        price: grandTotalWithTax,
+                        quantity: 1,
+                        image: item?.image,
+                    },
+                ],
+                user?.email
+            );
+        } catch (error) {
+            toast.error("Could not initiate payment gateway.");
+            setIsCheckingOut(false);
+        }
+    };
+
     return (
         <>
             {/* Floating Bottom Bar */}
@@ -53,7 +76,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                             Items Selected
                         </span>
                         <span className="text-sm font-black text-white">
-                            ${totalPrice} Total
+                            ${totalPrice.toFixed(2)} Total
                         </span>
                     </div>
                 </div>
@@ -121,7 +144,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                             </div>
                             <div className="text-right shrink-0">
                                 <span className="text-base font-black text-primary tracking-tight">
-                                    ${totalPrice}
+                                    ${totalPrice.toFixed(2)}
                                 </span>
                             </div>
                         </div>
@@ -130,15 +153,15 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                         <div className="flex flex-col gap-2.5 pt-2 border-t border-outline-variant/60 text-xs font-medium text-on-surface-variant">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span className="font-bold text-on-surface">${totalPrice}</span>
+                                <span className="font-bold text-on-surface">${totalPrice.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>VAT &amp; Service Fee (5%)</span>
-                                <span className="font-bold text-on-surface">${(Number(totalPrice) * 0.05).toFixed(2)}</span>
+                                <span className="font-bold text-on-surface">${(totalPrice * 0.05).toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between pt-3 border-t border-outline-variant/40 text-sm md:text-base font-black text-primary">
                                 <span>Total Payable</span>
-                                <span>${(Number(totalPrice) * 1.05).toFixed(2)}</span>
+                                <span>${grandTotalWithTax.toFixed(2)}</span>
                             </div>
                         </div>
 
@@ -146,20 +169,25 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                         <div className="flex items-center gap-3 pt-2">
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="flex-1 py-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs"
+                                className="flex-1 py-3 px-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs whitespace-nowrap"
                                 type="button"
                             >
                                 Continue Browsing
                             </button>
                             <button
-                                onClick={() => {
-                                    toast.success(`Order successfully placed for $${(Number(totalPrice) * 1.05).toFixed(2)}!`);
-                                    setIsOpen(false);
-                                }}
-                                className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-lg hover:bg-primary/90 transition-all cursor-pointer"
+                                onClick={handleStripePayment}
+                                disabled={isCheckingOut}
+                                className="flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70"
                                 type="button"
                             >
-                                Confirm &amp; Pay Now
+                                {isCheckingOut ? (
+                                    <>
+                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
+                                        <span>Redirecting...</span>
+                                    </>
+                                ) : (
+                                    <span>Confirm &amp; Pay Now</span>
+                                )}
                             </button>
                         </div>
 
