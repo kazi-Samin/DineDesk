@@ -1,17 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useReservation } from "@/context/ReservationContext";
+import toast from "react-hot-toast";
 
 interface TableBookingWidgetProps {
     restaurantName: string;
 }
 
 export default function TableBookingWidget({ restaurantName }: TableBookingWidgetProps) {
+    const router = useRouter();
+    const reservationContext = useReservation() as any;
+
     // Today's date formatted as YYYY-MM-DD for min date restriction
     const todayStr = new Date().toISOString().split("T")[0];
 
     // Date state
-    const [selectedDate, setSelectedDate] = useState(todayStr);
+    const [selectedDateVal, setSelectedDateVal] = useState(todayStr);
 
     // Time states (3 separate portions)
     const [selectedHour, setSelectedHour] = useState("7:30");
@@ -19,8 +25,9 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
     const [selectedSession, setSelectedSession] = useState("Dinner");
 
     // Guests state & capacity popups
-    const [guests, setGuests] = useState<number>(2);
+    const [guestsVal, setGuestsVal] = useState<number>(2);
     const [capacityMessage, setCapacityMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const chosenDate = e.target.value;
@@ -30,11 +37,11 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
             return;
         }
         setCapacityMessage(null);
-        setSelectedDate(chosenDate);
+        setSelectedDateVal(chosenDate);
     };
 
     const handleGuestChange = (delta: number) => {
-        setGuests((prev) => {
+        setGuestsVal((prev) => {
             const updated = prev + delta;
             if (updated > 10) {
                 setCapacityMessage("This is highest capacity (10 Guests)");
@@ -51,8 +58,41 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
         });
     };
 
-    const handleConfirmBooking = () => {
-        alert(`Table successfully reserved at ${restaurantName} for ${guests} guests on ${selectedDate} at ${selectedHour} ${selectedAmPm} (${selectedSession})!`);
+    const handleConfirmBooking = async () => {
+        setIsSubmitting(true);
+
+        const formattedDateReadable = new Date(selectedDateVal).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+        }).toUpperCase();
+
+        const fullTimeString = `${selectedHour} ${selectedAmPm}`;
+
+        // Safely update context if functions exist
+        if (typeof reservationContext?.setSelectedRestaurant === "function") {
+            reservationContext.setSelectedRestaurant(restaurantName);
+        }
+        if (typeof reservationContext?.setGuests === "function") {
+            reservationContext.setGuests(guestsVal);
+        }
+        if (typeof reservationContext?.setSelectedDate === "function") {
+            reservationContext.setSelectedDate(formattedDateReadable);
+        }
+        if (typeof reservationContext?.setSelectedTime === "function") {
+            reservationContext.setSelectedTime(fullTimeString);
+        }
+
+        // Simulate brief loading delay
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
+        // Fire hot toast notification
+        toast.success(`Table successfully reserved at ${restaurantName} for ${guestsVal} guests!`);
+
+        setIsSubmitting(false);
+
+        // Redirect user to the full /reservations route page
+        router.push("/reservations");
     };
 
     return (
@@ -84,7 +124,7 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
                         <input
                             type="date"
                             min={todayStr}
-                            value={selectedDate}
+                            value={selectedDateVal}
                             onChange={handleDateChange}
                             className="w-full bg-surface-container-low border border-outline-variant/60 rounded-xl px-4 py-3 text-xs font-bold text-on-surface focus:outline-none focus:border-primary transition-all cursor-pointer"
                         />
@@ -149,7 +189,7 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
                     </label>
                     <div className="flex items-center justify-between bg-surface-container-low border border-outline-variant/60 rounded-xl px-4 py-2.5">
                         <span className="text-xs font-bold text-on-surface">
-                            {guests} {guests === 1 ? "Guest" : "Guests"}
+                            {guestsVal} {guestsVal === 1 ? "Guest" : "Guests"}
                         </span>
 
                         {/* Up & Down Stepper Arrows */}
@@ -163,7 +203,7 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
                                 -
                             </button>
                             <span className="text-xs font-black text-primary w-4 text-center">
-                                {guests}
+                                {guestsVal}
                             </span>
                             <button
                                 onClick={() => handleGuestChange(1)}
@@ -179,20 +219,28 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
 
                 {/* Notification Popup Toast */}
                 {capacityMessage && (
-                    <div className="bg-primary/15 border border-primary/40 text-primary text-[11px] font-extrabold py-2 px-3 rounded-xl shadow-md text-center animate-bounce-subtle">
+                    <div className="bg-primary/15 border border-primary/40 text-primary text-[11px] font-extrabold py-2 px-3 rounded-xl shadow-md text-center">
                         {capacityMessage}
                     </div>
                 )}
 
             </div>
 
-            {/* Confirm Button */}
+            {/* Confirm Button with Dynamic Loading State */}
             <button
                 onClick={handleConfirmBooking}
-                className="w-full py-3.5 rounded-2xl bg-primary text-on-primary font-bold text-xs shadow-lg hover:bg-primary/90 transition-all cursor-pointer tracking-wider uppercase mt-2"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-2xl bg-primary text-on-primary font-bold text-xs shadow-lg hover:bg-primary/90 transition-all cursor-pointer tracking-wider uppercase mt-2 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                 type="button"
             >
-                Confirm Reservation Slot
+                {isSubmitting ? (
+                    <>
+                        <span className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span>
+                        <span>Confirming Reservation...</span>
+                    </>
+                ) : (
+                    <span>Confirm Reservation Slot</span>
+                )}
             </button>
 
             {/* Footer Guarantee */}

@@ -150,8 +150,8 @@ export default function AuthView({
                 authUser.role === "ADMIN" || authUser.role === "SUPERADMIN"
                   ? "Admin"
                   : authUser.role === "VENDOR"
-                  ? "Restaurant Manager"
-                  : "Diner",
+                    ? "Restaurant Manager"
+                    : "Diner",
             });
           } catch (e) {
             console.error("Error updating local profile cache:", e);
@@ -195,8 +195,8 @@ export default function AuthView({
                   authUser.role === "ADMIN" || authUser.role === "SUPERADMIN"
                     ? "Admin"
                     : authUser.role === "VENDOR"
-                    ? "Restaurant Partner"
-                    : "Diner",
+                      ? "Restaurant Partner"
+                      : "Diner",
               });
             } catch (e) {
               console.error("Error updating profile cache:", e);
@@ -418,11 +418,10 @@ export default function AuthView({
                   setErrors({});
                   setGeneralError("");
                 }}
-                className={`pb-3 text-sm transition-colors cursor-pointer relative ${
-                  authMode === "signin"
+                className={`pb-3 text-sm transition-colors cursor-pointer relative ${authMode === "signin"
                     ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
                     : "text-neutral-500 hover:text-neutral-800"
-                }`}
+                  }`}
               >
                 Sign In
               </button>
@@ -433,11 +432,10 @@ export default function AuthView({
                   setErrors({});
                   setGeneralError("");
                 }}
-                className={`pb-3 text-sm transition-colors cursor-pointer relative ${
-                  authMode === "signup"
+                className={`pb-3 text-sm transition-colors cursor-pointer relative ${authMode === "signup"
                     ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
                     : "text-neutral-500 hover:text-neutral-800"
-                }`}
+                  }`}
               >
                 Create Account
               </button>
@@ -532,9 +530,8 @@ export default function AuthView({
                       placeholder="name@example.com"
                       aria-invalid={!!errors.email}
                       aria-describedby={errors.email ? "email-error" : undefined}
-                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                        errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
-                      }`}
+                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
+                        }`}
                     />
                     {errors.email && (
                       <p id="email-error" className="mt-1 text-xs text-red-600">
@@ -563,11 +560,10 @@ export default function AuthView({
                         placeholder="••••••••"
                         aria-invalid={!!errors.password}
                         aria-describedby={errors.password ? "password-error" : undefined}
-                        className={`w-full h-12 pl-3.5 pr-14 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                          errors.password
+                        className={`w-full h-12 pl-3.5 pr-14 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.password
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : "border-neutral-300"
-                        }`}
+                          }`}
                       />
                       <button
                         type="button"
@@ -699,11 +695,10 @@ export default function AuthView({
                       setErrors({});
                       setGeneralError("");
                     }}
-                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${
-                      signupRole === "USER"
+                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${signupRole === "USER"
                         ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
                         : "text-neutral-400 hover:text-neutral-700"
-                    }`}
+                      }`}
                   >
                     Diner
                   </button>
@@ -714,11 +709,10 @@ export default function AuthView({
                       setErrors({});
                       setGeneralError("");
                     }}
-                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${
-                      signupRole === "VENDOR"
+                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${signupRole === "VENDOR"
                         ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
                         : "text-neutral-400 hover:text-neutral-700"
-                    }`}
+                      }`}
                   >
                     Restaurant Manager
                   </button>
@@ -755,9 +749,8 @@ export default function AuthView({
                       placeholder={signupRole === "VENDOR" ? "Marcus Vance" : "Jordan Smith"}
                       aria-invalid={!!errors.fullName}
                       aria-describedby={errors.fullName ? "fullName-error" : undefined}
-                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                        errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
-                      }`}
+                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
+                        }`}
                     />
                     {errors.fullName && (
                       <p id="fullName-error" className="mt-1 text-xs text-red-600">
@@ -787,9 +780,8 @@ export default function AuthView({
                       }
                       aria-invalid={!!errors.email}
                       aria-describedby={errors.email ? "email-error" : undefined}
-                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                        errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
-                      }`}
+                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
+                        }`}
                     />
                     {errors.email && (
                       <p id="email-error" className="mt-1 text-xs text-red-600">
@@ -818,11 +810,10 @@ export default function AuthView({
                         placeholder="General Manager / Operations Lead"
                         aria-invalid={!!errors.restaurantName}
                         aria-describedby={errors.restaurantName ? "restaurantName-error" : undefined}
-                        className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                          errors.restaurantName
+                        className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.restaurantName
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : "border-neutral-300"
-                        }`}
+                          }`}
                       />
                       {errors.restaurantName && (
                         <p id="restaurantName-error" className="mt-1 text-xs text-red-600">
@@ -853,9 +844,8 @@ export default function AuthView({
                       placeholder="(313) 555-0142"
                       aria-invalid={!!errors.phone}
                       aria-describedby={errors.phone ? "phone-error" : undefined}
-                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                        errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
-                      }`}
+                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
+                        }`}
                     />
                     {errors.phone && (
                       <p id="phone-error" className="mt-1 text-xs text-red-600">
@@ -884,11 +874,10 @@ export default function AuthView({
                         placeholder="••••••••"
                         aria-invalid={!!errors.password}
                         aria-describedby={errors.password ? "password-error" : undefined}
-                        className={`w-full h-12 pl-3.5 pr-14 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${
-                          errors.password
+                        className={`w-full h-12 pl-3.5 pr-14 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.password
                             ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                             : "border-neutral-300"
-                        }`}
+                          }`}
                       />
                       <button
                         type="button"
@@ -948,8 +937,8 @@ export default function AuthView({
                     {isLoading
                       ? "Creating account..."
                       : signupRole === "VENDOR"
-                      ? "Create manager account"
-                      : "Create account"}
+                        ? "Create manager account"
+                        : "Create account"}
                   </button>
 
                   {/* Demo Login under button for all roles */}
@@ -1057,9 +1046,8 @@ export default function AuthView({
                       if (forgotError) setForgotError("");
                     }}
                     placeholder="name@example.com"
-                    className={`w-full h-11 px-3.5 bg-white border rounded-lg text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors ${
-                      forgotError ? "border-red-500" : "border-neutral-300"
-                    }`}
+                    className={`w-full h-11 px-3.5 bg-white border rounded-lg text-xs text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary transition-colors ${forgotError ? "border-red-500" : "border-neutral-300"
+                      }`}
                   />
                   {forgotError && (
                     <p className="mt-1 text-xs text-red-600">{forgotError}</p>
