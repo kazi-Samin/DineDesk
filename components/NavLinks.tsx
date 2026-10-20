@@ -22,8 +22,8 @@ export default function NavLinks({
     const isReservations = pathname?.startsWith("/reservations");
 
     const dashboardHref = !isAuthenticated || !user
-        ? "/dashboard"
-        : user.role === "ADMIN"
+        ? "/dashboard/customer"
+        : user.role === "ADMIN" || user.role === "SUPERADMIN"
             ? "/dashboard/admin"
             : user.role === "VENDOR"
                 ? "/dashboard/vendor"
@@ -42,38 +42,39 @@ export default function NavLinks({
 
     return (
         <nav className={isMobile ? "flex flex-col gap-2" : "hidden xl:flex items-center gap-8"}>
-
             {/* Home Link */}
-
             <Link href="/" onClick={onItemClick} className={linkClass(isHome)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">home</span>}
                 Home
             </Link>
 
             {/* Explore Link */}
-
             <Link href="/explore" onClick={onItemClick} className={linkClass(isExplore)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">restaurant_menu</span>}
                 Browse Menu
             </Link>
 
             {/* Reserve a Table Link */}
-
             <Link href="/reservations" onClick={onItemClick} className={linkClass(isReservations)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">event_seat</span>}
                 Reserve a Table
             </Link>
 
-            {/* Dashboard Link */}
-
-            <Link
-                href={dashboardHref}
-                onClick={onItemClick}
-                className={linkClass(pathname?.includes("/dashboard"))}
-            >
-                {isMobile && <span className="material-symbols-outlined text-xl">dashboard</span>}
-                Dashboard
-            </Link>
+            {/* Dashboard Link - Only visible AFTER authentication */}
+            {isAuthenticated && user && (
+                <Link
+                    href={dashboardHref}
+                    onClick={onItemClick}
+                    className={linkClass(pathname?.includes("/dashboard"))}
+                >
+                    {isMobile && <span className="material-symbols-outlined text-xl">dashboard</span>}
+                    {user.role === "ADMIN" || user.role === "SUPERADMIN"
+                        ? "Admin Console"
+                        : user.role === "VENDOR"
+                            ? "Partner Portal"
+                            : "Dashboard"}
+                </Link>
+            )}
         </nav>
     );
 }
