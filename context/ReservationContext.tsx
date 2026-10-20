@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 import { ReservationRequest, ReservationConfirmation } from "@/types/reservation";
 import { createReservation } from "@/services/mockReservationService";
 
@@ -15,11 +15,21 @@ interface ReservationContextType {
   closeReservationModal: () => void;
   submitReservation: (payload: ReservationRequest) => Promise<ReservationConfirmation>;
   lastReservation: ReservationConfirmation | null;
+
+  // Dedicated /reservations page states
+  guests: number;
+  setGuests: (guests: number | ((prev: number) => number)) => void;
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+  selectedTime: string;
+  setSelectedTime: (time: string) => void;
+  seatingArea: string;
+  setSeatingArea: (area: string) => void;
 }
 
 const ReservationContext = createContext<ReservationContextType | undefined>(undefined);
 
-export function ReservationProvider({ children }: { children: React.ReactNode }) {
+export function ReservationProvider({ children }: { children: ReactNode }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [restaurantInfo, setRestaurantInfo] = useState({
     id: "the-maple-and-vine",
@@ -27,6 +37,12 @@ export function ReservationProvider({ children }: { children: React.ReactNode })
     neighborhood: "Corktown, Detroit, MI",
   });
   const [lastReservation, setLastReservation] = useState<ReservationConfirmation | null>(null);
+
+  // Additional state for the full dedicated reservations page
+  const [guests, setGuests] = useState<number>(2);
+  const [selectedDate, setSelectedDate] = useState("TODAY, OCT 20");
+  const [selectedTime, setSelectedTime] = useState("8:00 PM");
+  const [seatingArea, setSeatingArea] = useState("Main Hall");
 
   const openReservationModal = (restaurant?: { id: string; name: string; neighborhood: string }) => {
     if (restaurant) {
@@ -54,6 +70,14 @@ export function ReservationProvider({ children }: { children: React.ReactNode })
         closeReservationModal,
         submitReservation,
         lastReservation,
+        guests,
+        setGuests,
+        selectedDate,
+        setSelectedDate,
+        selectedTime,
+        setSelectedTime,
+        seatingArea,
+        setSeatingArea,
       }}
     >
       {children}

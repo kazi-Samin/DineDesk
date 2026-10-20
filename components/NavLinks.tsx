@@ -7,27 +7,27 @@ import { useAuth } from "@/context/AuthContext";
 interface NavLinksProps {
     onItemClick?: () => void;
     isMobile?: boolean;
-    openReservationModal: () => void;
+    openReservationModal?: () => void;
     selectedRole?: string;
 }
 
 export default function NavLinks({
     onItemClick,
     isMobile = false,
-    openReservationModal,
 }: NavLinksProps) {
     const pathname = usePathname();
     const { user, isAuthenticated } = useAuth();
     const isHome = pathname === "/";
     const isExplore = pathname === "/explore";
+    const isReservations = pathname?.startsWith("/reservations");
 
     const dashboardHref = !isAuthenticated || !user
         ? "/dashboard"
         : user.role === "ADMIN"
-        ? "/dashboard/admin"
-        : user.role === "VENDOR"
-        ? "/dashboard/vendor"
-        : "/dashboard/customer";
+            ? "/dashboard/admin"
+            : user.role === "VENDOR"
+                ? "/dashboard/vendor"
+                : "/dashboard/customer";
 
     const linkClass = (active: boolean) =>
         isMobile
@@ -42,27 +42,29 @@ export default function NavLinks({
 
     return (
         <nav className={isMobile ? "flex flex-col gap-2" : "hidden xl:flex items-center gap-8"}>
+
+            {/* Home Link */}
+
             <Link href="/" onClick={onItemClick} className={linkClass(isHome)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">home</span>}
                 Home
             </Link>
+
+            {/* Explore Link */}
 
             <Link href="/explore" onClick={onItemClick} className={linkClass(isExplore)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">restaurant_menu</span>}
                 Browse Menu
             </Link>
 
-            <button
-                onClick={() => {
-                    openReservationModal();
-                    if (onItemClick) onItemClick();
-                }}
-                type="button"
-                className={isMobile ? linkClass(false) + " text-left w-full" : linkClass(false) + " cursor-pointer"}
-            >
+            {/* Reserve a Table Link */}
+
+            <Link href="/reservations" onClick={onItemClick} className={linkClass(isReservations)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">event_seat</span>}
                 Reserve a Table
-            </button>
+            </Link>
+
+            {/* Dashboard Link */}
 
             <Link
                 href={dashboardHref}

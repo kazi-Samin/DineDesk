@@ -6,7 +6,6 @@ import Footer from "@/components/layout/Footer";
 import CookieConsent from "@/components/ui/CookieConsent";
 import TableMateAIBadge from "@/components/ui/TableMateAIBadge";
 import CartDrawer from "@/components/cart/CartDrawer";
-import ReserveTableModal from "@/components/reservations/ReserveTableModal";
 import GlobalLoader from "@/components/ui/GlobalLoader";
 import { CartProvider } from "@/context/CartContext";
 import { ReservationProvider } from "@/context/ReservationContext";
@@ -54,7 +53,6 @@ export default function RootLayout({
               <Navbar />
               {children}
               <CartDrawer />
-              <ReserveTableModal />
               <CookieConsent />
               <TableMateAIBadge />
               <Footer />
