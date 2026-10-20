@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface OrderCartModalProps {
     item?: {
@@ -14,6 +17,8 @@ interface OrderCartModalProps {
 
 export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const { isAuthenticated } = useAuth();
+    const router = useRouter();
 
     // Fallback item details if props aren't passed directly
     const rawDishName = item?.name || "Menu Item #7: Slow-Braised Lamb Shank with Rosemary Jus";
@@ -25,6 +30,15 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
     const itemNumberMatch = rawDishName.match(/#(\d+)/);
     const itemSerialTag = itemNumberMatch ? `#${itemNumberMatch[1]}` : item?.id ? `#${item.id.slice(-4).toUpperCase()}` : '#007';
     const cleanDishName = rawDishName.replace(/^Menu Item #\d+:\s*/, '');
+
+    const handleReviewAndPayClick = () => {
+        if (!isAuthenticated) {
+            toast.error("Please sign in first to review & pay.");
+            router.push("/sign-in");
+            return;
+        }
+        setIsOpen(true);
+    };
 
     return (
         <>
@@ -45,7 +59,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                 </div>
 
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={handleReviewAndPayClick}
                     className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-2"
                     type="button"
                 >
@@ -139,7 +153,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                             </button>
                             <button
                                 onClick={() => {
-                                    alert(`Order successfully placed for $${(Number(totalPrice) * 1.05).toFixed(2)}!`);
+                                    toast.success(`Order successfully placed for $${(Number(totalPrice) * 1.05).toFixed(2)}!`);
                                     setIsOpen(false);
                                 }}
                                 className="flex-1 py-3 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-lg hover:bg-primary/90 transition-all cursor-pointer"

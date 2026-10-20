@@ -2,13 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export default function CartDrawer() {
   const cartContext = useCart() as any;
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+
   const [isOpen, setIsOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
+  const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const checkCart = () => {
@@ -34,6 +40,7 @@ export default function CartDrawer() {
 
   const handleClose = () => {
     setIsOpen(false);
+    setAuthRestrictionMessage(null);
     if (cartContext?.setIsCartOpen) {
       cartContext.setIsCartOpen(false);
     }
@@ -51,6 +58,19 @@ export default function CartDrawer() {
       setCartItems([...saved]);
       window.dispatchEvent(new Event("storage"));
     }
+  };
+
+  const handleCheckoutClick = () => {
+    setAuthRestrictionMessage(null);
+
+    // Authentication restriction check
+    if (!isAuthenticated) {
+      setAuthRestrictionMessage("Authentication required! Please sign in first to proceed with checkout.");
+      return;
+    }
+
+    alert("Proceeding to secure checkout!");
+    handleClose();
   };
 
   const subtotal = cartItems.reduce((acc, i) => acc + Number(i.price || 0) * Number(i.quantity || 0), 0);
@@ -213,11 +233,28 @@ export default function CartDrawer() {
                   <span>${grandTotal.toFixed(2)}</span>
                 </div>
 
+                {/* Restricted Light Red State Banner */}
+                {authRestrictionMessage && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-between gap-2.5 animate-fadeIn mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base shrink-0 text-red-500">lock_person</span>
+                      <span>{authRestrictionMessage}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleClose();
+                        router.push("/sign-in");
+                      }}
+                      className="text-[11px] font-bold underline text-red-800 hover:text-red-950 shrink-0 cursor-pointer"
+                      type="button"
+                    >
+                      Sign In →
+                    </button>
+                  </div>
+                )}
+
                 <button
-                  onClick={() => {
-                    alert("Proceeding to secure checkout!");
-                    handleClose();
-                  }}
+                  onClick={handleCheckoutClick}
                   className="w-full mt-2 py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   type="button"
                 >

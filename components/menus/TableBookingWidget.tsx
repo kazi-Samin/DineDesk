@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useReservation } from "@/context/ReservationContext";
+import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
 interface TableBookingWidgetProps {
@@ -12,6 +13,7 @@ interface TableBookingWidgetProps {
 export default function TableBookingWidget({ restaurantName }: TableBookingWidgetProps) {
     const router = useRouter();
     const reservationContext = useReservation() as any;
+    const { isAuthenticated } = useAuth();
 
     // Today's date formatted as YYYY-MM-DD for min date restriction
     const todayStr = new Date().toISOString().split("T")[0];
@@ -27,6 +29,7 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
     // Guests state & capacity popups
     const [guestsVal, setGuestsVal] = useState<number>(2);
     const [capacityMessage, setCapacityMessage] = useState<string | null>(null);
+    const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +62,14 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
     };
 
     const handleConfirmBooking = async () => {
+        setAuthRestrictionMessage(null);
+
+        // Authentication guard restriction
+        if (!isAuthenticated) {
+            setAuthRestrictionMessage("Authentication required! Please sign in first to confirm your table reservation.");
+            return;
+        }
+
         setIsSubmitting(true);
 
         const formattedDateReadable = new Date(selectedDateVal).toLocaleDateString("en-US", {
@@ -242,6 +253,23 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
                     <span>Confirm Reservation Slot</span>
                 )}
             </button>
+
+            {/* Restricted Light Red State Banner below the reservation button */}
+            {authRestrictionMessage && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-between gap-2.5 animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-base shrink-0 text-red-500">lock_person</span>
+                        <span>{authRestrictionMessage}</span>
+                    </div>
+                    <button
+                        onClick={() => router.push("/sign-in")}
+                        className="text-[11px] font-bold underline text-red-800 hover:text-red-950 shrink-0 cursor-pointer"
+                        type="button"
+                    >
+                        Sign In →
+                    </button>
+                </div>
+            )}
 
             {/* Footer Guarantee */}
             <div className="flex items-center justify-center gap-4 text-[10px] font-medium text-on-surface-variant pt-1 border-t border-outline-variant/40">
