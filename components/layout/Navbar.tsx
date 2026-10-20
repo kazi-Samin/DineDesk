@@ -13,17 +13,43 @@ import { useAuth } from "@/context/AuthContext";
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { toggleDrawer, totalItemCount } = useCart();
+  const { cartItems } = useCart() as any;
+
+  const [localCount, setLocalCount] = useState(0);
+
+  // Dynamically sync badge count from localStorage and context items
+  useEffect(() => {
+    const updateCount = () => {
+      const saved = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
+      const count = saved.reduce((acc: number, item: any) => acc + Number(item.quantity || 0), 0);
+      setLocalCount(count);
+    };
+
+    updateCount();
+    window.addEventListener("storage", updateCount);
+
+    // Custom listener for instant state refresh across components
+    const handleCartUpdate = () => updateCount();
+    window.addEventListener("open-cart-drawer", handleCartUpdate);
+
+    return () => {
+      window.removeEventListener("storage", updateCount);
+      window.removeEventListener("open-cart-drawer", handleCartUpdate);
+    };
+  }, [cartItems]);
+
+  const cartBadgeCount = (cartItems && cartItems.length > 0)
+    ? cartItems.reduce((acc: number, item: any) => acc + Number(item.quantity || 0), 0)
+    : localCount;
+
   const { openReservationModal } = useReservation();
   const { user, isAuthenticated, logout } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("Diner");
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   // Dynamic scroll listener for liquid glass effect
   useEffect(() => {
     const handleScroll = () => {
@@ -56,14 +82,13 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`pointer-events-auto max-w-[1400px] mx-auto h-20 px-5 sm:px-8 flex items-center justify-between gap-4 transition-all duration-500 rounded-3xl border shadow-xl ${scrolled
-          ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
-          : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
+            ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
+            : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
           }`}
       >
         {/* Brand Logo Image & Desktop Navigation Links */}
         <div className="flex items-center gap-8 shrink-0">
           <Logo size="lg" />
-
           <NavLinks openReservationModal={openReservationModal} />
         </div>
 
@@ -85,19 +110,21 @@ export default function Navbar() {
 
         {/* Action Controls & Profile Pill */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Cart Bag with Bouncing Count */}
+          {/* Cart Bag with Dynamic Badge Count */}
           <motion.button
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.92 }}
             aria-label="View cart"
-            onClick={toggleDrawer}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent("open-cart-drawer"));
+            }}
             className="relative p-3 text-on-surface-variant hover:text-primary rounded-2xl bg-surface-container/50 hover:bg-surface-container border border-outline-variant/40 transition-colors cursor-pointer shadow-2xs"
             type="button"
           >
             <span className="material-symbols-outlined text-lg">shopping_bag</span>
-            {totalItemCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-secondary text-on-secondary rounded-full font-bold text-[10px] flex items-center justify-center shadow-md animate-bounce">
-                {totalItemCount}
+            {cartBadgeCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full font-bold text-[10px] flex items-center justify-center shadow-md animate-bounce">
+                {cartBadgeCount}
               </span>
             )}
           </motion.button>
@@ -271,7 +298,7 @@ export default function Navbar() {
 
                   <Link
                     href={
-                      user.role === "ADMIN"
+                      user.role === "ADMIN" || user.role === "SUPERADMIN"
                         ? "/dashboard/admin"
                         : user.role === "VENDOR"
                           ? "/dashboard/vendor"

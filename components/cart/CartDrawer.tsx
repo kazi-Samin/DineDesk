@@ -1,220 +1,234 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export default function CartDrawer() {
-  const {
-    cart,
-    isDrawerOpen,
-    closeDrawer,
-    updateQuantity,
-    addRecommendation,
-  } = useCart();
-  const router = useRouter();
+  const cartContext = useCart() as any;
+  const [isOpen, setIsOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
-  // Close on Escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isDrawerOpen) {
-        closeDrawer();
-      }
+    const checkCart = () => {
+      const saved = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
+      setCartItems(saved);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDrawerOpen, closeDrawer]);
 
-  const handleProceedToCheckout = () => {
-    closeDrawer();
-    router.push("/checkout");
+    checkCart();
+    window.addEventListener("storage", checkCart);
+    window.addEventListener("open-cart-drawer", () => setIsOpen(true));
+
+    return () => {
+      window.removeEventListener("storage", checkCart);
+      window.removeEventListener("open-cart-drawer", () => setIsOpen(true));
+    };
+  }, []);
+
+  useEffect(() => {
+    if (cartContext?.isCartOpen !== undefined) {
+      setIsOpen(cartContext.isCartOpen);
+    }
+  }, [cartContext?.isCartOpen]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    if (cartContext?.setIsCartOpen) {
+      cartContext.setIsCartOpen(false);
+    }
   };
 
-  if (!isDrawerOpen) return null;
+  const updateQty = (id: string, delta: number) => {
+    let saved = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
+    const idx = saved.findIndex((i: any) => i.id === id || i.menuId === id);
+    if (idx > -1) {
+      saved[idx].quantity += delta;
+      if (saved[idx].quantity <= 0) {
+        saved.splice(idx, 1);
+      }
+      localStorage.setItem("dine_desk_cart", JSON.stringify(saved));
+      setCartItems([...saved]);
+      window.dispatchEvent(new Event("storage"));
+    }
+  };
+
+  const subtotal = cartItems.reduce((acc, i) => acc + Number(i.price || 0) * Number(i.quantity || 0), 0);
+  const deliveryFee = cartItems.length > 0 ? 5.00 : 0;
+  const packagingFee = cartItems.length > 0 ? 3.00 : 0;
+  const tax = subtotal * 0.06;
+  const grandTotal = subtotal + deliveryFee + packagingFee + tax;
+
+  // Group items by restaurantName
+  const groupedItems = cartItems.reduce((acc: any, item: any) => {
+    const restName = item.restaurantName || "Sultan's Heritage Kitchen";
+    if (!acc[restName]) acc[restName] = [];
+    acc[restName].push(item);
+    return acc;
+  }, {});
 
   return (
-    <div
-      className="fixed inset-0 bg-on-surface/40 z-50 transition-opacity duration-300 opacity-100 pointer-events-auto"
-      id="cartDrawerBackdrop"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) closeDrawer();
-      }}
-    >
-      <div
-        className="absolute top-0 right-0 bottom-0 w-full max-w-md bg-surface-container-lowest shadow-2xl flex flex-col justify-between transform transition-transform duration-300 translate-x-0"
-        id="cartDrawer"
-      >
-        {/* Drawer Header */}
-        <div className="p-space-lg bg-surface-container-low flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-space-xs">
-              <span className="material-symbols-outlined text-primary-container text-lg">
-                local_dining
-              </span>
-              <span className="font-label-sm text-label-sm uppercase tracking-widest text-primary font-bold">
-                Your Order
-              </span>
-            </div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface mt-0.5">
-              {cart.restaurantName}
-            </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
-              {cart.items.length > 0
-                ? `${cart.items.reduce((s, i) => s + i.quantity, 0)} items ready for delivery`
-                : "Your cart is currently empty"}
-            </p>
-          </div>
-          <button
-            aria-label="Close cart"
-            className="p-1 rounded text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-            id="closeCartDrawerBtn"
-            onClick={closeDrawer}
-            type="button"
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={handleClose}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs"
+          />
+
+          <motion.div
+            initial={{ x: "100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 250 }}
+            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-md bg-surface-container-lowest shadow-2xl flex flex-col border-l border-outline-variant"
           >
-            <span className="material-symbols-outlined text-2xl">close</span>
-          </button>
-        </div>
-
-        {/* Drawer Items List */}
-        <div className="flex-1 overflow-y-auto p-space-lg space-y-space-md">
-          {cart.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center text-on-surface-variant">
-              <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-primary-container mb-space-sm">
-                <span className="material-symbols-outlined text-3xl">shopping_bag</span>
+            <div className="flex items-center justify-between p-6 border-b border-outline-variant/60">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-secondary">
+                  Your Order
+                </span>
+                <h3 className="font-heading font-extrabold text-lg text-primary">
+                  Multi-Kitchen Order
+                </h3>
+                <p className="text-[11px] text-on-surface-variant font-medium">
+                  {cartItems.reduce((acc, i) => acc + i.quantity, 0)} total items ready
+                </p>
               </div>
-              <h3 className="font-headline-sm text-lg text-on-surface mb-1">Your cart is empty</h3>
-              <p className="font-body-sm text-sm text-on-surface-variant max-w-xs mb-space-md">
-                Explore delicious handcrafted dishes from Dhaka&apos;s celebrated kitchens.
-              </p>
-              <Link
-                href="/explore"
-                onClick={closeDrawer}
-                className="px-space-md py-2 bg-primary-container text-on-primary rounded font-label-sm text-label-sm font-semibold"
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-on-surface hover:text-primary cursor-pointer transition-colors"
+                type="button"
               >
-                Browse Restaurants
-              </Link>
+                ✕
+              </button>
             </div>
-          ) : (
-            <>
-              {cart.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-start justify-between gap-space-md p-space-sm rounded bg-surface-container-lowest hover:bg-surface-container-low transition-colors"
-                >
-                  <div className="w-16 h-16 rounded overflow-hidden shrink-0 bg-surface-container">
-                    <img
-                      className="w-full h-full object-cover"
-                      alt={item.imageAlt}
-                      src={item.image}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <h3 className="font-label-lg text-label-lg font-semibold text-on-surface truncate">
-                        {item.name}
-                      </h3>
-                    </div>
-                    {item.variant && (
-                      <p className="text-xs text-on-surface-variant mt-0.5">{item.variant}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-space-sm">
-                      {/* Stepper */}
-                      <div className="flex items-center bg-surface-container rounded px-1.5 py-0.5 gap-space-sm text-xs font-label-sm">
-                        <button
-                          aria-label="Decrease quantity"
-                          className="w-5 h-5 flex items-center justify-center text-on-surface hover:bg-surface-container-high rounded"
-                          onClick={() => updateQuantity(item.id, -1)}
-                          type="button"
-                        >
-                          -
-                        </button>
-                        <span className="font-bold text-on-surface tabular-nums">
-                          {item.quantity}
-                        </span>
-                        <button
-                          aria-label="Increase quantity"
-                          className="w-5 h-5 flex items-center justify-center text-on-surface hover:bg-surface-container-high rounded"
-                          onClick={() => updateQuantity(item.id, 1)}
-                          type="button"
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span className="font-label-md text-label-md font-bold text-on-surface tabular-nums">
-                        ${(item.price * item.quantity).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
 
-              {/* Additional Chef Suggestion Upsell */}
-              <div className="p-space-md bg-surface-container-low rounded flex items-center justify-between">
-                <div className="flex items-center gap-space-sm">
-                  <span className="material-symbols-outlined text-secondary text-lg">
-                    hotel_class
-                  </span>
-                  <div>
-                    <p className="font-label-sm text-label-sm font-semibold text-on-surface">
-                      Artisanal Honey Panna Cotta
-                    </p>
-                    <p className="text-[11px] text-on-surface-variant">
-                      +$8 (Special dessert pairing)
-                    </p>
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+              {cartItems.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 gap-4">
+                  <div className="w-20 h-20 rounded-3xl bg-surface-container flex items-center justify-center text-primary shadow-inner">
+                    <span className="material-symbols-outlined text-4xl">remove_shopping_cart</span>
                   </div>
+                  <h4 className="font-heading font-extrabold text-xl text-on-surface">
+                    Your Cart is Empty
+                  </h4>
+                  <Link
+                    href="/explore"
+                    onClick={handleClose}
+                    className="mt-2 px-6 py-3 rounded-2xl bg-primary text-on-primary font-bold text-xs uppercase tracking-wider shadow-md hover:bg-primary/90 transition-all"
+                  >
+                    Explore Menus
+                  </Link>
                 </div>
+              ) : (
+                Object.entries(groupedItems).map(([restaurantName, items]: [string, any]) => (
+                  <div key={restaurantName} className="flex flex-col gap-3">
+                    {/* Restaurant Section Header */}
+                    <div className="flex items-center gap-2 pb-1 border-b border-primary/20">
+                      <span className="material-symbols-outlined text-sm text-primary">storefront</span>
+                      <h4 className="font-heading font-bold text-xs text-primary uppercase tracking-wider">
+                        {restaurantName}
+                      </h4>
+                    </div>
+
+                    {/* Items List for this Restaurant */}
+                    <div className="flex flex-col gap-3">
+                      {items.map((item: any) => (
+                        <div
+                          key={item.id || item.menuId}
+                          className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-low border border-outline-variant/60 shadow-2xs"
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-14 h-14 rounded-xl object-cover shadow-xs shrink-0"
+                          />
+                          <div className="flex-1 flex flex-col justify-center">
+                            <h5 className="font-heading font-bold text-xs text-on-surface line-clamp-1">
+                              {item.name}
+                            </h5>
+                            <span className="text-[11px] font-medium text-on-surface-variant mt-0.5">
+                              ${Number(item.price || 0).toFixed(2)} each
+                            </span>
+
+                            <div className="flex items-center gap-2 mt-2">
+                              <button
+                                onClick={() => updateQty(item.id || item.menuId, -1)}
+                                className="w-6 h-6 rounded-lg bg-surface-container-lowest text-on-surface hover:text-primary font-bold flex items-center justify-center shadow-2xs cursor-pointer border border-outline-variant/40 text-xs"
+                                type="button"
+                              >
+                                -
+                              </button>
+                              <span className="text-xs font-black text-primary w-4 text-center">
+                                {item.quantity}
+                              </span>
+                              <button
+                                onClick={() => updateQty(item.id || item.menuId, 1)}
+                                className="w-6 h-6 rounded-lg bg-surface-container-lowest text-on-surface hover:text-primary font-bold flex items-center justify-center shadow-2xs cursor-pointer border border-outline-variant/40 text-xs"
+                                type="button"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="text-sm font-black text-primary">
+                              ${(Number(item.price || 0) * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cartItems.length > 0 && (
+              <div className="p-6 border-t border-outline-variant/60 bg-surface-container-low flex flex-col gap-3">
+                <div className="flex justify-between text-xs text-on-surface-variant font-medium">
+                  <span>Subtotal</span>
+                  <span className="font-bold text-on-surface">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-on-surface-variant font-medium">
+                  <span>Delivery Fee</span>
+                  <span className="font-bold text-on-surface">${deliveryFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-on-surface-variant font-medium">
+                  <span>Restaurant Packaging</span>
+                  <span className="font-bold text-on-surface">${packagingFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-on-surface-variant font-medium">
+                  <span>State &amp; Local Tax (6%)</span>
+                  <span className="font-bold text-on-surface">${tax.toFixed(2)}</span>
+                </div>
+
+                <div className="flex justify-between pt-3 border-t border-outline-variant/60 text-base font-black text-primary">
+                  <span>Total</span>
+                  <span>${grandTotal.toFixed(2)}</span>
+                </div>
+
                 <button
-                  onClick={addRecommendation}
-                  className="px-space-sm py-1 bg-surface-container-lowest hover:bg-primary hover:text-on-primary rounded text-xs font-label-sm font-semibold transition-colors"
+                  onClick={() => {
+                    alert("Proceeding to secure checkout!");
+                    handleClose();
+                  }}
+                  className="w-full mt-2 py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
                   type="button"
                 >
-                  Add
+                  <span>Proceed to Checkout</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
               </div>
-            </>
-          )}
-        </div>
-
-        {/* Drawer Cost Breakdown & Sticky Checkout Action */}
-        {cart.items.length > 0 && (
-          <div className="p-space-lg bg-surface-container-lowest shadow-[0_-8px_20px_rgba(30,27,22,0.05)]">
-            <div className="space-y-1.5 font-body-sm text-body-sm pb-space-md">
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>Subtotal</span>
-                <span className="tabular-nums">${cart.subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>Delivery Fee</span>
-                <span className="tabular-nums">${cart.deliveryFee.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>Restaurant Packaging</span>
-                <span className="tabular-nums">${cart.packagingFee.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>State &amp; Local Tax (6%)</span>
-                <span className="tabular-nums">${cart.tax.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center justify-between pt-space-xs font-headline-sm text-headline-sm text-on-surface font-semibold">
-                <span>Total</span>
-                <span className="text-primary-container tabular-nums">
-                  ${(cart.subtotal + cart.deliveryFee + cart.packagingFee + cart.tax).toLocaleString()}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={handleProceedToCheckout}
-              className="w-full py-space-md px-space-lg bg-primary-container hover:bg-primary text-on-primary rounded font-label-lg text-label-lg font-semibold tracking-wide transition-colors flex items-center justify-center gap-space-sm"
-              id="drawerCheckoutAction"
-              type="button"
-            >
-              <span>Proceed to Checkout</span>
-              <span className="material-symbols-outlined text-lg">east</span>
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+            )}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
