@@ -26,7 +26,7 @@ export default function NotFound() {
             Table Not Found
           </span>
           <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-[#1b3b2b] tracking-tight">
-            This Dish is off the Menu
+            Page Not Found in Our Culinary Guide
           </h1>
           <p className="text-xs sm:text-sm text-[#1b3b2b]/70 font-medium leading-relaxed mt-1">
             The page or reservation suite you are looking for may have been removed, relocated, or never existed.
