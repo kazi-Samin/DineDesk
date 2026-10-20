@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MenuItemProps } from "@/components/ui/MenuCard";
+import { useCart } from "@/context/CartContext";
+import toast from "react-hot-toast";
 
 interface MenuListSectionProps {
-    currentItem: MenuItemProps & { description?: string; price?: number; name?: string };
+    currentItem: MenuItemProps & { description?: string; price?: number; name?: string; restaurantName?: string };
     activeTab?: string;
     quantity: number;
     setQuantity: React.Dispatch<React.SetStateAction<number>>;
@@ -35,7 +37,10 @@ const CATEGORY_DETAILS: Record<string, { title: string; subtitle: string; sample
 };
 
 export default function MenuListSection({ currentItem, activeTab = "starters", quantity, setQuantity }: MenuListSectionProps) {
+    const { addToCart, setIsCartOpen } = useCart() as any;
     const [imgSrc, setImgSrc] = useState(currentItem.image || FALLBACK_IMAGE);
+    const [adding, setAdding] = useState(false);
+
     const unitPrice = Number(currentItem.price || 36.50);
 
     const handleDelta = (delta: number) => {
@@ -45,6 +50,49 @@ export default function MenuListSection({ currentItem, activeTab = "starters", q
     const currentDetails = CATEGORY_DETAILS[activeTab] || CATEGORY_DETAILS.starters;
     const totalPrice = (unitPrice * quantity).toFixed(2);
     const dishName = currentItem.menuName || currentItem.name || "Gourmet Dish";
+
+    const handleAddToCart = async () => {
+        setAdding(true);
+
+        const newItem = {
+            id: currentItem.id,
+            menuId: currentItem.id,
+            name: dishName,
+            price: unitPrice,
+            image: imgSrc,
+            restaurantName: currentItem.restaurantName || "Sultan's Heritage Kitchen",
+            quantity: quantity,
+        };
+
+        // Simulate a brief, smooth loading experience for the "Adding..." state
+        await new Promise((resolve) => setTimeout(resolve, 350));
+
+        // 1. Update via Context if available
+        if (typeof addToCart === "function") {
+            await addToCart(newItem);
+        }
+
+        // 2. Direct localStorage update & event dispatch to guarantee sync
+        const existingCart = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
+        const itemIndex = existingCart.findIndex((i: any) => i.id === newItem.id);
+
+        if (itemIndex > -1) {
+            existingCart[itemIndex].quantity += quantity;
+        } else {
+            existingCart.push(newItem);
+        }
+
+        localStorage.setItem("dine_desk_cart", JSON.stringify(existingCart));
+        window.dispatchEvent(new Event("storage"));
+
+        // 3. Force open the drawer
+        if (typeof setIsCartOpen === "function") {
+            setIsCartOpen(true);
+        }
+
+        toast.success(`Added ${quantity}x ${dishName} to cart!`);
+        setAdding(false);
+    };
 
     return (
         <div className="flex flex-col gap-8 w-full">
@@ -66,7 +114,7 @@ export default function MenuListSection({ currentItem, activeTab = "starters", q
                     onError={() => setImgSrc(FALLBACK_IMAGE)}
                     className="w-full sm:w-40 h-40 object-cover rounded-2xl shadow-sm shrink-0"
                 />
-                <div className="flex-1 flex flex-col justify-between gap-2 w-full">
+                <div className="flex-1 flex flex-col justify-between gap-4 w-full">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-primary/10 text-primary uppercase">
@@ -84,7 +132,7 @@ export default function MenuListSection({ currentItem, activeTab = "starters", q
                         </p>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
                         <div className="flex flex-col">
                             <span className="text-base font-black text-primary">
                                 ${totalPrice}
@@ -96,24 +144,46 @@ export default function MenuListSection({ currentItem, activeTab = "starters", q
                             )}
                         </div>
 
-                        {/* Quantity Counter */}
-                        <div className="flex items-center gap-3 bg-surface-container px-3 py-1.5 rounded-xl border border-outline-variant/60 shadow-inner">
+                        <div className="flex items-center gap-4">
+                            {/* Quantity Counter */}
+                            <div className="flex items-center gap-3 bg-surface-container px-3 py-1.5 rounded-xl border border-outline-variant/60 shadow-inner">
+                                <button
+                                    onClick={() => handleDelta(-1)}
+                                    className="text-on-surface hover:text-primary font-bold cursor-pointer w-5 h-5 flex items-center justify-center rounded-lg bg-surface-container-lowest shadow-2xs"
+                                    type="button"
+                                >
+                                    -
+                                </button>
+                                <span className="text-xs font-black text-primary w-4 text-center">
+                                    {quantity}
+                                </span>
+                                <button
+                                    onClick={() => handleDelta(1)}
+                                    className="text-on-surface hover:text-primary font-bold cursor-pointer w-5 h-5 flex items-center justify-center rounded-lg bg-surface-container-lowest shadow-2xs"
+                                    type="button"
+                                >
+                                    +
+                                </button>
+                            </div>
+
+                            {/* Add to Cart Action Button with Dynamic Loading State */}
                             <button
-                                onClick={() => handleDelta(-1)}
-                                className="text-on-surface hover:text-primary font-bold cursor-pointer w-5 h-5 flex items-center justify-center rounded-lg bg-surface-container-lowest shadow-2xs"
+                                onClick={handleAddToCart}
+                                disabled={adding}
+                                className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs uppercase tracking-wider shadow-md hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                                 type="button"
                             >
-                                -
-                            </button>
-                            <span className="text-xs font-black text-primary w-4 text-center">
-                                {quantity}
-                            </span>
-                            <button
-                                onClick={() => handleDelta(1)}
-                                className="text-on-surface hover:text-primary font-bold cursor-pointer w-5 h-5 flex items-center justify-center rounded-lg bg-surface-container-lowest shadow-2xs"
-                                type="button"
-                            >
-                                +
+                                {adding ? (
+                                    <>
+                                        <span className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></span>
+                                        <span>Adding...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="material-symbols-outlined text-sm">shopping_cart_checkout</span>
+                                        <span>Add to Cart</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>

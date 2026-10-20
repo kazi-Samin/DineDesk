@@ -10,6 +10,7 @@ import ReserveTableModal from "@/components/reservations/ReserveTableModal";
 import { CartProvider } from "@/context/CartContext";
 import { ReservationProvider } from "@/context/ReservationContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({
             </ReservationProvider>
           </CartProvider>
         </AuthProvider>
+        <Toaster position="top-right" />
       </body>
     </html>
   );
