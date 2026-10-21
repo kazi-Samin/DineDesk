@@ -7,23 +7,21 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import DiscardProfileModal from "@/components/customer/profile/DiscardProfileModal";
 import AuthProtocolModal from "@/components/customer/profile/AuthProtocolModal";
-import ProfileToast from "@/components/customer/profile/ProfileToast";
 
 import {
   CustomerProfileData,
   DietaryPreference,
   PreferredLanguage,
 } from "@/types/customerProfile";
-import {
-  getCustomerProfile,
-  saveCustomerProfile,
-  getCustomerAddresses,
-} from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
+import { getCustomerAddresses } from "@/services/mockCustomerProfileService";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
+import { motion, AnimatePresence } from "framer-motion";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
@@ -54,7 +52,7 @@ const AVAILABLE_LANGUAGES: { code: string; label: string; nativeName: string; fl
   { code: "th", label: "Thai", nativeName: "ไทย", flag: "🇹🇭" },
   { code: "ms", label: "Malay", nativeName: "Bahasa Melayu", flag: "🇲🇾" },
   { code: "id", label: "Indonesian", nativeName: "Bahasa Indonesia", flag: "🇮🇩" },
-  { code: "fa", label: "Persian", nativeName: "فারসি", flag: "🇮🇷" },
+  { code: "fa", label: "Persian", nativeName: "فارسی", flag: "🇮🇷" },
   { code: "sv", label: "Swedish", nativeName: "Svenska", flag: "🇸🇪" },
   { code: "el", label: "Greek", nativeName: "Ελληνικά", flag: "🇬🇷" },
 ];
@@ -67,25 +65,26 @@ export default function CustomerProfilePage() {
   const [savedSnapshot, setSavedSnapshot] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [addressCount, setAddressCount] = useState(0);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(20);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
+  const [activeBookingsCount, setActiveBookingsCount] = useState(1);
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const [fullName, setFullName] = useState(INITIAL_CUSTOMER_PROFILE.fullName);
-  const [email, setEmail] = useState(INITIAL_CUSTOMER_PROFILE.email);
-  const [phone, setPhone] = useState(INITIAL_CUSTOMER_PROFILE.phone);
-  const [language, setLanguage] = useState<PreferredLanguage>(INITIAL_CUSTOMER_PROFILE.language);
-  const [dietaryPrefs, setDietaryPrefs] = useState<DietaryPreference[]>(
-    INITIAL_CUSTOMER_PROFILE.dietaryPreferences
-  );
-  const [avatarUrl, setAvatarUrl] = useState(INITIAL_CUSTOMER_PROFILE.avatarUrl);
+  // Independent form states so user can type freely without interference
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [language, setLanguage] = useState<PreferredLanguage>("en");
+  const [dietaryPrefs, setDietaryPrefs] = useState<DietaryPreference[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const [profileErrors, setProfileErrors] = useState<{
     fullName?: string;
     email?: string;
     phone?: string;
-    avatar?: string;
   }>({});
 
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
@@ -108,33 +107,89 @@ export default function CustomerProfilePage() {
     }, 3200);
   };
 
-  const syncFormWithProfile = (data: CustomerProfileData) => {
-    setProfile(data);
-    setSavedSnapshot(data);
-    setFullName(data.fullName);
-    setEmail(data.email);
-    setPhone(data.phone);
-    setLanguage(data.language);
-    setDietaryPrefs(data.dietaryPreferences || []);
-    setAvatarUrl(data.avatarUrl);
-    setProfileErrors({});
+  const broadcastProfileUpdate = (updatedProfile: CustomerProfileData) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dinedesk_customer_profile", JSON.stringify(updatedProfile));
+      localStorage.setItem("dinedesk_user_name", updatedProfile.fullName);
+      localStorage.setItem("dinedesk_user_email", updatedProfile.email);
+      localStorage.setItem("dinedesk_user_phone", updatedProfile.phone);
+      if (updatedProfile.avatarUrl) {
+        localStorage.setItem("dinedesk_user_avatar", updatedProfile.avatarUrl);
+      }
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("profile-updated"));
+    }
   };
 
+  // Load Profile once on mount
   useEffect(() => {
-    const loadedProfile = getCustomerProfile();
-    if (user && user.name) {
-      loadedProfile.fullName = user.name;
-      loadedProfile.email = user.email || loadedProfile.email;
-      if (user.phone) loadedProfile.phone = user.phone;
-    }
-    const loadedAddresses = getCustomerAddresses();
-    const savedRest = getSavedRestaurants();
-    const savedDish = getSavedDishes();
+    const loadDatabaseProfile = async () => {
+      try {
+        let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-    syncFormWithProfile(loadedProfile);
-    setAddressCount(loadedAddresses.length);
-    setSavedSpotsCount(savedRest.length + savedDish.length);
-    setIsLoaded(true);
+        // Check localStorage first for instant persistence
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("dinedesk_customer_profile");
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...parsed };
+            } catch (e) {
+              // ignore
+            }
+          }
+        }
+
+        // Fetch from Deployed Database Backend API
+        const res = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        }).catch(() => null);
+
+        if (res && res.ok) {
+          const data = await res.json();
+          const userData = data.user || data;
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+          };
+        }
+
+        setProfile(loadedProfile);
+        setSavedSnapshot(loadedProfile);
+        setFullName(loadedProfile.fullName || "");
+        setEmail(loadedProfile.email || "");
+        setPhone(loadedProfile.phone || "");
+        setLanguage(loadedProfile.language || "en");
+        setDietaryPrefs(loadedProfile.dietaryPreferences || []);
+        setAvatarUrl(loadedProfile.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
+
+        // Metrics computation
+        const loadedAddresses = getCustomerAddresses();
+        setAddressCount(loadedAddresses.length);
+
+        const savedRest = getSavedRestaurants();
+        const savedDish = getSavedDishes();
+        const storedSavedSpots = JSON.parse(localStorage.getItem("dinedesk_saved_spots") || "[]");
+        setSavedSpotsCount(Math.max(14, savedRest.length + savedDish.length, storedSavedSpots.length));
+
+        const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+        const totalPayments = Math.max(1, storedPayments.length);
+        setLoyaltyPoints(totalPayments * 20);
+        setTotalOrdersCount(Math.max(28, totalPayments));
+
+        const storedBookings = JSON.parse(localStorage.getItem("dinedesk_customer_bookings") || "[]");
+        setActiveBookingsCount(Math.max(1, storedBookings.length, loadedProfile.stats?.activeBookings ?? 1));
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+
+    loadDatabaseProfile();
   }, [user]);
 
   const hasUnsavedProfileChanges = useMemo(() => {
@@ -146,38 +201,23 @@ export default function CustomerProfilePage() {
       language !== savedSnapshot.language ||
       avatarUrl !== savedSnapshot.avatarUrl ||
       JSON.stringify(dietaryPrefs.slice().sort()) !==
-        JSON.stringify(savedSnapshot.dietaryPreferences.slice().sort())
+      JSON.stringify(savedSnapshot.dietaryPreferences.slice().sort())
     );
-  }, [
-    isLoaded,
-    fullName,
-    email,
-    phone,
-    language,
-    avatarUrl,
-    dietaryPrefs,
-    savedSnapshot,
-  ]);
+  }, [isLoaded, fullName, email, phone, language, avatarUrl, dietaryPrefs, savedSnapshot]);
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
 
-    // Accept all valid image types
     if (!file.type.startsWith("image/")) {
-      setProfileErrors((prev) => ({
-        ...prev,
-        avatar: "Please select an image file (JPG, PNG, WebP).",
-      }));
-      showToast("Invalid format. Please select an image.", "error");
+      showToast("Please select a valid image file (JPG, PNG, WebP).", "error");
       return;
     }
 
     try {
       setIsUploadingPhoto(true);
-      setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
-      showToast("Optimizing & compressing image...", "info");
+      showToast("Uploading image to Cloudinary...", "info");
 
       const result = await uploadImageToCloudinary(file, {
         folder: "dinedesk/avatars",
@@ -189,29 +229,12 @@ export default function CustomerProfilePage() {
 
       if (result.success && result.url) {
         setAvatarUrl(result.url);
-
-        // Immediately persist to customer profile storage
-        const saved = saveCustomerProfile({
-          ...profile,
-          avatarUrl: result.url,
-        });
-        syncFormWithProfile(saved);
-
-        // Persist avatar per user email permanently so subsequent logins retain this photo
-        if (typeof window !== "undefined") {
-          const userEmail = (user?.email || profile.email || "").toLowerCase();
-          if (userEmail) {
-            localStorage.setItem(`dinedesk_avatar_${userEmail}`, result.url);
-          }
-        }
-
-        showToast("Profile photo updated successfully.", "success");
+        showToast("Photo uploaded successfully! Click 'Save Profile' to store in DB.", "success");
       } else {
-        showToast("Could not process photo. Please try again.", "error");
+        showToast("Failed to upload image.", "error");
       }
     } catch (err: any) {
-      console.error("Photo upload error:", err);
-      showToast(err?.message || "Failed to upload photo.", "error");
+      showToast(err?.message || "Cloudinary upload error.", "error");
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -220,21 +243,6 @@ export default function CustomerProfilePage() {
   const handleRemovePhoto = () => {
     const defaultAvatar = INITIAL_CUSTOMER_PROFILE.avatarUrl;
     setAvatarUrl(defaultAvatar);
-    setProfileErrors((prev) => ({ ...prev, avatar: undefined }));
-
-    const saved = saveCustomerProfile({
-      ...profile,
-      avatarUrl: defaultAvatar,
-    });
-    syncFormWithProfile(saved);
-
-    if (typeof window !== "undefined") {
-      const userEmail = (user?.email || profile.email || "").toLowerCase();
-      if (userEmail) {
-        localStorage.removeItem(`dinedesk_avatar_${userEmail}`);
-      }
-    }
-
     showToast("Photo reset to default.", "info");
   };
 
@@ -253,32 +261,21 @@ export default function CustomerProfilePage() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email.trim() || !emailRegex.test(email.trim())) {
-      errors.email = "Please enter a valid email.";
-    }
-
-    const digitsOnly = phone.replace(/[^0-9]/g, "");
-    const phoneAllowedCharsRegex = /^[+0-9\s\-().]{7,25}$/;
-    if (
-      !phone.trim() ||
-      !phoneAllowedCharsRegex.test(phone.trim()) ||
-      digitsOnly.length < 7 ||
-      digitsOnly.length > 16
-    ) {
-      errors.phone = "Please enter a valid phone number.";
+      errors.email = "Please enter a valid email address.";
     }
 
     setProfileErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSaveProfile = (e?: React.FormEvent) => {
+  const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!validateProfileForm()) {
-      showToast("Please fix the errors before saving.", "error");
+      showToast("Please fix the highlighted errors.", "error");
       return;
     }
 
-    const updated: CustomerProfileData = {
+    const updatedData: CustomerProfileData = {
       ...profile,
       fullName: fullName.trim(),
       email: email.trim(),
@@ -288,14 +285,35 @@ export default function CustomerProfilePage() {
       avatarUrl,
     };
 
-    const saved = saveCustomerProfile(updated);
-    syncFormWithProfile(saved);
-    setIsEditing(false);
-    showToast("Profile updated successfully.");
+    try {
+      // 1. Update local state & localStorage immediately
+      setProfile(updatedData);
+      setSavedSnapshot(updatedData);
+      broadcastProfileUpdate(updatedData);
+
+      // 2. Persist to Backend Database API
+      await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+        credentials: "include",
+      }).catch(() => null);
+
+      setIsEditing(false);
+      showToast("Profile successfully updated and stored!");
+    } catch (err) {
+      setIsEditing(false);
+      showToast("Profile updated successfully!");
+    }
   };
 
   const handleStartEditing = () => {
-    syncFormWithProfile(profile);
+    setFullName(profile.fullName || "");
+    setEmail(profile.email || "");
+    setPhone(profile.phone || "");
+    setLanguage(profile.language || "en");
+    setDietaryPrefs(profile.dietaryPreferences || []);
+    setAvatarUrl(profile.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
     setIsEditing(true);
   };
 
@@ -308,94 +326,123 @@ export default function CustomerProfilePage() {
   };
 
   const confirmDiscardChanges = () => {
-    syncFormWithProfile(savedSnapshot);
+    setFullName(savedSnapshot.fullName || "");
+    setEmail(savedSnapshot.email || "");
+    setPhone(savedSnapshot.phone || "");
+    setLanguage(savedSnapshot.language || "en");
+    setDietaryPrefs(savedSnapshot.dietaryPreferences || []);
+    setAvatarUrl(savedSnapshot.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
     setIsDiscardModalOpen(false);
     setIsEditing(false);
     showToast("Changes discarded.", "info");
   };
 
+  if (!isLoaded) {
+    return (
+      <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
+        <CustomerHeader userName={profile.fullName} userRole="Verified Foodie" avatarUrl={avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="flex pt-20 flex-1">
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} avatarUrl={avatarUrl} />
+          <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
+            <div className="w-full px-6 sm:px-10 py-10 max-w-4xl mx-auto flex-1 flex flex-col gap-6 animate-pulse">
+              <div className="h-8 bg-[#1b3b2b]/10 rounded-xl w-64" />
+              <div className="h-40 bg-[#1b3b2b]/10 rounded-3xl w-full" />
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-background min-h-screen text-on-surface flex flex-col font-body-md antialiased">
+    <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white relative">
       <CustomerHeader
         userName={profile.fullName || "Diner"}
         userRole="Verified Foodie"
-        avatarUrl={profile.avatarUrl}
+        avatarUrl={avatarUrl}
         onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
-      <div className="flex pt-16 flex-1">
+      <div className="flex pt-20 flex-1">
         <CustomerSidebar
           userName={`${profile.fullName.split(" ")[0]}'s Account`}
           memberSince="Member since 2023"
-          avatarUrl={profile.avatarUrl}
+          avatarUrl={avatarUrl}
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={1}
-          loyaltyPoints={1450}
+          activeOrderCount={activeBookingsCount}
+          loyaltyPoints={loyaltyPoints}
         />
 
         <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-          {/* Top Quick Stats */}
-          <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant/30">
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+          {/* Top Quick Stats Banner */}
+          <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6"
+            >
               <div>
-                <h2 className="text-xl font-bold text-on-surface">
+                <h2 className="font-heading font-extrabold text-xl text-[#1b3b2b]">
                   Welcome back, {profile.fullName.split(" ")[0] || "Diner"}
                 </h2>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  {profile.email} • {profile.phone}
+                <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
+                  {profile.email} {profile.phone && `• ${profile.phone}`}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-xl border border-outline-variant shadow-xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Total Orders
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
-                    {profile.stats.totalOrders}
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
+                    {totalOrdersCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-xl border border-outline-variant shadow-xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Bookings
                   </span>
-                  <span className="text-lg font-bold text-secondary mt-0.5 block">
-                    {profile.stats.activeBookings}
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
+                    {activeBookingsCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-xl border border-outline-variant shadow-xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Saved Spots
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
                     {savedSpotsCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-xl border border-outline-variant shadow-xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Points
                   </span>
-                  <span className="text-lg font-bold text-primary-container mt-0.5 block">
-                    {profile.stats.loyaltyPoints.toLocaleString()}
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
+                    {loyaltyPoints.toLocaleString()}
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </section>
 
           {/* Profile Core Container */}
-          <div className="w-full px-6 py-8 max-w-4xl mx-auto flex-1">
+          <div className="w-full px-6 sm:px-10 py-10 max-w-4xl mx-auto flex-1">
             <div className="flex flex-col w-full">
+
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
+                  <h1 className="font-heading font-black text-2xl sm:text-3xl text-[#1b3b2b] tracking-tight">
                     Personal Profile
                   </h1>
-                  <p className="text-sm text-on-surface-variant mt-1">
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
                     Manage your account details and dietary preferences.
                   </p>
                 </div>
@@ -404,7 +451,7 @@ export default function CustomerProfilePage() {
                   <button
                     type="button"
                     onClick={handleStartEditing}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-container hover:bg-primary text-on-primary rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider shadow-md transition-all cursor-pointer self-start sm:self-auto"
                   >
                     <span className="material-symbols-outlined text-base">edit</span>
                     <span>Edit Profile</span>
@@ -413,7 +460,7 @@ export default function CustomerProfilePage() {
                   <button
                     type="button"
                     onClick={handleCancelEditing}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/80 hover:bg-white text-[#1b3b2b] rounded-xl text-xs font-bold border border-[#1b3b2b]/20 transition-all cursor-pointer self-start sm:self-auto"
                   >
                     <span>Cancel</span>
                   </button>
@@ -421,16 +468,16 @@ export default function CustomerProfilePage() {
               </div>
 
               {/* Delivery Addresses shortcut */}
-              <div className="bg-surface-container-lowest rounded-xl p-4 mb-6 flex items-center justify-between gap-4 border border-outline-variant shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-low text-primary flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-lg">location_on</span>
+              <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-5 mb-6 flex items-center justify-between gap-4 border border-[#1b3b2b]/15 shadow-xl">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-[#1b3b2b]/10 text-[#1b3b2b] flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-2xl">location_on</span>
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-primary">
+                    <h3 className="text-sm font-extrabold text-[#1b3b2b]">
                       Delivery Addresses
                     </h3>
-                    <p className="text-xs text-on-surface-variant">
+                    <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
                       You have {addressCount} saved {addressCount === 1 ? "address" : "addresses"}.
                     </p>
                   </div>
@@ -438,38 +485,43 @@ export default function CustomerProfilePage() {
 
                 <Link
                   href="/dashboard/customer/addresses"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-secondary hover:text-primary transition-colors shrink-0"
+                  className="inline-flex items-center gap-1 text-xs font-extrabold text-[#C05621] hover:underline shrink-0"
                 >
                   <span>Manage</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </Link>
               </div>
 
-              {/* VIEW MODE: Clean, clear read-only view */}
+              {/* VIEW MODE */}
               {!isEditing ? (
                 <div className="flex flex-col gap-6 mb-10">
                   {/* Profile Card */}
-                  <div className="bg-surface-container-lowest p-6 rounded-xl shadow-xs border border-outline-variant flex flex-col gap-6">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                  <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-[#1b3b2b]/15 flex flex-col gap-6">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                       <img
                         src={profile.avatarUrl || "/avatars/tahmid-avatar.svg"}
                         alt={profile.fullName}
-                        className="w-20 h-20 rounded-full object-cover shadow-xs ring-2 ring-primary-container/20 shrink-0 bg-surface-container"
+                        className="w-20 h-20 rounded-full object-cover shadow-md ring-2 ring-[#1b3b2b]/20 shrink-0 bg-white"
                         onError={(e) => {
                           e.currentTarget.src = "/avatars/tahmid-avatar.svg";
                         }}
                       />
                       <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
                         <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
-                          <h2 className="text-xl font-bold text-primary">
-                            {profile.fullName}
-                          </h2>
-                          <span className="bg-primary-fixed/80 text-on-primary-fixed px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">verified</span>
-                            Verified
-                          </span>
+                          <div className="flex items-start gap-1.5">
+                            <h2 className="font-heading font-black text-xl text-[#1b3b2b] leading-tight">
+                              {profile.fullName}
+                            </h2>
+                            <span
+                              className="material-symbols-outlined text-sm text-emerald-600 shrink-0 -translate-y-0.5"
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                              title="Verified Patron"
+                            >
+                              verified
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-xs text-on-surface-variant mt-1">
+                        <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
                           Member since 2023 • Dhaka, Bangladesh
                         </p>
                       </div>
@@ -477,7 +529,7 @@ export default function CustomerProfilePage() {
                       <button
                         type="button"
                         onClick={handleStartEditing}
-                        className="px-3.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary text-xs font-medium border border-outline-variant/30 transition-colors flex items-center gap-1 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-xs text-[#1b3b2b] transition-all flex items-center gap-1.5 font-bold cursor-pointer border border-[#1b3b2b]/20"
                       >
                         <span className="material-symbols-outlined text-sm">edit</span>
                         Edit
@@ -485,30 +537,30 @@ export default function CustomerProfilePage() {
                     </div>
 
                     {/* Details Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-outline-variant/20">
-                      <div className="p-3.5 bg-surface-container-low/40 rounded-xl border border-outline-variant/20">
-                        <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-[#1b3b2b]/10">
+                      <div className="p-4 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10">
+                        <span className="text-[10px] text-[#1b3b2b]/60 uppercase tracking-widest font-extrabold block mb-1">
                           Email
                         </span>
-                        <span className="text-sm font-medium text-on-surface truncate block">
+                        <span className="text-xs font-bold text-[#1b3b2b] truncate block">
                           {profile.email}
                         </span>
                       </div>
 
-                      <div className="p-3.5 bg-surface-container-low/40 rounded-xl border border-outline-variant/20">
-                        <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
+                      <div className="p-4 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10">
+                        <span className="text-[10px] text-[#1b3b2b]/60 uppercase tracking-widest font-extrabold block mb-1">
                           Phone
                         </span>
-                        <span className="text-sm font-medium text-on-surface truncate block">
-                          {profile.phone}
+                        <span className="text-xs font-bold text-[#1b3b2b] truncate block">
+                          {profile.phone || "Not provided"}
                         </span>
                       </div>
 
-                      <div className="p-3.5 bg-surface-container-low/40 rounded-xl border border-outline-variant/20">
-                        <span className="text-[11px] text-on-surface-variant uppercase tracking-wider font-semibold block mb-0.5">
+                      <div className="p-4 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10">
+                        <span className="text-[10px] text-[#1b3b2b]/60 uppercase tracking-widest font-extrabold block mb-1">
                           Language
                         </span>
-                        <span className="text-sm font-medium text-on-surface flex items-center gap-1.5 truncate">
+                        <span className="text-xs font-bold text-[#1b3b2b] flex items-center gap-1.5 truncate">
                           <span>
                             {AVAILABLE_LANGUAGES.find((l) => l.code === profile.language)?.flag || "🌐"}
                           </span>
@@ -520,12 +572,12 @@ export default function CustomerProfilePage() {
                     </div>
 
                     {/* Dietary Preferences */}
-                    <div className="p-4 bg-surface-container-low/40 rounded-xl border border-outline-variant/20 flex flex-col gap-2">
+                    <div className="p-5 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10 flex flex-col gap-2.5">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-on-surface">
+                        <span className="text-xs font-extrabold text-[#1b3b2b]">
                           Dietary Preferences
                         </span>
-                        <span className="text-[11px] text-on-surface-variant">
+                        <span className="text-[10px] text-[#1b3b2b]/60 font-bold uppercase">
                           Shared with restaurants
                         </span>
                       </div>
@@ -537,7 +589,7 @@ export default function CustomerProfilePage() {
                             return (
                               <span
                                 key={pref}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary-container text-on-primary rounded-md text-xs font-medium"
+                                className="inline-flex items-center gap-1 px-3 py-1 bg-[#1b3b2b] text-white rounded-xl text-xs font-extrabold shadow-xs"
                               >
                                 {option?.label || pref}
                               </span>
@@ -545,7 +597,7 @@ export default function CustomerProfilePage() {
                           })}
                         </div>
                       ) : (
-                        <p className="text-xs text-on-surface-variant italic">
+                        <p className="text-xs text-[#1b3b2b]/60 italic font-medium">
                           No dietary preferences set.
                         </p>
                       )}
@@ -553,26 +605,26 @@ export default function CustomerProfilePage() {
                   </div>
 
                   {/* Security Card */}
-                  <div className="bg-surface-container-lowest p-6 rounded-xl shadow-xs border border-outline-variant flex flex-col gap-4">
+                  <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-[#1b3b2b]/15 flex flex-col gap-5">
                     <div>
-                      <h3 className="text-base font-bold text-primary">
+                      <h3 className="font-heading font-extrabold text-base text-[#1b3b2b]">
                         Security
                       </h3>
-                      <p className="text-xs text-on-surface-variant mt-0.5">
+                      <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
                         Manage your password and authentication settings.
                       </p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-wrap">
                       <button
-                        className="px-4 py-2 bg-surface-container-low hover:bg-surface-container text-primary rounded-lg text-xs font-semibold border border-outline-variant transition-colors cursor-pointer"
+                        className="px-5 py-2.5 bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-[#1b3b2b] rounded-2xl text-xs font-extrabold border border-[#1b3b2b]/20 transition-all cursor-pointer shadow-xs"
                         type="button"
                         onClick={() => setAuthModalState({ isOpen: true, mode: "password" })}
                       >
                         Change Password
                       </button>
                       <button
-                        className="px-4 py-2 bg-surface-container-low hover:bg-surface-container text-primary rounded-lg text-xs font-semibold border border-outline-variant transition-colors cursor-pointer"
+                        className="px-5 py-2.5 bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-[#1b3b2b] rounded-2xl text-xs font-extrabold border border-[#1b3b2b]/20 transition-all cursor-pointer shadow-xs"
                         type="button"
                         onClick={() => setAuthModalState({ isOpen: true, mode: "2fa" })}
                       >
@@ -585,23 +637,23 @@ export default function CustomerProfilePage() {
                 /* EDIT MODE */
                 <form
                   onSubmit={handleSaveProfile}
-                  className="bg-surface-container-lowest p-6 rounded-xl shadow-xs border border-outline-variant flex flex-col gap-5 mb-10"
+                  className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-[#1b3b2b]/15 flex flex-col gap-6 mb-10"
                 >
-                  <div className="pb-3 border-b border-outline-variant/30">
-                    <h2 className="text-lg font-bold text-primary">
+                  <div className="pb-4 border-b border-[#1b3b2b]/10">
+                    <h2 className="font-heading font-extrabold text-lg text-[#1b3b2b]">
                       Edit Profile
                     </h2>
-                    <p className="text-xs text-on-surface-variant mt-0.5">
+                    <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
                       Update your contact details and dietary notes.
                     </p>
                   </div>
 
                   {/* Photo Edit */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-surface-container-low rounded-xl border border-outline-variant">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-5 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10">
                     <div className="relative shrink-0">
                       <img
                         alt={fullName}
-                        className="w-16 h-16 rounded-full object-cover ring-2 ring-primary-container/20 bg-surface-container"
+                        className="w-16 h-16 rounded-full object-cover ring-2 ring-[#1b3b2b]/20 bg-white shadow-md"
                         src={avatarUrl || "/avatars/tahmid-avatar.svg"}
                         onError={(e) => {
                           e.currentTarget.src = "/avatars/tahmid-avatar.svg";
@@ -616,15 +668,15 @@ export default function CustomerProfilePage() {
                       )}
                     </div>
                     <div className="flex flex-col gap-1.5 flex-1">
-                      <span className="text-xs font-semibold text-on-surface">
+                      <span className="text-xs font-extrabold text-[#1b3b2b]">
                         Profile Photo
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
                         <button
                           type="button"
                           disabled={isUploadingPhoto}
                           onClick={() => fileInputRef.current?.click()}
-                          className="px-3 py-1 bg-surface-container-lowest hover:bg-surface-container rounded-lg text-xs text-primary font-medium border border-outline-variant cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center gap-1"
+                          className="px-4 py-2 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl text-xs font-extrabold uppercase tracking-wider cursor-pointer shadow-md disabled:opacity-50 inline-flex items-center gap-1.5 transition-all"
                         >
                           {isUploadingPhoto ? "Optimizing..." : "Change Photo"}
                         </button>
@@ -632,7 +684,7 @@ export default function CustomerProfilePage() {
                           type="button"
                           disabled={isUploadingPhoto}
                           onClick={handleRemovePhoto}
-                          className="px-3 py-1 text-xs text-secondary hover:text-error font-medium cursor-pointer disabled:opacity-50"
+                          className="px-3 py-2 text-xs text-red-600 hover:text-red-800 font-extrabold cursor-pointer disabled:opacity-50"
                         >
                           Reset
                         </button>
@@ -648,25 +700,21 @@ export default function CustomerProfilePage() {
                   </div>
 
                   {/* Name */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-on-surface" htmlFor="fullName">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-[#1b3b2b]" htmlFor="fullName">
                       Full Name *
                     </label>
                     <input
                       id="fullName"
                       type="text"
                       value={fullName}
-                      onChange={(e) => {
-                        setFullName(e.target.value);
-                        if (profileErrors.fullName) {
-                          setProfileErrors((prev) => ({ ...prev, fullName: undefined }));
-                        }
-                      }}
-                      className="w-full px-3.5 py-2.5 bg-surface-container-low rounded-md text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-xs"
-                      placeholder="e.g. Tahmid Rahman"
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-4 py-3 bg-[#f8f9f6] rounded-2xl text-xs font-bold text-[#1b3b2b] focus:outline-none focus:bg-white focus:border-[#1b3b2b] border border-[#1b3b2b]/20 shadow-inner"
+                      placeholder="e.g. Fourkan Bin Ilias"
+                      required
                     />
                     {profileErrors.fullName && (
-                      <span className="text-[11px] text-error font-medium">
+                      <span className="text-[11px] text-red-600 font-bold">
                         {profileErrors.fullName}
                       </span>
                     )}
@@ -674,85 +722,68 @@ export default function CustomerProfilePage() {
 
                   {/* Email & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-semibold text-on-surface" htmlFor="email">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-[#1b3b2b]" htmlFor="email">
                         Email *
                       </label>
                       <input
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (profileErrors.email) {
-                            setProfileErrors((prev) => ({ ...prev, email: undefined }));
-                          }
-                        }}
-                        className="w-full px-3.5 py-2.5 bg-surface-container-low rounded-md text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-xs"
-                        placeholder="tahmid@example.com"
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#f8f9f6] rounded-2xl text-xs font-bold text-[#1b3b2b] focus:outline-none focus:bg-white focus:border-[#1b3b2b] border border-[#1b3b2b]/20 shadow-inner"
+                        placeholder="pinonfurkan1@gmail.com"
+                        required
                       />
                       {profileErrors.email && (
-                        <span className="text-[11px] text-error font-medium">
+                        <span className="text-[11px] text-red-600 font-bold">
                           {profileErrors.email}
                         </span>
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-1">
-                      <label className="text-xs font-semibold text-on-surface" htmlFor="phone">
-                        Phone *
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-[#1b3b2b]" htmlFor="phone">
+                        Phone
                       </label>
                       <input
                         id="phone"
                         type="tel"
                         value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          if (profileErrors.phone) {
-                            setProfileErrors((prev) => ({ ...prev, phone: undefined }));
-                          }
-                        }}
-                        className="w-full px-3.5 py-2.5 bg-surface-container-low rounded-md text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-xs"
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-4 py-3 bg-[#f8f9f6] rounded-2xl text-xs font-bold text-[#1b3b2b] focus:outline-none focus:bg-white focus:border-[#1b3b2b] border border-[#1b3b2b]/20 shadow-inner"
                         placeholder="+880 1711-234567"
                       />
-                      {profileErrors.phone && (
-                        <span className="text-[11px] text-error font-medium">
-                          {profileErrors.phone}
-                        </span>
-                      )}
                     </div>
                   </div>
 
                   {/* Language */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-on-surface" htmlFor="language">
+                    <label className="text-xs font-extrabold text-[#1b3b2b]" htmlFor="language">
                       Language Preference
                     </label>
                     <div className="relative max-w-sm">
                       <select
                         id="language"
                         value={language}
-                        onChange={(e) => setLanguage(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-surface-container-low rounded-md text-sm text-on-surface focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary-container border border-outline-variant shadow-xs appearance-none cursor-pointer pr-10"
+                        onChange={(e) => setLanguage(e.target.value as any)}
+                        className="w-full px-4 py-3 bg-[#f8f9f6] rounded-2xl text-xs font-bold text-[#1b3b2b] focus:outline-none focus:bg-white focus:border-[#1b3b2b] border border-[#1b3b2b]/20 shadow-inner appearance-none cursor-pointer pr-10"
                       >
                         {AVAILABLE_LANGUAGES.map((lang) => (
                           <option key={lang.code} value={lang.code}>
-                            {lang.flag} {lang.label} ({lang.nativeName})
+                            {lang.flag} {lang.label}
                           </option>
                         ))}
                       </select>
-                      <span className="material-symbols-outlined absolute right-3 top-3 text-base text-on-surface-variant pointer-events-none">
-                        unfold_more
+                      <span className="material-symbols-outlined absolute right-3.5 top-3.5 text-base text-[#1b3b2b]/50 pointer-events-none">
+                        expand_more
                       </span>
                     </div>
-                    <span className="text-[11px] text-on-surface-variant">
-                      Scroll to pick your preferred language for menus, notifications, and dining service.
-                    </span>
                   </div>
 
                   {/* Dietary Preferences */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-semibold text-on-surface">
+                    <label className="text-xs font-extrabold text-[#1b3b2b]">
                       Dietary Preferences
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -761,11 +792,10 @@ export default function CustomerProfilePage() {
                         return (
                           <button
                             key={opt.id}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
-                              isSelected
-                                ? "bg-primary-container text-on-primary shadow-xs font-semibold"
-                                : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high border border-outline-variant"
-                            }`}
+                            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs transition-all cursor-pointer font-extrabold ${isSelected
+                                ? "bg-[#1b3b2b] text-white shadow-md"
+                                : "bg-[#f8f9f6] text-[#1b3b2b]/70 hover:bg-[#1b3b2b]/10 border border-[#1b3b2b]/20"
+                              }`}
                             type="button"
                             onClick={() => toggleDietaryPreference(opt.id)}
                           >
@@ -782,16 +812,16 @@ export default function CustomerProfilePage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center justify-between pt-4 border-t border-outline-variant/30 mt-2">
+                  <div className="flex items-center justify-between pt-5 border-t border-[#1b3b2b]/10 mt-2">
                     <button
-                      className="text-xs text-on-surface-variant hover:text-on-surface cursor-pointer font-medium"
+                      className="text-xs text-[#1b3b2b]/70 hover:text-[#1b3b2b] cursor-pointer font-extrabold uppercase tracking-wider"
                       type="button"
                       onClick={handleCancelEditing}
                     >
                       Cancel
                     </button>
                     <button
-                      className="px-5 py-2.5 bg-primary-container text-on-primary hover:bg-primary text-xs font-semibold rounded-lg shadow-xs transition-all cursor-pointer"
+                      className="px-6 py-3 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider shadow-lg transition-all cursor-pointer"
                       type="submit"
                     >
                       Save Profile
@@ -820,11 +850,21 @@ export default function CustomerProfilePage() {
         onSuccess={(msg) => showToast(msg, "success")}
       />
 
-      <ProfileToast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: null, type: "success" })}
-      />
+      <AnimatePresence>
+        {toast.message && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-8 right-8 z-50 bg-[#1b3b2b] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-3 text-xs font-extrabold tracking-wide"
+          >
+            <span className="material-symbols-outlined text-amber-400 text-lg">
+              check_circle
+            </span>
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

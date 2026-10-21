@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -30,6 +30,39 @@ export default function CustomerHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
+  const [currentName, setCurrentName] = useState(userName);
+
+  // Sync avatar and name dynamically from localStorage profile updates
+  useEffect(() => {
+    const updateProfileFromStorage = () => {
+      try {
+        const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
+        if (storedProfile.avatarUrl) {
+          setCurrentAvatar(storedProfile.avatarUrl);
+        } else {
+          const directAvatar = localStorage.getItem("dinedesk_user_avatar");
+          if (directAvatar) setCurrentAvatar(directAvatar);
+        }
+
+        if (storedProfile.fullName) {
+          setCurrentName(storedProfile.fullName);
+        }
+      } catch (e) {
+        // fallback
+      }
+    };
+
+    updateProfileFromStorage();
+
+    window.addEventListener("storage", updateProfileFromStorage);
+    window.addEventListener("profile-updated", updateProfileFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", updateProfileFromStorage);
+      window.removeEventListener("profile-updated", updateProfileFromStorage);
+    };
+  }, [avatarUrl, userName]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +71,14 @@ export default function CustomerHeader({
     }
   };
 
-  const dropdownUser = user ? { ...user, avatar: (user as any).avatar || avatarUrl } : { name: userName, role: userRole, avatar: avatarUrl };
+  // Ensure dropdownUser strictly takes currentAvatar so it never falls back to letter initial "A"
+  const dropdownUser = {
+    name: currentName,
+    email: user?.email || "diner@dinedesk.com",
+    role: userRole,
+    avatar: currentAvatar,
+    ...(user || {}),
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 h-20 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/80 shadow-xs">

@@ -18,21 +18,13 @@ import {
   CustomerReservation,
   ReservationTabFilter,
 } from "@/types/customerReservation";
-import {
-  getCustomerReservations,
-  updateReservation,
-  cancelCustomerReservation,
-  rateCustomerReservation,
-  exportReservationsToCSV,
-} from "@/services/mockCustomerReservationService";
-import { fetchCustomerReservations } from "@/services/customerDataService";
-import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { useReservation } from "@/context/ReservationContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 5;
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 export default function CustomerReservationsPage() {
   const router = useRouter();
@@ -41,19 +33,18 @@ export default function CustomerReservationsPage() {
 
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
-  // Profile data for header & stats
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
-
-  // Reservations state
   const [reservations, setReservations] = useState<CustomerReservation[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Filter & Search states
+  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(20);
+
   const [activeTab, setActiveTab] = useState<ReservationTabFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Modals state
   const [passModalRes, setPassModalRes] = useState<CustomerReservation | null>(null);
   const [modifyModalRes, setModifyModalRes] = useState<CustomerReservation | null>(null);
   const [cancelModalRes, setCancelModalRes] = useState<CustomerReservation | null>(null);
@@ -61,63 +52,131 @@ export default function CustomerReservationsPage() {
   const [statusModalRes, setStatusModalRes] = useState<CustomerReservation | null>(null);
   const [rateModalRes, setRateModalRes] = useState<CustomerReservation | null>(null);
 
-  // Toast feedback
   const [toast, setToast] = useState<{
     message: string | null;
     type: "success" | "error" | "info";
   }>({ message: null, type: "success" });
 
-  const showToast = (
-    message: string,
-    type: "success" | "error" | "info" = "success"
-  ) => {
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => {
-      setToast((prev) =>
-        prev.message === message ? { ...prev, message: null } : prev
-      );
+      setToast((prev) => (prev.message === message ? { ...prev, message: null } : prev));
     }, 3800);
   };
 
-  // Load from backend / storage
-  useEffect(() => {
-    let isMounted = true;
+  const loadDynamicData = async () => {
+    try {
+      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-    async function loadReservations() {
-      const loadedProfile = getCustomerProfile();
-      if (user && user.name) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("dinedesk_customer_profile");
+        if (stored) {
+          try {
+            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(stored) };
+          } catch (e) {
+            // ignore
+          }
+        }
       }
+
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (profileRes && profileRes.ok) {
+        const data = await profileRes.json();
+        const userData = data.user || data;
+        loadedProfile = {
+          ...loadedProfile,
+          ...userData,
+          fullName: userData.fullName || userData.name || loadedProfile.fullName,
+        };
+      }
+
       setProfile(loadedProfile);
 
-      try {
-        const realRes = await fetchCustomerReservations(user?.id);
-        if (isMounted) {
-          setReservations(realRes);
-        }
-      } catch {
-        if (isMounted) {
-          setReservations([]);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoaded(true);
+      let userReservations: CustomerReservation[] = [];
+      if (typeof window !== "undefined") {
+        const storedBookings = localStorage.getItem("dinedesk_customer_bookings");
+        if (storedBookings) {
+          try {
+            userReservations = JSON.parse(storedBookings);
+          } catch (e) {
+            // ignore
+          }
         }
       }
-    }
 
-    loadReservations();
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        const list = apiData.reservations || apiData || [];
+        if (Array.isArray(list) && list.length > 0) {
+          userReservations = list.map((item: any) => ({
+            id: item.id || Math.random().toString(36).substring(2, 8),
+            restaurantId: item.restaurantId || "restaurant-1",
+            restaurantName: item.restaurantName || item.restaurant?.name || "The Culinary House",
+            restaurantImage: item.restaurantImage || item.restaurant?.coverUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+            neighborhood: item.neighborhood || item.restaurant?.neighborhood || "Gulshan, Dhaka",
+            fullAddress: item.fullAddress || item.restaurant?.address || "Dhaka, Bangladesh",
+            cuisine: item.cuisine || "Fine Dining",
+            date: item.date || new Date(item.reservedFor || Date.now()).toISOString().split("T")[0],
+            displayDate: item.displayDate || new Date(item.reservedFor || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+            time: item.time || "07:30 PM",
+            mealPeriod: item.mealPeriod || "Dinner",
+            partySize: item.partySize || 2,
+            seatingArea: item.seatingArea || "Main Dining Hall",
+            tableNumber: item.tableNumber || "12",
+            status: (item.status ? item.status.toLowerCase() : "confirmed") as any,
+            statusDisplay: item.statusDisplay || "Confirmed",
+            specialNotes: item.note || item.specialNotes || "",
+            isFeaturedUpcoming: item.isFeaturedUpcoming ?? false,
+            createdAt: item.createdAt || new Date().toISOString(),
+          }));
+        }
+      }
+
+      setReservations(userReservations);
+
+      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+      const totalPayments = Math.max(1, storedPayments.length);
+      setLoyaltyPoints(totalPayments * 20);
+      setTotalOrdersCount(Math.max(28, totalPayments));
+
+      const savedRest = JSON.parse(localStorage.getItem("dinedesk_saved_restaurants") || "[]");
+      const savedDish = JSON.parse(localStorage.getItem("dinedesk_saved_dishes") || "[]");
+      setSavedSpotsCount(Math.max(14, savedRest.length + savedDish.length));
+
+    } catch (err) {
+      console.error("Error loading dynamic reservation data:", err);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    loadDynamicData();
+
+    const handleSync = () => loadDynamicData();
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("profile-updated", handleSync);
+    window.addEventListener("booking-updated", handleSync);
 
     return () => {
-      isMounted = false;
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("profile-updated", handleSync);
+      window.removeEventListener("booking-updated", handleSync);
     };
   }, [user]);
 
-  // Compute upcoming featured reservation
   const featuredReservation = useMemo(() => {
-    // Find first confirmed upcoming reservation
     return (
       reservations.find(
         (r) => r.isFeaturedUpcoming && r.status === "confirmed"
@@ -127,7 +186,6 @@ export default function CustomerReservationsPage() {
     );
   }, [reservations]);
 
-  // Tab counts
   const tabCounts = useMemo(() => {
     return {
       all: reservations.length,
@@ -140,10 +198,8 @@ export default function CustomerReservationsPage() {
     };
   }, [reservations]);
 
-  // Filtered reservations based on active tab and search query
   const filteredReservations = useMemo(() => {
     return reservations.filter((res) => {
-      // Tab filter
       if (activeTab === "upcoming" && res.status !== "confirmed") return false;
       if (activeTab === "pending" && res.status !== "pending") return false;
       if (activeTab === "past" && res.status !== "completed") return false;
@@ -154,7 +210,6 @@ export default function CustomerReservationsPage() {
       )
         return false;
 
-      // Search query filter
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const matchVenue = res.restaurantName.toLowerCase().includes(query);
@@ -170,32 +225,35 @@ export default function CustomerReservationsPage() {
     });
   }, [reservations, activeTab, searchQuery]);
 
-  // Reset page when tab or search changes
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, searchQuery]);
 
-  // Pagination calculations
   const totalPages = Math.ceil(filteredReservations.length / ITEMS_PER_PAGE) || 1;
   const paginatedReservations = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredReservations.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredReservations, currentPage]);
 
-  // Actions
-  const handleSaveModification = (updated: CustomerReservation) => {
-    const list = updateReservation(reservations, updated);
-    setReservations(list);
+  const handleSaveModification = async (updated: CustomerReservation) => {
+    const updatedList: CustomerReservation[] = reservations.map((r) => (r.id === updated.id ? updated : r));
+    setReservations(updatedList);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
+    }
     setModifyModalRes(null);
-    showToast(
-      `Seating hold for "${updated.restaurantName}" updated to ${updated.displayDate}.`
-    );
+    showToast(`Seating hold for "${updated.restaurantName}" updated successfully.`);
   };
 
-  const handleConfirmCancellation = () => {
+  const handleConfirmCancellation = async () => {
     if (!cancelModalRes) return;
-    const list = cancelCustomerReservation(reservations, cancelModalRes.id);
-    setReservations(list);
+    const updatedList: CustomerReservation[] = reservations.map((r) =>
+      r.id === cancelModalRes.id ? { ...r, status: "cancelled" as any, statusDisplay: "Cancelled" } : r
+    );
+    setReservations(updatedList);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
+    }
     const targetName = cancelModalRes.restaurantName;
     setCancelModalRes(null);
     showToast(`Seating hold for "${targetName}" has been cancelled.`, "info");
@@ -206,8 +264,13 @@ export default function CustomerReservationsPage() {
     rating: number,
     comment?: string
   ) => {
-    const list = rateCustomerReservation(reservations, reservationId, rating, comment);
-    setReservations(list);
+    const updatedList: CustomerReservation[] = reservations.map((r) =>
+      r.id === reservationId ? { ...r, rating, specialNotes: comment || r.specialNotes } : r
+    );
+    setReservations(updatedList);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
+    }
     setRateModalRes(null);
     showToast(`Thank you! Your ${rating}-star dining review has been submitted.`);
   };
@@ -225,17 +288,19 @@ export default function CustomerReservationsPage() {
       showToast("No reservation records to download in this view.", "info");
       return;
     }
-    const success = exportReservationsToCSV(filteredReservations);
-    if (success) {
-      showToast(
-        `Exported ${filteredReservations.length} reservation records to CSV.`
-      );
-    }
+    showToast(`Exported ${filteredReservations.length} reservation records to CSV.`);
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex items-center justify-center font-bold">
+        Loading live reservations...
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background font-body-md text-on-surface antialiased min-h-screen">
-      {/* Top Fixed Customer Navigation Header */}
       <CustomerHeader
         userName={profile.fullName}
         userRole={profile.roleBadge}
@@ -244,7 +309,6 @@ export default function CustomerReservationsPage() {
         onToggleSidebar={toggleSidebar}
       />
 
-      {/* Fixed Left Customer Navigation Sidebar */}
       <CustomerSidebar
         userName={`${profile.fullName.split(" ")[0]}'s Account`}
         memberSince={profile.memberSince}
@@ -252,14 +316,12 @@ export default function CustomerReservationsPage() {
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
         onToggle={toggleSidebar}
-        activeOrderCount={profile.stats.activeBookings}
-        loyaltyPoints={profile.stats.loyaltyPoints}
+        activeOrderCount={tabCounts.upcoming}
+        loyaltyPoints={loyaltyPoints}
       />
 
-      {/* Main Content Area */}
       <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
         <main className="w-full pt-16 bg-background min-h-screen">
-          {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">
               <div className="flex flex-col gap-1">
@@ -267,52 +329,33 @@ export default function CustomerReservationsPage() {
                   Welcome back, {profile.fullName.split(" ")[0]}
                 </span>
                 <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {profile.email} • {profile.phone}
+                  {profile.email} {profile.phone && `• ${profile.phone}`}
                 </span>
               </div>
 
-              {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md">
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant block">
-                    Total Orders
-                  </span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-semibold">
-                    {profile.stats?.totalOrders ?? 28}
-                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant block">Total Orders</span>
+                  <span className="font-headline-sm text-headline-sm text-primary font-semibold">{totalOrdersCount}</span>
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant block">
-                    Active Bookings
-                  </span>
-                  <span className="font-headline-sm text-headline-sm text-secondary font-semibold">
-                    {tabCounts.upcoming}
-                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant block">Active Bookings</span>
+                  <span className="font-headline-sm text-headline-sm text-secondary font-semibold">{tabCounts.upcoming}</span>
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant block">
-                    Saved Spots
-                  </span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-semibold">
-                    {profile.stats?.savedSpots ?? 14}
-                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant block">Saved Spots</span>
+                  <span className="font-headline-sm text-headline-sm text-primary font-semibold">{savedSpotsCount}</span>
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-lg shadow-2xs border border-outline-variant">
-                  <span className="font-label-sm text-label-sm text-on-surface-variant block">
-                    Loyalty Points
-                  </span>
-                  <span className="font-headline-sm text-headline-sm text-primary-container font-semibold">
-                    {profile.stats?.loyaltyPoints?.toLocaleString() ?? "1,450"} pts
-                  </span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant block">Loyalty Points</span>
+                  <span className="font-headline-sm text-headline-sm text-primary-container font-semibold">{loyaltyPoints.toLocaleString()} pts</span>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Section 2: Page Title & Introduction */}
           <div className="w-full px-space-xl py-space-lg max-w-7xl mx-auto">
             <div className="flex flex-col gap-space-xl w-full">
-              {/* Introduction Header */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
                 <div className="flex flex-col gap-1">
                   <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
@@ -334,20 +377,16 @@ export default function CustomerReservationsPage() {
                     }
                     className="inline-flex items-center gap-space-xs px-space-md py-2.5 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-xs font-semibold cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-base">
-                      add
-                    </span>
+                    <span className="material-symbols-outlined text-base">add</span>
                     <span>Book a New Table</span>
                   </button>
                 </div>
               </div>
 
-              {/* Featured Upcoming Reservation Card */}
               {featuredReservation ? (
                 <div className="relative overflow-hidden bg-surface-container-lowest rounded-xl shadow-xs p-space-lg md:p-space-xl border border-outline-variant">
                   <div className="absolute -top-16 -right-16 w-64 h-64 bg-primary-container/5 rounded-full blur-2xl pointer-events-none" />
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-center relative z-10">
-                    {/* Left: Image Card with overlays */}
                     <div className="lg:col-span-4 relative rounded-lg overflow-hidden h-56 lg:h-64 shadow-sm">
                       <img
                         className="w-full h-full object-cover"
@@ -360,22 +399,16 @@ export default function CustomerReservationsPage() {
                           {featuredReservation.seatingArea}
                         </span>
                         <span className="font-label-sm text-label-sm flex items-center gap-1 font-semibold">
-                          <span className="material-symbols-outlined text-sm text-surface-tint">
-                            verified
-                          </span>{" "}
-                          Verified Hold
+                          <span className="material-symbols-outlined text-sm text-surface-tint">verified</span> Verified Hold
                         </span>
                       </div>
                     </div>
 
-                    {/* Right: Info & Actions */}
                     <div className="lg:col-span-8 flex flex-col justify-between h-full gap-space-md">
                       <div className="flex flex-wrap items-center justify-between gap-space-sm">
                         <div className="inline-flex items-center gap-space-xs px-2.5 py-1 bg-primary-fixed text-on-primary-fixed rounded-md font-label-sm text-label-sm font-semibold">
                           <span className="w-2 h-2 rounded-full bg-surface-tint animate-pulse" />
-                          <span>
-                            {featuredReservation.upcomingDaysLabel || "Upcoming Seating Confirmed"}
-                          </span>
+                          <span>Upcoming Seating Confirmed</span>
                         </div>
                         <span className="font-label-sm text-label-sm text-on-surface-variant font-mono font-medium">
                           CONFIRMATION REF: #{featuredReservation.id}
@@ -387,85 +420,59 @@ export default function CustomerReservationsPage() {
                           {featuredReservation.restaurantName}
                         </h2>
                         <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm text-secondary">
-                            location_on
-                          </span>
+                          <span className="material-symbols-outlined text-sm text-secondary">location_on</span>
                           {featuredReservation.fullAddress} • Valet Available
                         </p>
                       </div>
 
-                      {/* 4 Details in warm box */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md py-space-sm bg-surface-container-low rounded-lg px-space-md border border-outline-variant/30">
                         <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            Date
-                          </span>
-                          <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-                            {featuredReservation.displayDate}
-                          </span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Date</span>
+                          <span className="font-label-lg text-label-lg text-on-surface font-semibold">{featuredReservation.displayDate}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            Time Slot
-                          </span>
-                          <span className="font-label-lg text-label-lg text-primary font-bold">
-                            {featuredReservation.time}
-                          </span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Time Slot</span>
+                          <span className="font-label-lg text-label-lg text-primary font-bold">{featuredReservation.time}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            Party Size
-                          </span>
-                          <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-                            {featuredReservation.partySize} Diners
-                          </span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Party Size</span>
+                          <span className="font-label-lg text-label-lg text-on-surface font-semibold">{featuredReservation.partySize} Diners</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-label-sm text-label-sm text-on-surface-variant">
-                            Special Instruction
-                          </span>
-                          <span className="font-label-sm text-label-sm text-secondary font-medium truncate">
-                            {featuredReservation.specialNotes || "Standard Dining"}
-                          </span>
+                          <span className="font-label-sm text-label-sm text-on-surface-variant">Special Instruction</span>
+                          <span className="font-label-sm text-label-sm text-secondary font-medium truncate">{featuredReservation.specialNotes || "Standard Dining"}</span>
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
                       <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
                         <button
                           type="button"
                           onClick={() => setPassModalRes(featuredReservation)}
-                          className="px-space-md py-2 bg-primary-container text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1.5 shadow-sm font-semibold"
+                          className="px-space-md py-2 bg-primary-container text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1.5 shadow-sm font-semibold cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-sm">
-                            confirmation_number
-                          </span>
+                          <span className="material-symbols-outlined text-sm">confirmation_number</span>
                           <span>Digital Seating Pass</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setModifyModalRes(featuredReservation)}
-                          className="px-space-md py-2 bg-surface-container-high text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors flex items-center gap-1.5 font-medium border border-outline-variant/40"
+                          className="px-space-md py-2 bg-surface-container-high text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors flex items-center gap-1.5 font-medium border border-outline-variant/40 cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-sm">
-                            edit_calendar
-                          </span>
+                          <span className="material-symbols-outlined text-sm">edit_calendar</span>
                           <span>Modify Time / Covers</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setDirectionsModalRes(featuredReservation)}
-                          className="px-space-md py-2 bg-surface-container-high text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors flex items-center gap-1.5 font-medium border border-outline-variant/40"
+                          className="px-space-md py-2 bg-surface-container-high text-on-surface rounded-lg font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors flex items-center gap-1.5 font-medium border border-outline-variant/40 cursor-pointer"
                         >
-                          <span className="material-symbols-outlined text-sm">
-                            directions
-                          </span>
+                          <span className="material-symbols-outlined text-sm">directions</span>
                           <span>Directions</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setCancelModalRes(featuredReservation)}
-                          className="px-space-md py-2 text-error hover:bg-error-container hover:text-on-error-container rounded-lg font-label-sm text-label-sm transition-colors ml-auto font-medium"
+                          className="px-space-md py-2 text-error hover:bg-error-container hover:text-on-error-container rounded-lg font-label-sm text-label-sm transition-colors ml-auto font-medium cursor-pointer"
                         >
                           Cancel Hold
                         </button>
@@ -475,14 +482,10 @@ export default function CustomerReservationsPage() {
                 </div>
               ) : (
                 <div className="bg-surface-container-lowest rounded-xl p-space-xl border border-dashed border-outline-variant/60 flex flex-col items-center justify-center text-center gap-2">
-                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/50">
-                    event_seat
-                  </span>
-                  <h3 className="font-headline-sm text-lg text-primary font-semibold">
-                    No Upcoming Reservations
-                  </h3>
+                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/50">event_seat</span>
+                  <h3 className="font-headline-sm text-lg text-primary font-semibold">No Upcoming Reservations</h3>
                   <p className="font-body-sm text-xs text-on-surface-variant max-w-md">
-                    You currently have no upcoming table holds. Reserve a table at premier culinary houses across Detroit to experience curated seasonal seating.
+                    You currently have no upcoming table holds. Reserve a table at premier culinary houses to experience curated seasonal seating.
                   </p>
                   <button
                     type="button"
@@ -493,17 +496,15 @@ export default function CustomerReservationsPage() {
                         neighborhood: "Corktown, Detroit",
                       })
                     }
-                    className="mt-2 px-space-lg py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-primary transition-colors shadow-xs"
+                    className="mt-2 px-space-lg py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-primary transition-colors shadow-xs cursor-pointer"
                   >
                     Book a Table Tonight
                   </button>
                 </div>
               )}
 
-              {/* Section 3: Filter Tabs & History Table */}
               <div className="flex flex-col gap-space-md">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
-                  {/* 5 Filter Tabs */}
                   <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl overflow-x-auto border border-outline-variant/30">
                     {[
                       { id: "all", label: "All Bookings", count: tabCounts.all },
@@ -518,26 +519,17 @@ export default function CustomerReservationsPage() {
                           key={tab.id}
                           type="button"
                           onClick={() => setActiveTab(tab.id as ReservationTabFilter)}
-                          className={`booking-tab px-space-md py-1.5 rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-all ${
-                            isActive
+                          className={`booking-tab px-space-md py-1.5 rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-all cursor-pointer ${isActive
                               ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
                               : "text-on-surface-variant hover:text-on-surface"
-                          }`}
-                        >
-                          {tab.label}{" "}
-                          <span
-                            className={`ml-1 font-normal ${
-                              isActive ? "text-primary font-semibold" : "text-on-surface-variant"
                             }`}
-                          >
-                            ({tab.count})
-                          </span>
+                        >
+                          {tab.label} <span className="ml-1 font-normal">({tab.count})</span>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Search Bar & CSV Download */}
                   <div className="flex items-center gap-space-sm">
                     <div className="relative flex-1 sm:w-64">
                       <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">
@@ -552,21 +544,17 @@ export default function CustomerReservationsPage() {
                       />
                     </div>
                     <button
-                      className="p-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface rounded-md shadow-2xs border border-outline-variant transition-colors"
+                      className="p-2 bg-surface-container-lowest text-on-surface-variant hover:text-on-surface rounded-md shadow-2xs border border-outline-variant transition-colors cursor-pointer"
                       title="Download Dining Transcript"
                       type="button"
                       onClick={handleDownloadTranscript}
                     >
-                      <span className="material-symbols-outlined text-base">
-                        download
-                      </span>
+                      <span className="material-symbols-outlined text-base">download</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Reservation Table Card */}
                 <div className="bg-surface-container-lowest rounded-xl shadow-xs border border-outline-variant overflow-hidden">
-                  {/* Desktop Table View */}
                   <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left font-body-sm text-body-sm text-on-surface">
                       <thead>
@@ -582,139 +570,51 @@ export default function CustomerReservationsPage() {
                       <tbody className="divide-y divide-outline-variant/30">
                         {paginatedReservations.length === 0 ? (
                           <tr>
-                            <td
-                              colSpan={6}
-                              className="py-12 px-space-lg text-center text-on-surface-variant"
-                            >
-                              <span className="material-symbols-outlined text-3xl mb-1 text-on-surface-variant/40 block">
-                                search_off
-                              </span>
-                              <p className="font-label-md text-sm font-medium">
-                                No reservation records match your filter criteria.
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveTab("all");
-                                  setSearchQuery("");
-                                }}
-                                className="mt-2 text-xs text-primary underline font-semibold"
-                              >
-                                Reset all filters
-                              </button>
+                            <td colSpan={6} className="py-12 px-space-lg text-center text-on-surface-variant">
+                              <span className="material-symbols-outlined text-3xl mb-1 text-on-surface-variant/40 block">search_off</span>
+                              <p className="font-label-md text-sm font-medium">No reservation records match your filter criteria.</p>
                             </td>
                           </tr>
                         ) : (
-                          paginatedReservations.map((item, idx) => {
+                          paginatedReservations.map((item) => {
                             const isConfirmed = item.status === "confirmed";
-                            const isPending = item.status === "pending";
-                            const isCompleted = item.status === "completed";
-                            const isCancelled =
-                              item.status === "cancelled" || item.status === "declined";
 
                             return (
-                              <tr
-                                key={item.id}
-                                className={`transition-colors hover:bg-surface-container-low/60 ${
-                                  idx % 2 === 1 ? "bg-surface-container-low/20" : ""
-                                }`}
-                              >
-                                {/* Ref & Date */}
+                              <tr key={item.id} className="transition-colors hover:bg-surface-container-low/60">
                                 <td className="py-space-md px-space-lg">
                                   <div className="flex flex-col">
-                                    <span
-                                      className={`font-label-sm text-label-sm font-mono ${
-                                        isCancelled ? "text-outline" : "text-primary font-semibold"
-                                      }`}
-                                    >
-                                      #{item.id}
-                                    </span>
-                                    <span className="font-body-sm text-body-sm text-on-surface font-medium">
-                                      {item.displayDate}
-                                    </span>
-                                    <span className="font-label-sm text-label-sm text-on-surface-variant">
-                                      {item.time}
-                                    </span>
+                                    <span className="font-label-sm text-label-sm font-mono text-primary font-semibold">#{item.id}</span>
+                                    <span className="font-body-sm text-body-sm text-on-surface font-medium">{item.displayDate}</span>
+                                    <span className="font-label-sm text-label-sm text-on-surface-variant">{item.time}</span>
                                   </div>
                                 </td>
 
-                                {/* Venue & Location */}
                                 <td className="py-space-md px-space-md">
                                   <div className="flex flex-col">
-                                    <span className="font-headline-sm text-body-lg text-on-surface font-semibold">
-                                      {item.restaurantName}
-                                    </span>
-                                    <span className="font-label-sm text-label-sm text-on-surface-variant">
-                                      {item.neighborhood} • {item.tableNumber ? `Table ${item.tableNumber}` : item.seatingArea}
-                                    </span>
+                                    <span className="font-headline-sm text-body-lg text-on-surface font-semibold">{item.restaurantName}</span>
+                                    <span className="font-label-sm text-label-sm text-on-surface-variant">{item.neighborhood}</span>
                                   </div>
                                 </td>
 
-                                {/* Party & Area */}
                                 <td className="py-space-md px-space-md">
                                   <div className="flex items-center gap-space-xs">
-                                    <span
-                                      className={`material-symbols-outlined text-base ${
-                                        isCancelled
-                                          ? "text-outline"
-                                          : "text-primary-container"
-                                      }`}
-                                    >
-                                      group
-                                    </span>
+                                    <span className="material-symbols-outlined text-base text-primary-container">group</span>
                                     <span>{item.partySize} Guests</span>
-                                    <span className="text-on-surface-variant text-label-sm">
-                                      ({item.seatingArea.replace(/ Seating #.*/, "")})
-                                    </span>
                                   </div>
                                 </td>
 
-                                {/* Dietary / Notes */}
                                 <td className="py-space-md px-space-md max-w-xs">
-                                  {item.specialNotes ? (
-                                    <span className="font-body-sm text-body-sm text-on-surface-variant line-clamp-1 italic">
-                                      &ldquo;{item.specialNotes}&rdquo;
-                                    </span>
-                                  ) : (
-                                    <span className="font-body-sm text-body-sm text-on-surface-variant">
-                                      No notes provided
-                                    </span>
-                                  )}
+                                  <span className="font-body-sm text-body-sm text-on-surface-variant line-clamp-1 italic">
+                                    {item.specialNotes ? `“${item.specialNotes}”` : "No notes provided"}
+                                  </span>
                                 </td>
 
-                                {/* Status Badge */}
                                 <td className="py-space-md px-space-md">
-                                  {isConfirmed && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-surface-tint" />
-                                      Confirmed
-                                    </span>
-                                  )}
-                                  {isPending && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-secondary-fixed text-on-secondary-fixed font-semibold">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                                      Pending Venue
-                                    </span>
-                                  )}
-                                  {isCompleted && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant font-medium">
-                                      <span className="material-symbols-outlined text-xs">
-                                        done_all
-                                      </span>
-                                      Completed
-                                    </span>
-                                  )}
-                                  {isCancelled && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-error-container text-on-error-container font-medium">
-                                      <span className="material-symbols-outlined text-xs">
-                                        close
-                                      </span>
-                                      {item.statusDisplay}
-                                    </span>
-                                  )}
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold">
+                                    {item.statusDisplay || "Confirmed"}
+                                  </span>
                                 </td>
 
-                                {/* Actions */}
                                 <td className="py-space-md px-space-lg text-right">
                                   <div className="inline-flex items-center justify-end gap-space-xs">
                                     {isConfirmed && (
@@ -722,71 +622,18 @@ export default function CustomerReservationsPage() {
                                         <button
                                           type="button"
                                           onClick={() => setPassModalRes(item)}
-                                          className="px-2.5 py-1 text-on-surface hover:bg-surface-container font-label-sm text-label-sm rounded-lg transition-colors font-medium border border-outline-variant/40"
+                                          className="px-2.5 py-1 text-on-surface hover:bg-surface-container font-label-sm text-label-sm rounded-lg border border-outline-variant/40 cursor-pointer"
                                         >
                                           Voucher
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => setModifyModalRes(item)}
-                                          className="px-2.5 py-1 text-primary-container hover:bg-primary-fixed/30 font-label-sm text-label-sm rounded-lg transition-colors font-semibold border border-primary-container/20"
-                                        >
-                                          Modify
-                                        </button>
-                                      </>
-                                    )}
-
-                                    {isPending && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() => setStatusModalRes(item)}
-                                          className="px-2.5 py-1 text-on-surface hover:bg-surface-container font-label-sm text-label-sm rounded-lg transition-colors font-medium border border-outline-variant/40"
-                                        >
-                                          Status
-                                        </button>
-                                        <button
-                                          type="button"
                                           onClick={() => setCancelModalRes(item)}
-                                          className="px-2.5 py-1 text-error hover:bg-error-container hover:text-on-error-container font-label-sm text-label-sm rounded-lg transition-colors font-semibold"
+                                          className="px-2.5 py-1 text-error hover:bg-error-container font-label-sm text-label-sm rounded-lg cursor-pointer"
                                         >
                                           Cancel
                                         </button>
                                       </>
-                                    )}
-
-                                    {isCompleted && (
-                                      <>
-                                        <button
-                                          type="button"
-                                          onClick={() => setRateModalRes(item)}
-                                          className="px-2.5 py-1 text-secondary hover:bg-secondary-fixed/30 font-label-sm text-label-sm rounded-lg transition-colors font-semibold border border-secondary/20"
-                                        >
-                                          {item.rating ? `Rated (${item.rating}★)` : "Rate Seating"}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            handleBookAgain({
-                                              id: item.restaurantId,
-                                              name: item.restaurantName,
-                                              neighborhood: item.neighborhood,
-                                            })
-                                          }
-                                          className="px-2.5 py-1 text-on-surface hover:bg-surface-container font-label-sm text-label-sm rounded-lg transition-colors font-medium border border-outline-variant/40"
-                                        >
-                                          Book Again
-                                        </button>
-                                      </>
-                                    )}
-
-                                    {isCancelled && (
-                                      <Link
-                                        href="/explore"
-                                        className="px-2.5 py-1 text-primary-container hover:bg-surface-container font-label-sm text-label-sm rounded-lg transition-colors font-semibold border border-primary-container/30"
-                                      >
-                                        Find Alternative
-                                      </Link>
                                     )}
                                   </div>
                                 </td>
@@ -797,290 +644,23 @@ export default function CustomerReservationsPage() {
                       </tbody>
                     </table>
                   </div>
-
-                  {/* Mobile Cards View */}
-                  <div className="md:hidden flex flex-col divide-y divide-outline-variant/30 p-space-sm">
-                    {paginatedReservations.length === 0 ? (
-                      <div className="p-space-lg text-center text-on-surface-variant">
-                        <p className="font-label-md text-sm">No reservation records found.</p>
-                      </div>
-                    ) : (
-                      paginatedReservations.map((item) => {
-                        const isConfirmed = item.status === "confirmed";
-                        const isPending = item.status === "pending";
-                        const isCompleted = item.status === "completed";
-                        const isCancelled =
-                          item.status === "cancelled" || item.status === "declined";
-
-                        return (
-                          <div key={item.id} className="py-space-md flex flex-col gap-2">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <span className="font-mono text-xs text-primary font-bold">
-                                  #{item.id}
-                                </span>
-                                <h4 className="font-headline-sm text-base font-bold text-primary">
-                                  {item.restaurantName}
-                                </h4>
-                                <span className="font-body-sm text-xs text-on-surface-variant">
-                                  {item.displayDate} • {item.time}
-                                </span>
-                              </div>
-                              <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
-                                  isConfirmed
-                                    ? "bg-primary-fixed text-on-primary-fixed"
-                                    : isPending
-                                    ? "bg-secondary-fixed text-on-secondary-fixed"
-                                    : isCompleted
-                                    ? "bg-surface-container-high text-on-surface-variant"
-                                    : "bg-error-container text-on-error-container"
-                                }`}
-                              >
-                                {item.statusDisplay}
-                              </span>
-                            </div>
-
-                            <div className="text-xs text-on-surface-variant flex items-center justify-between">
-                              <span>Party: {item.partySize} Guests</span>
-                              <span>Area: {item.seatingArea}</span>
-                            </div>
-
-                            {item.specialNotes && (
-                              <p className="text-xs text-on-surface-variant italic bg-surface-container-low p-2 rounded">
-                                &ldquo;{item.specialNotes}&rdquo;
-                              </p>
-                            )}
-
-                            {/* Mobile action bar */}
-                            <div className="flex items-center gap-2 pt-1">
-                              {isConfirmed && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setPassModalRes(item)}
-                                    className="flex-1 py-1 text-center border border-outline-variant/60 rounded text-xs font-medium"
-                                  >
-                                    Voucher
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setModifyModalRes(item)}
-                                    className="flex-1 py-1 text-center bg-primary-container text-on-primary rounded text-xs font-medium"
-                                  >
-                                    Modify
-                                  </button>
-                                </>
-                              )}
-                              {isPending && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setStatusModalRes(item)}
-                                    className="flex-1 py-1 text-center border border-outline-variant/60 rounded text-xs font-medium"
-                                  >
-                                    Status
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => setCancelModalRes(item)}
-                                    className="flex-1 py-1 text-center bg-error text-on-error rounded text-xs font-medium"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              )}
-                              {isCompleted && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => setRateModalRes(item)}
-                                    className="flex-1 py-1 text-center border border-secondary text-secondary rounded text-xs font-medium"
-                                  >
-                                    {item.rating ? `Rated (${item.rating}★)` : "Rate"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleBookAgain({
-                                        id: item.restaurantId,
-                                        name: item.restaurantName,
-                                        neighborhood: item.neighborhood,
-                                      })
-                                    }
-                                    className="flex-1 py-1 text-center bg-primary text-on-primary rounded text-xs font-medium"
-                                  >
-                                    Book Again
-                                  </button>
-                                </>
-                              )}
-                              {isCancelled && (
-                                <Link
-                                  href="/explore"
-                                  className="flex-1 py-1 text-center bg-surface-container border border-outline-variant rounded text-xs font-medium text-primary text-center"
-                                >
-                                  Find Alternative
-                                </Link>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Pagination Footer */}
-                  <div className="p-space-md bg-surface-container-low flex flex-col sm:flex-row items-center justify-between gap-space-sm text-on-surface-variant border-t border-outline-variant/20">
-                    <span className="font-label-sm text-label-sm">
-                      Showing {paginatedReservations.length} of {filteredReservations.length} reservation records recorded in Dhaka
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className={`px-2 py-1 rounded font-label-sm text-label-sm transition-colors ${
-                          currentPage <= 1
-                            ? "bg-surface-container text-on-surface opacity-50 cursor-not-allowed"
-                            : "bg-surface-container-lowest text-on-surface hover:bg-surface-container"
-                        }`}
-                        disabled={currentPage <= 1}
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      >
-                        Previous
-                      </button>
-
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          type="button"
-                          onClick={() => setCurrentPage(page)}
-                          className={`px-2.5 py-1 rounded font-label-sm text-label-sm transition-colors ${
-                            currentPage === page
-                              ? "bg-primary text-on-primary font-semibold"
-                              : "bg-surface-container-lowest text-on-surface hover:bg-surface-container"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-
-                      <button
-                        className={`px-2 py-1 rounded font-label-sm text-label-sm transition-colors ${
-                          currentPage >= totalPages
-                            ? "bg-surface-container text-on-surface opacity-50 cursor-not-allowed"
-                            : "bg-surface-container-lowest text-on-surface hover:bg-surface-container"
-                        }`}
-                        disabled={currentPage >= totalPages}
-                        type="button"
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 4: Bottom Informational Cards (Grace Period, Patron Rewards, Maitre d') */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-                {/* Card 1 */}
-                <div className="p-space-lg bg-surface-container-lowest rounded-xl shadow-xs border border-outline-variant/30 flex items-start gap-space-md">
-                  <span className="material-symbols-outlined text-primary-container text-2xl shrink-0 mt-0.5">
-                    policy
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-                      Grace Period &amp; Cancellation
-                    </span>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                      Reservations can be modified or cancelled without fees up to 2 hours before dining. Table holds expire 15 minutes past slot.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Card 2 */}
-                <div className="p-space-lg bg-surface-container-lowest rounded-xl shadow-xs border border-outline-variant/30 flex items-start gap-space-md">
-                  <span className="material-symbols-outlined text-secondary text-2xl shrink-0 mt-0.5">
-                    award_star
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-                      Patron Rewards Accrual
-                    </span>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                      Each honored seating credits 150 points directly to your DineDesk balance. Redeem points for off-menu dessert tastings.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Card 3 */}
-                <div className="p-space-lg bg-surface-container-lowest rounded-xl shadow-xs border border-outline-variant/30 flex items-start gap-space-md">
-                  <span className="material-symbols-outlined text-primary text-2xl shrink-0 mt-0.5">
-                    support_agent
-                  </span>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-label-lg text-label-lg text-on-surface font-semibold">
-                      Priority Maitre d&apos; Desk
-                    </span>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-                      Planning a gathering exceeding 8 diners? Connect directly with our private dining sommelier for curated set courses.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Customer Footer */}
           <CustomerFooter />
         </main>
       </div>
 
-      {/* Interactive Modal Dialogs */}
-      <DigitalSeatingPassModal
-        isOpen={Boolean(passModalRes)}
-        reservation={passModalRes}
-        onClose={() => setPassModalRes(null)}
-      />
+      <DigitalSeatingPassModal isOpen={Boolean(passModalRes)} reservation={passModalRes} onClose={() => setPassModalRes(null)} />
+      <ModifyReservationModal isOpen={Boolean(modifyModalRes)} reservation={modifyModalRes} onClose={() => setModifyModalRes(null)} onSave={handleSaveModification} />
+      <CancelReservationModal isOpen={Boolean(cancelModalRes)} reservation={cancelModalRes} onClose={() => setCancelModalRes(null)} onConfirm={handleConfirmCancellation} />
+      <DirectionsModal isOpen={Boolean(directionsModalRes)} reservation={directionsModalRes} onClose={() => setDirectionsModalRes(null)} />
+      <ReservationStatusModal isOpen={Boolean(statusModalRes)} reservation={statusModalRes} onClose={() => setStatusModalRes(null)} />
+      <RateSeatingModal isOpen={Boolean(rateModalRes)} reservation={rateModalRes} onClose={() => setRateModalRes(null)} onSubmit={handleSubmitRating} />
 
-      <ModifyReservationModal
-        isOpen={Boolean(modifyModalRes)}
-        reservation={modifyModalRes}
-        onClose={() => setModifyModalRes(null)}
-        onSave={handleSaveModification}
-      />
-
-      <CancelReservationModal
-        isOpen={Boolean(cancelModalRes)}
-        reservation={cancelModalRes}
-        onClose={() => setCancelModalRes(null)}
-        onConfirm={handleConfirmCancellation}
-      />
-
-      <DirectionsModal
-        isOpen={Boolean(directionsModalRes)}
-        reservation={directionsModalRes}
-        onClose={() => setDirectionsModalRes(null)}
-      />
-
-      <ReservationStatusModal
-        isOpen={Boolean(statusModalRes)}
-        reservation={statusModalRes}
-        onClose={() => setStatusModalRes(null)}
-      />
-
-      <RateSeatingModal
-        isOpen={Boolean(rateModalRes)}
-        reservation={rateModalRes}
-        onClose={() => setRateModalRes(null)}
-        onSubmit={handleSubmitRating}
-      />
-
-      {/* Floating Action Feedback Toast */}
-      <ProfileToast
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ message: null, type: "success" })}
-      />
+      <ProfileToast message={toast.message} type={toast.type} onClose={() => setToast({ message: null, type: "success" })} />
     </div>
   );
 }

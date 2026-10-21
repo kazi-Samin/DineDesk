@@ -39,6 +39,22 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
     const found = getMockOrder(orderId);
     if (found) {
       setOrder(found);
+
+      // AUTOMATIC LOYALTY POINTS TRACKER:
+      // When a valid order is confirmed/paid, record it to add 20 loyalty points automatically
+      try {
+        const existingPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+        const paymentKey = `order_pay_${orderId}`;
+
+        if (!existingPayments.includes(paymentKey)) {
+          existingPayments.push(paymentKey);
+          localStorage.setItem("dinedesk_stripe_payments", JSON.stringify(existingPayments));
+          // Dispatch storage event so sidebars and loyalty pages update instantly
+          window.dispatchEvent(new Event("storage"));
+        }
+      } catch (e) {
+        // ignore localStorage errors in restricted environments
+      }
     }
     setLoading(false);
   }, [orderId]);

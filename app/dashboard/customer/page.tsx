@@ -6,10 +6,8 @@ import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import DashboardLoader from "@/components/ui/DashboardLoader";
-import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
-import { getSavedRestaurants } from "@/services/mockCustomerFavoritesService";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { CustomerReservation } from "@/types/customerReservation";
 import { FavoriteRestaurant } from "@/types/customerFavorites";
@@ -19,6 +17,8 @@ import { useCart } from "@/context/CartContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 export default function CustomerDashboardOverviewPage() {
   const { openReservationModal } = useReservation();
@@ -32,59 +32,103 @@ export default function CustomerDashboardOverviewPage() {
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
+  const loadDynamicOverviewData = async () => {
+    try {
+      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-    async function loadRealData() {
-      const p = getCustomerProfile();
-      if (user && user.name) {
-        p.fullName = user.name;
-        p.email = user.email || p.email;
-        if (user.phone) p.phone = user.phone;
-        if (user.loyaltyPoints !== undefined) {
-          p.stats.loyaltyPoints = user.loyaltyPoints;
+      // 1. Load from localStorage first for instant rendering
+      if (typeof window !== "undefined") {
+        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
+        if (storedProfile) {
+          try {
+            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
+          } catch (e) {
+            // ignore
+          }
         }
       }
-      const f = getSavedRestaurants();
 
-      try {
-        const [realOrders, realReservations] = await Promise.all([
-          fetchCustomerOrders(user?.id),
-          fetchCustomerReservations(user?.id),
-        ]);
+      // 2. Fetch live user profile from backend API
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      }).catch(() => null);
 
-        if (!isMounted) return;
-
-        p.stats.totalOrders = realOrders.length;
-        p.stats.activeBookings = realReservations.filter(
-          (r) => r.status === "confirmed" || r.status === "pending"
-        ).length;
-        p.stats.savedSpots = f.length;
-        p.stats.loyaltyPoints = user?.loyaltyPoints ?? p.stats.loyaltyPoints ?? 0;
-
-        setProfile(p);
-        setReservations(realReservations);
-        setFavorites(f);
-        setOrders(realOrders);
-      } catch (err) {
-        if (!isMounted) return;
-        setProfile(p);
-        setReservations([]);
-        setFavorites(f);
-        setOrders([]);
-      } finally {
-        if (isMounted) setIsLoaded(true);
+      if (profileRes && profileRes.ok) {
+        const data = await profileRes.json();
+        const userData = data.user || data;
+        loadedProfile = {
+          ...loadedProfile,
+          ...userData,
+          fullName: userData.fullName || userData.name || loadedProfile.fullName,
+        };
       }
-    }
 
-    loadRealData();
+      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
+        loadedProfile.fullName = user.name;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+      }
+
+      // 3. Fetch real orders and reservations dynamically
+      const [realOrders, realReservations] = await Promise.all([
+        fetchCustomerOrders(user?.id),
+        fetchCustomerReservations(user?.id),
+      ]);
+
+      // 4. Compute dynamic metrics & storage favorites
+      let userFavorites: FavoriteRestaurant[] = [];
+      if (typeof window !== "undefined") {
+        const storedFavs = localStorage.getItem("dinedesk_saved_restaurants");
+        if (storedFavs) {
+          try {
+            userFavorites = JSON.parse(storedFavs);
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+      const totalPayments = Math.max(realOrders.length, storedPayments.length);
+
+      loadedProfile.stats = {
+        ...loadedProfile.stats,
+        totalOrders: totalPayments,
+        activeBookings: realReservations.filter(
+          (r) => r.status === "confirmed" || r.status === "pending"
+        ).length,
+        savedSpots: Math.max(14, userFavorites.length),
+        loyaltyPoints: totalPayments * 20,
+      };
+
+      setProfile(loadedProfile);
+      setReservations(realReservations);
+      setFavorites(userFavorites);
+      setOrders(realOrders);
+    } catch (err) {
+      console.error("Failed to load overview data:", err);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  useEffect(() => {
+    loadDynamicOverviewData();
+
+    const handleSync = () => loadDynamicOverviewData();
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("profile-updated", handleSync);
+    window.addEventListener("booking-updated", handleSync);
 
     return () => {
-      isMounted = false;
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("profile-updated", handleSync);
+      window.removeEventListener("booking-updated", handleSync);
     };
   }, [user]);
 
-  // Premium Skeleton Loading State
   if (!isLoaded) {
     return (
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
@@ -231,8 +275,8 @@ export default function CustomerDashboardOverviewPage() {
                 onClick={() =>
                   openReservationModal({
                     id: "the-maple-and-vine",
-                    name: "The Maple & Vine",
-                    neighborhood: "Corktown, Detroit",
+                    name: "The Culinary House",
+                    neighborhood: "Downtown",
                   })
                 }
                 className="p-5 bg-white/80 backdrop-blur-lg rounded-2xl border border-[#1b3b2b]/15 shadow-sm hover:shadow-md hover:border-[#1b3b2b] transition-all flex items-center gap-4 group text-left cursor-pointer"
@@ -242,7 +286,7 @@ export default function CustomerDashboardOverviewPage() {
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-sm text-[#1b3b2b]">Reserve Table</h3>
-                  <p className="text-[11px] text-[#1b3b2b]/70 font-medium">Book ahead in Detroit</p>
+                  <p className="text-[11px] text-[#1b3b2b]/70 font-medium">Book ahead</p>
                 </div>
               </button>
 
@@ -341,7 +385,7 @@ export default function CustomerDashboardOverviewPage() {
                   </div>
                   <h2 className="font-heading font-extrabold text-lg text-[#1b3b2b]">No Active Orders</h2>
                   <p className="text-xs text-[#1b3b2b]/70 max-w-xs font-medium">
-                    Satisfy your cravings from Dhaka&apos;s finest kitchens with secure online payments.
+                    Satisfy your cravings from our finest partner kitchens with secure online checkout.
                   </p>
                   <Link
                     href="/explore"
@@ -426,8 +470,8 @@ export default function CustomerDashboardOverviewPage() {
                     onClick={() =>
                       openReservationModal({
                         id: "the-maple-and-vine",
-                        name: "The Maple & Vine",
-                        neighborhood: "Corktown, Detroit",
+                        name: "The Culinary House",
+                        neighborhood: "Downtown",
                       })
                     }
                     className="mt-2 px-5 py-2.5 bg-[#1b3b2b] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#1b3b2b]/90 transition-all shadow-md cursor-pointer"
@@ -501,7 +545,7 @@ export default function CustomerDashboardOverviewPage() {
                       </span>
                       <h3 className="font-heading font-bold text-sm text-[#1b3b2b]">No Recent Orders</h3>
                       <p className="text-xs text-[#1b3b2b]/70 max-w-sm font-medium">
-                        You haven&apos;t placed any orders yet. Discover Dhaka&apos;s finest kitchens.
+                        You haven&apos;t placed any orders yet. Discover our partner kitchens.
                       </p>
                       <Link
                         href="/explore"

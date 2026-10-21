@@ -38,6 +38,7 @@ export default function CustomerFavoritesPage() {
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [allMenus, setAllMenus] = useState<DatabaseMenu[]>([]);
+  const [points, setPoints] = useState(0); // Dynamic real loyalty points
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Filter & Pagination States
@@ -51,42 +52,66 @@ export default function CustomerFavoritesPage() {
   const realUserName = user?.name || profile.fullName || "Valued Diner";
   const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
 
-  // Fetch real database menus from API proxy
+  // Dynamic telemetry synchronizer for points & database data
+  const syncTelemetryData = async () => {
+    try {
+      const [profileRes, menuRes, paymentsRes] = await Promise.all([
+        fetch(`/api/customer/profile`, { credentials: "include" }).catch(() => null),
+        fetch(`/api/customer/favorites`, { credentials: "include" }),
+        fetch(`/api/customer/payments`, { credentials: "include" }).catch(() => null),
+      ]);
+
+      if (profileRes && profileRes.ok) {
+        const pData = await profileRes.json();
+        setProfile((prev) => ({ ...prev, ...pData }));
+      }
+
+      if (menuRes.ok) {
+        const jsonResponse = await menuRes.json();
+        const fetchedMenus = jsonResponse.menus || [];
+        setAllMenus(fetchedMenus);
+      }
+
+      // Dynamic calculation: combine API payments and localStorage records for real-time reactivity
+      let apiPaymentsCount = 0;
+      if (paymentsRes && paymentsRes.ok) {
+        const paymentData = await paymentsRes.json();
+        const successfulPayments = paymentData.payments || paymentData.sessions || [];
+        apiPaymentsCount = successfulPayments.length;
+      }
+
+      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+      const totalPaymentSessions = Math.max(apiPaymentsCount, storedPayments.length);
+      const calculatedPoints = totalPaymentSessions * 20;
+
+      setPoints(calculatedPoints);
+    } catch (err) {
+      console.error("Failed to sync telemetry:", err);
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
 
-    async function loadRealDatabaseMenus() {
-      try {
-        const [profileRes, menuRes] = await Promise.all([
-          fetch(`/api/customer/profile`, { credentials: "include" }).catch(() => null),
-          fetch(`/api/customer/favorites`, { credentials: "include" }),
-        ]);
-
-        if (!isMounted) return;
-
-        if (profileRes && profileRes.ok) {
-          const pData = await profileRes.json();
-          setProfile((prev) => ({ ...prev, ...pData }));
-        }
-
-        if (menuRes.ok) {
-          const jsonResponse = await menuRes.json();
-          const fetchedMenus = jsonResponse.menus || [];
-          setAllMenus(fetchedMenus);
-        } else {
-          toast.error("Failed to fetch menus from database.");
-        }
-      } catch (err) {
-        toast.error("Network error synchronizing menus.");
-      } finally {
-        if (isMounted) setIsLoaded(true);
-      }
+    async function loadInitialData() {
+      await syncTelemetryData();
+      if (isMounted) setIsLoaded(true);
     }
 
-    loadRealDatabaseMenus();
+    loadInitialData();
+
+    // Listen to storage events so loyalty points update instantly across actions
+    const handleStorageChange = () => {
+      syncTelemetryData();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("dinedesk-points-updated", handleStorageChange);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("dinedesk-points-updated", handleStorageChange);
     };
   }, [user]);
 
@@ -104,8 +129,6 @@ export default function CustomerFavoritesPage() {
     toast.success(!currentStatus ? `Added "${menuName}" to Favorites.` : `Removed "${menuName}" from Favorites.`);
   };
 
-  // Corrected Add to Cart mapping supporting CartContext property schemas
-  
   const handleAddToCart = (menu: DatabaseMenu) => {
     setAddingDishId(menu.id);
 
@@ -121,7 +144,6 @@ export default function CustomerFavoritesPage() {
       restaurantName: menu.restaurantName || "The Maple & Vine",
     };
 
-    // 1. Get existing items from CartDrawer's localStorage key
     const existingCart = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
     const existingIndex = existingCart.findIndex((i: any) => i.id === menu.id || i.menuId === menu.id);
 
@@ -131,15 +153,12 @@ export default function CustomerFavoritesPage() {
       existingCart.push(cartItem);
     }
 
-    // 2. Save to both storage keys used across your app
     localStorage.setItem("dine_desk_cart", JSON.stringify(existingCart));
     localStorage.setItem("dinedesk_cart", JSON.stringify(existingCart));
 
-    // 3. Dispatch storage and open events so CartDrawer updates instantly
     window.dispatchEvent(new Event("storage"));
     window.dispatchEvent(new Event("open-cart-drawer"));
 
-    // 4. Also call context addItem if available
     try {
       addItem({
         id: menu.id,
@@ -159,7 +178,6 @@ export default function CustomerFavoritesPage() {
     setTimeout(() => setAddingDishId(null), 1500);
   };
 
-  // Filtered menus based on tab, search query, and cuisine
   const filteredMenus = useMemo(() => {
     return allMenus.filter((menu) => {
       if (activeTab === "saved" && !menu.isSaved) return false;
@@ -174,7 +192,6 @@ export default function CustomerFavoritesPage() {
     });
   }, [allMenus, activeTab, cuisineFilter, searchQuery]);
 
-  // Client-side Pagination calculation
   const totalPages = Math.ceil(filteredMenus.length / itemsPerPage) || 1;
   const paginatedMenus = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -189,7 +206,7 @@ export default function CustomerFavoritesPage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={realUserName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <DashboardLoader />
           </main>
@@ -208,6 +225,7 @@ export default function CustomerFavoritesPage() {
         onToggleSidebar={toggleSidebar}
       />
 
+      {/* Dynamic Loyalty Points passed to Sidebar */}
       <CustomerSidebar
         userName={`${realUserName.split(" ")[0]}'s Account`}
         memberSince={profile.memberSince}
@@ -216,7 +234,7 @@ export default function CustomerFavoritesPage() {
         onClose={closeSidebar}
         onToggle={toggleSidebar}
         activeOrderCount={profile.stats.activeBookings}
-        loyaltyPoints={profile.stats.loyaltyPoints}
+        loyaltyPoints={points}
       />
 
       <div className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
@@ -251,7 +269,7 @@ export default function CustomerFavoritesPage() {
                   </div>
                   <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm col-span-2 sm:col-span-1">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Loyalty Pts</span>
-                    <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">{profile.stats.loyaltyPoints.toLocaleString()}</span>
+                    <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">{points.toLocaleString()}</span>
                   </div>
                 </div>
               </motion.div>
