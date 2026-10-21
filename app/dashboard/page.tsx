@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import DashboardLoader from "@/components/ui/DashboardLoader";
 
 export default function DashboardIndexPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -25,14 +26,5 @@ export default function DashboardIndexPage() {
     }
   }, [user, isAuthenticated, isLoading, router]);
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-      <span className="material-symbols-outlined text-4xl text-primary animate-spin">
-        progress_activity
-      </span>
-      <p className="font-headline-sm text-sm font-semibold text-primary">
-        Navigating to your dashboard...
-      </p>
-    </div>
-  );
+  return <DashboardLoader />;
 }
