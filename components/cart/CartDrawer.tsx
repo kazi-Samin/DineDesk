@@ -196,10 +196,14 @@ export default function CartDrawer() {
                           className="flex items-center gap-4 p-3 rounded-2xl bg-surface-container-low border border-outline-variant/60 shadow-2xs"
                         >
                           <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-14 h-14 rounded-xl object-cover shadow-xs shrink-0"
+                            src={item.image && item.image.startsWith("http") ? item.image : "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80"}
+                            alt={item.name || "Menu item"}
+                            className="w-14 h-14 rounded-xl object-cover shadow-xs shrink-0 bg-surface-container"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80";
+                            }}
                           />
+
                           <div className="flex-1 flex flex-col justify-center">
                             <h5 className="font-heading font-bold text-xs text-on-surface line-clamp-1">
                               {item.name}

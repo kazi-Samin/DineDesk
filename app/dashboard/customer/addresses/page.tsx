@@ -8,20 +8,13 @@ import CustomerFooter from "@/components/customer/CustomerFooter";
 import AddressFormDrawer from "@/components/customer/profile/AddressFormDrawer";
 import DeleteAddressModal from "@/components/customer/profile/DeleteAddressModal";
 import ProfileToast from "@/components/customer/profile/ProfileToast";
+import DashboardLoader from "@/components/ui/DashboardLoader";
 
 import { CustomerAddress } from "@/types/customerProfile";
-import {
-  getCustomerProfile,
-  getCustomerAddresses,
-  setDefaultCustomerAddress,
-  deleteCustomerAddress,
-  upsertCustomerAddress,
-  exportAddressesToCSV,
-} from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
+import { motion } from "framer-motion";
 
 export default function CustomerAddressesPage() {
   const { user } = useAuth();
@@ -33,6 +26,7 @@ export default function CustomerAddressesPage() {
   const [isAddressDrawerOpen, setIsAddressDrawerOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [deletingAddress, setDeletingAddress] = useState<CustomerAddress | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -48,20 +42,40 @@ export default function CustomerAddressesPage() {
     }, 3000);
   };
 
+  // Fetch Real Database Data
   useEffect(() => {
-    const loadedProfile = getCustomerProfile();
-    if (user && user.name) {
-      loadedProfile.fullName = user.name;
-      loadedProfile.email = user.email || loadedProfile.email;
-      if (user.phone) loadedProfile.phone = user.phone;
-    }
-    const loadedAddresses = getCustomerAddresses();
-    const savedRest = getSavedRestaurants();
-    const savedDish = getSavedDishes();
+    let isMounted = true;
 
-    setProfile(loadedProfile);
-    setAddresses(loadedAddresses);
-    setSavedSpotsCount(savedRest.length + savedDish.length);
+    async function loadDatabaseAddresses() {
+      try {
+        const [profileRes, addressesRes] = await Promise.all([
+          fetch(`/api/customer/profile`, { credentials: "include" }),
+          fetch(`/api/customer/addresses`, { credentials: "include" }),
+        ]);
+
+        if (!isMounted) return;
+
+        if (profileRes.ok) {
+          const pData = await profileRes.json();
+          setProfile((prev) => ({ ...prev, ...pData }));
+        }
+
+        if (addressesRes.ok) {
+          const aData = await addressesRes.json();
+          setAddresses(aData);
+        }
+      } catch (err) {
+        console.error("Failed to sync customer addresses ledger:", err);
+      } finally {
+        if (isMounted) setIsLoaded(true);
+      }
+    }
+
+    loadDatabaseAddresses();
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const filteredAddresses = useMemo(() => {
@@ -81,10 +95,22 @@ export default function CustomerAddressesPage() {
     return addresses.find((a) => a.isDefault) || addresses[0];
   }, [addresses]);
 
-  const handleSetDefault = (addressId: string, addressLabel: string) => {
-    const updated = setDefaultCustomerAddress(addresses, addressId);
-    setAddresses(updated);
-    showToast(`"${addressLabel}" set as your default delivery address.`);
+  const handleSetDefault = async (addressId: string, addressLabel: string) => {
+    try {
+      const res = await fetch(`/api/customer/addresses/${addressId}/default`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setAddresses(updated);
+        showToast(`"${addressLabel}" set as your default delivery address.`);
+      } else {
+        showToast("Failed to update default address.", "error");
+      }
+    } catch (err) {
+      showToast("Network error updating address.", "error");
+    }
   };
 
   const handleOpenAddAddress = () => {
@@ -97,35 +123,101 @@ export default function CustomerAddressesPage() {
     setIsAddressDrawerOpen(true);
   };
 
-  const handleSaveAddress = (address: CustomerAddress) => {
+  const handleSaveAddress = async (address: CustomerAddress) => {
     const isNew = !editingAddress;
-    const updated = upsertCustomerAddress(addresses, address);
-    setAddresses(updated);
-    setIsAddressDrawerOpen(false);
-    setEditingAddress(null);
-    showToast(
-      isNew
-        ? `Added "${address.label}" to your saved addresses.`
-        : `Updated address "${address.label}".`
-    );
+    try {
+      const endpoint = isNew ? `/api/customer/addresses` : `/api/customer/addresses/${address.id}`;
+      const method = isNew ? "POST" : "PUT";
+
+      const res = await fetch(endpoint, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(address),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setAddresses(updated);
+        setIsAddressDrawerOpen(false);
+        setEditingAddress(null);
+        showToast(
+          isNew
+            ? `Added "${address.label}" to your database.`
+            : `Updated address "${address.label}".`
+        );
+      } else {
+        showToast("Failed to save address to database.", "error");
+      }
+    } catch (err) {
+      showToast("Network error saving address.", "error");
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deletingAddress) return;
     const label = deletingAddress.label;
-    const updated = deleteCustomerAddress(addresses, deletingAddress.id);
-    setAddresses(updated);
-    setDeletingAddress(null);
-    showToast(`Removed "${label}".`);
+    try {
+      const res = await fetch(`/api/customer/addresses/${deletingAddress.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setAddresses(updated);
+        setDeletingAddress(null);
+        showToast(`Removed "${label}".`);
+      } else {
+        showToast("Failed to delete address.", "error");
+      }
+    } catch (err) {
+      showToast("Network error deleting address.", "error");
+    }
   };
 
-  const handleExportCSV = () => {
-    exportAddressesToCSV(addresses);
-    showToast("Downloaded addresses as CSV.", "info");
+  const handleExportCSV = async () => {
+    try {
+      const res = await fetch(`/api/customer/addresses/export`, { credentials: "include" });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "dinedesk-addresses.csv";
+        a.click();
+        showToast("Downloaded addresses as CSV.", "info");
+      }
+    } catch (err) {
+      showToast("Export failed.", "error");
+    }
   };
+
+  // Component-level Skeleton Loading State
+  if (!isLoaded) {
+    return (
+      <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
+        <CustomerHeader userName={profile.fullName} userRole="Verified Foodie" avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <div className="flex pt-20 flex-1">
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} />
+          <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
+            <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-6 animate-pulse">
+              <div className="h-8 bg-[#1b3b2b]/10 rounded-xl w-64" />
+              <div className="h-28 bg-[#1b3b2b]/10 rounded-2xl w-full" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-56 bg-[#1b3b2b]/10 rounded-3xl" />
+                ))}
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-background min-h-screen text-on-surface flex flex-col font-body-md antialiased">
+    <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white">
       <CustomerHeader
         userName={profile.fullName || "Diner"}
         userRole="Verified Foodie"
@@ -134,7 +226,7 @@ export default function CustomerAddressesPage() {
         isSidebarOpen={isSidebarOpen}
       />
 
-      <div className="flex pt-16 flex-1">
+      <div className="flex pt-20 flex-1">
         <CustomerSidebar
           userName={`${profile.fullName.split(" ")[0]}'s Account`}
           memberSince="Member since 2023"
@@ -147,74 +239,81 @@ export default function CustomerAddressesPage() {
         />
 
         <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-          {/* Top Quick Stats */}
-          <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant/30">
-            <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+          {/* Top Quick Stats Banner */}
+          <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+            >
               <div>
-                <h2 className="text-xl font-bold text-on-surface">
+                <h2 className="font-heading font-extrabold text-xl text-[#1b3b2b]">
                   Welcome back, {profile.fullName.split(" ")[0] || "Diner"}
                 </h2>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  {profile.email} • {profile.phone}
+                <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
+                  {profile.email} {profile.phone && `• ${profile.phone}`}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Total Orders
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
                     {profile.stats?.totalOrders ?? 28}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Bookings
                   </span>
-                  <span className="text-lg font-bold text-secondary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
                     {profile.stats?.activeBookings ?? 1}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Saved Spots
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
                     {savedSpotsCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Points
                   </span>
-                  <span className="text-lg font-bold text-primary-container mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
                     {profile.stats?.loyaltyPoints?.toLocaleString() ?? "1,450"}
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </section>
 
           {/* Main Content Area */}
-          <div className="w-full px-6 py-8 max-w-6xl mx-auto flex-1">
+          <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-8">
             <div className="flex flex-col w-full">
+
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
+                  <h1 className="font-heading font-black text-2xl sm:text-3xl text-[#1b3b2b] tracking-tight">
                     Saved Addresses
                   </h1>
-                  <p className="text-sm text-on-surface-variant mt-1">
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
                     Manage where your food gets delivered. We will use your default address at checkout.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+                <div className="flex items-center gap-3 self-start sm:self-auto shrink-0">
                   <button
                     type="button"
                     onClick={handleExportCSV}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-surface-container-lowest hover:bg-surface-container text-xs text-on-surface font-medium rounded-lg border border-outline-variant transition-colors cursor-pointer shadow-2xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/80 hover:bg-white text-xs font-bold text-[#1b3b2b] rounded-xl border border-[#1b3b2b]/20 transition-all cursor-pointer shadow-xs"
                     title="Export addresses as CSV"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
@@ -224,7 +323,7 @@ export default function CustomerAddressesPage() {
                   <button
                     type="button"
                     onClick={handleOpenAddAddress}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-container hover:bg-primary text-on-primary text-xs font-semibold rounded-lg shadow-xs transition-all cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-base">add</span>
                     <span>Add New Address</span>
@@ -232,20 +331,20 @@ export default function CustomerAddressesPage() {
                 </div>
               </div>
 
-              {/* Informative Default Banner */}
-              <div className="bg-surface-container-lowest rounded-xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant shadow-2xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-lg">local_shipping</span>
+              {/* Informative Default Banner & Search Bar */}
+              <div className="bg-white/90 backdrop-blur-xl rounded-2xl p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#1b3b2b]/15 shadow-lg">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-xl bg-[#1b3b2b]/10 text-[#1b3b2b] flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-2xl">local_shipping</span>
                   </div>
                   <div>
-                    <span className="text-xs text-on-surface-variant font-medium block">
+                    <span className="text-[10px] text-[#1b3b2b]/60 font-extrabold uppercase tracking-wider block">
                       Default Delivery Address
                     </span>
-                    <p className="text-sm text-on-surface font-semibold">
+                    <p className="text-sm text-[#1b3b2b] font-bold mt-0.5">
                       {defaultAddress ? (
                         <>
-                          {defaultAddress.label} • {defaultAddress.road}, {defaultAddress.city}
+                          {defaultAddress.label} — {defaultAddress.road}, {defaultAddress.city}
                         </>
                       ) : (
                         "No default address set"
@@ -254,20 +353,20 @@ export default function CustomerAddressesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                  <div className="relative">
+                <div className="flex items-center gap-3 self-end sm:self-auto shrink-0 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-60">
                     <input
                       type="text"
                       placeholder="Search address..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 bg-surface-container-low text-xs rounded-md border border-outline-variant text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:ring-1 focus:ring-primary-container"
+                      className="w-full pl-9 pr-3 py-2 bg-[#f8f9f6] text-xs font-medium rounded-xl border border-[#1b3b2b]/20 text-[#1b3b2b] placeholder:text-[#1b3b2b]/50 focus:outline-none focus:border-[#1b3b2b] shadow-inner"
                     />
-                    <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-on-surface-variant pointer-events-none">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#1b3b2b]/50 pointer-events-none">
                       search
                     </span>
                   </div>
-                  <span className="text-xs text-on-surface-variant font-medium px-2">
+                  <span className="text-xs font-bold text-[#1b3b2b]/70 px-2 shrink-0">
                     {addresses.length} {addresses.length === 1 ? "address" : "addresses"}
                   </span>
                 </div>
@@ -275,39 +374,38 @@ export default function CustomerAddressesPage() {
 
               {/* Addresses Cards Grid */}
               {filteredAddresses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                   {filteredAddresses.map((addr) => {
                     const isDefault = addr.isDefault;
                     const categoryIcon =
                       addr.category === "office"
                         ? "apartment"
                         : addr.category === "home"
-                        ? "home"
-                        : "location_on";
+                          ? "home"
+                          : "location_on";
 
                     return (
                       <div
                         key={addr.id}
-                        className={`bg-surface-container-lowest rounded-xl p-5 shadow-2xs border transition-all flex flex-col justify-between gap-4 hover:shadow-xs ${
-                          isDefault
-                            ? "border-primary-container ring-1 ring-primary-container/20"
-                            : "border-outline-variant"
-                        }`}
+                        className={`bg-white/90 backdrop-blur-xl rounded-3xl p-6 shadow-xl border transition-all flex flex-col justify-between gap-5 hover:border-[#1b3b2b] ${isDefault
+                            ? "border-[#1b3b2b] ring-2 ring-[#1b3b2b]/20"
+                            : "border-[#1b3b2b]/15"
+                          }`}
                       >
-                        <div className="flex flex-col gap-2.5">
+                        <div className="flex flex-col gap-3">
                           {/* Card Top */}
-                          <div className="flex items-center justify-between pb-2 border-b border-outline-variant/30">
-                            <div className="flex items-center gap-1.5">
-                              <span className="material-symbols-outlined text-base text-primary">
+                          <div className="flex items-center justify-between pb-3 border-b border-[#1b3b2b]/10">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-lg text-[#1b3b2b]">
                                 {categoryIcon}
                               </span>
-                              <span className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">
+                              <span className="text-[10px] font-extrabold text-[#1b3b2b]/70 uppercase tracking-widest">
                                 {addr.category || "Address"}
                               </span>
                             </div>
 
                             {isDefault ? (
-                              <span className="bg-primary-fixed/80 text-on-primary-fixed px-2 py-0.5 rounded-md text-[11px] font-semibold flex items-center gap-1">
+                              <span className="bg-[#1b3b2b] text-white px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
                                 <span className="material-symbols-outlined text-xs">check</span>
                                 Default
                               </span>
@@ -315,7 +413,7 @@ export default function CustomerAddressesPage() {
                               <button
                                 type="button"
                                 onClick={() => handleSetDefault(addr.id, addr.label)}
-                                className="text-xs text-on-surface-variant hover:text-primary underline cursor-pointer"
+                                className="text-xs font-bold text-[#C05621] hover:underline cursor-pointer"
                               >
                                 Set as default
                               </button>
@@ -324,32 +422,32 @@ export default function CustomerAddressesPage() {
 
                           {/* Address Details */}
                           <div>
-                            <h3 className="text-base font-bold text-primary">
+                            <h3 className="font-heading font-extrabold text-base text-[#1b3b2b]">
                               {addr.label}
                             </h3>
-                            <p className="text-xs text-on-surface-variant mt-0.5">
+                            <p className="text-xs text-[#1b3b2b]/70 font-medium mt-0.5">
                               {addr.recipientName} • {addr.contactNumber}
                             </p>
                           </div>
 
-                          <div className="text-xs text-on-surface flex flex-col gap-0.5 leading-relaxed">
-                            <p className="font-medium">
+                          <div className="text-xs text-[#1b3b2b] flex flex-col gap-1 leading-relaxed font-medium bg-[#f8f9f6] p-3.5 rounded-2xl border border-[#1b3b2b]/10">
+                            <p className="font-bold text-[#1b3b2b]">
                               {addr.building}, {addr.road}
                             </p>
                             {addr.apartment && (
-                              <p className="text-on-surface-variant">
+                              <p className="text-[#1b3b2b]/70">
                                 {addr.apartment}
                               </p>
                             )}
-                            <p className="text-on-surface-variant">
+                            <p className="text-[#1b3b2b]/70">
                               {addr.city} {addr.postalCode ? `— ${addr.postalCode}` : ""}
                             </p>
                           </div>
 
                           {/* Delivery Notes */}
                           {addr.deliveryInstructions && (
-                            <div className="p-2.5 bg-surface-container-low rounded-lg text-xs text-on-surface-variant flex items-start gap-2 border border-outline-variant/40">
-                              <span className="material-symbols-outlined text-sm text-secondary shrink-0 mt-0.5">
+                            <div className="p-3 bg-[#f8f9f6] rounded-xl text-xs text-[#1b3b2b]/80 flex items-start gap-2 border border-[#1b3b2b]/10 font-medium">
+                              <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0 mt-0.5">
                                 notes
                               </span>
                               <span className="line-clamp-2">
@@ -360,11 +458,11 @@ export default function CustomerAddressesPage() {
                         </div>
 
                         {/* Card Actions */}
-                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-outline-variant/30">
+                        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#1b3b2b]/10">
                           <button
                             type="button"
                             onClick={() => handleOpenEditAddress(addr)}
-                            className="px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs text-primary transition-colors flex items-center gap-1 font-medium cursor-pointer border border-outline-variant"
+                            className="px-4 py-2 rounded-xl bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-xs text-[#1b3b2b] transition-all flex items-center gap-1.5 font-bold cursor-pointer border border-[#1b3b2b]/20"
                           >
                             <span className="material-symbols-outlined text-sm">edit</span>
                             Edit
@@ -373,7 +471,7 @@ export default function CustomerAddressesPage() {
                           <button
                             type="button"
                             onClick={() => setDeletingAddress(addr)}
-                            className="px-3 py-1.5 rounded-lg hover:bg-error-container hover:text-on-error-container text-xs text-secondary transition-colors flex items-center gap-1 font-medium cursor-pointer border border-transparent"
+                            className="px-4 py-2 rounded-xl hover:bg-red-50 text-xs text-red-600 hover:text-red-800 transition-all flex items-center gap-1.5 font-bold cursor-pointer border border-transparent"
                           >
                             <span className="material-symbols-outlined text-sm">delete</span>
                             Delete
@@ -384,23 +482,23 @@ export default function CustomerAddressesPage() {
                   })}
                 </div>
               ) : (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-outline-variant/30 my-4 shadow-2xs flex flex-col items-center">
-                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/60 mb-3">
-                    location_off
-                  </span>
-                  <h3 className="text-lg font-bold text-primary">
+                <div className="bg-white/90 backdrop-blur-xl rounded-3xl p-16 text-center border border-[#1b3b2b]/15 my-6 shadow-xl flex flex-col items-center">
+                  <div className="w-16 h-16 rounded-2xl bg-[#1b3b2b]/10 flex items-center justify-center text-[#1b3b2b] mb-4">
+                    <span className="material-symbols-outlined text-3xl">location_off</span>
+                  </div>
+                  <h3 className="font-heading font-extrabold text-lg text-[#1b3b2b]">
                     {searchQuery ? "No matching addresses" : "No saved addresses yet"}
                   </h3>
-                  <p className="text-sm text-on-surface-variant mt-1.5 max-w-sm">
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1.5 max-w-sm">
                     {searchQuery
                       ? "Try searching for a different keyword or reset the search."
-                      : "Add your home or office address to make ordering faster."}
+                      : "Add your home or office address to make ordering faster and seamless."}
                   </p>
                   {searchQuery ? (
                     <button
                       type="button"
                       onClick={() => setSearchQuery("")}
-                      className="mt-4 px-4 py-2 bg-surface-container-low text-xs font-semibold rounded-xl hover:bg-surface-container cursor-pointer"
+                      className="mt-5 px-5 py-2.5 bg-[#f8f9f6] text-xs font-bold rounded-xl hover:bg-[#1b3b2b]/10 text-[#1b3b2b] cursor-pointer border border-[#1b3b2b]/20"
                     >
                       Clear search
                     </button>
@@ -408,7 +506,7 @@ export default function CustomerAddressesPage() {
                     <button
                       type="button"
                       onClick={handleOpenAddAddress}
-                      className="mt-5 px-5 py-2.5 bg-primary-container text-on-primary text-xs font-semibold rounded-xl hover:bg-primary transition-colors cursor-pointer"
+                      className="mt-6 px-6 py-3 bg-[#1b3b2b] text-white text-xs font-extrabold uppercase tracking-wider rounded-xl hover:bg-[#1b3b2b]/90 transition-all shadow-md cursor-pointer"
                     >
                       + Add New Address
                     </button>

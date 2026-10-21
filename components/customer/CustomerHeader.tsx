@@ -4,8 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
+import UserProfileDropdown from "@/components/layout/UserProfileDropdown";
 
 interface CustomerHeaderProps {
   userName?: string;
@@ -25,12 +26,10 @@ export default function CustomerHeader({
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  const displayName = user?.name || (userName && userName !== "Tahmid Rahman" && userName !== "Diner" ? userName : user?.name || "Diner");
-  const displayRole = user?.role === "ADMIN" ? "Super Admin" : user?.role === "VENDOR" ? "Restaurant Owner" : userRole;
-
   const [searchQuery, setSearchQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,62 +38,108 @@ export default function CustomerHeader({
     }
   };
 
+  const dropdownUser = user ? { ...user, avatar: (user as any).avatar || avatarUrl } : { name: userName, role: userRole, avatar: avatarUrl };
+
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant shadow-2xs">
-      <div className="h-full w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-        {/* Left: Brand Logo + Nav Links */}
-        <div className="flex items-center gap-4 sm:gap-6">
+    <header className="fixed top-0 left-0 right-0 h-20 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/80 shadow-xs">
+      <div className="h-full w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
 
-          {/* DineDesk Brand Logo */}
-          <Link
-            className="flex items-center gap-2 group transition-transform duration-300 hover:scale-105 shrink-0"
-            href="/"
+        {/* Left: Larger Brand Logo with Bouncing/Floating Animation */}
+        <div className="flex items-center gap-4">
+          <motion.div
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
           >
-            <div className="h-8 sm:h-9 w-auto flex items-center justify-center">
-              <Image
-                alt="DineDesk Logo"
-                className="h-full w-auto object-contain"
-                src="/assets/DineDesk Monogram.png"
-                width={150}
-                height={36}
-                priority
-              />
-            </div>
-          </Link>
-
-          {/* Quick Public Navigation Links */}
-          <nav className="hidden xl:flex items-center gap-6 ml-2">
             <Link
-              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
+              className="flex items-center group transition-transform duration-300 hover:scale-105 shrink-0"
               href="/"
             >
-              Home
+              <div className="h-12 sm:h-14 w-auto flex items-center justify-center">
+                <Image
+                  alt="DineDesk Logo"
+                  className="h-full w-auto object-contain"
+                  src="/assets/DineDesk Monogram.png"
+                  width={210}
+                  height={52}
+                  priority
+                />
+              </div>
             </Link>
-            <Link
-              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
-              href="/explore"
-            >
-              Browse Restaurants
-            </Link>
-            <Link
-              className="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors font-medium"
-              href="/explore"
-            >
-              Reserve a Table
-            </Link>
-          </nav>
+          </motion.div>
         </div>
 
-        {/* Right: Search, Notifications, Profile Pill */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Middle: Centered Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+          <Link
+            href="/"
+            className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+          >
+            Home
+          </Link>
+
+          <Link
+            href="/dashboard/customer/orders"
+            className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+          >
+            My Orders
+          </Link>
+
+          {/* Hover Dropdown for Explore & Dining */}
+          <div
+            className="relative"
+            onMouseEnter={() => setExploreDropdownOpen(true)}
+            onMouseLeave={() => setExploreDropdownOpen(false)}
+          >
+            <button
+              type="button"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1 cursor-pointer"
+            >
+              <span>Culinary Guide</span>
+              <span className="material-symbols-outlined text-base">expand_more</span>
+            </button>
+
+            <AnimatePresence>
+              {exploreDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-full left-0 w-60 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-xl p-2 z-50 mt-1"
+                >
+                  <Link
+                    href="/explore"
+                    onClick={() => setExploreDropdownOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-xs font-bold text-on-surface hover:bg-primary/10 hover:text-primary transition-all"
+                  >
+                    <span className="material-symbols-outlined text-base text-primary">restaurant_menu</span>
+                    <span>Browse Restaurants</span>
+                  </Link>
+                  <Link
+                    href="/explore"
+                    onClick={() => setExploreDropdownOpen(false)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl text-xs font-bold text-on-surface hover:bg-primary/10 hover:text-primary transition-all"
+                  >
+                    <span className="material-symbols-outlined text-base text-secondary">table_restaurant</span>
+                    <span>Reserve a Table</span>
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </nav>
+
+        {/* Right: Search, Notifications, Unique User Profile Pill */}
+        <div className="flex items-center gap-3">
+
           {/* Global Search Field */}
-          <form onSubmit={handleSearch} className="relative hidden md:block max-w-xs w-56 lg:w-64">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">
+          <form onSubmit={handleSearch} className="relative hidden md:block max-w-xs w-48 lg:w-60">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">
               search
             </span>
             <input
-              className="w-full pl-9 pr-3 py-2 bg-surface-container-low font-body-sm text-body-sm text-on-surface rounded-xl placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest focus:border-primary border border-outline-variant/70 shadow-inner transition-all"
-              placeholder="Search dishes, restaurants..."
+              className="w-full pl-10 pr-3 py-2.5 bg-surface-container-low font-body-sm text-xs text-on-surface rounded-2xl placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest focus:border-primary border border-outline-variant/70 shadow-inner transition-all"
+              placeholder="Search dishes, kitchens..."
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -105,31 +150,31 @@ export default function CustomerHeader({
           <div className="relative">
             <button
               aria-label="Notifications"
-              className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors rounded-xl relative cursor-pointer"
+              className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors rounded-2xl relative cursor-pointer border border-outline-variant/40"
               type="button"
               onClick={() => setNotificationsOpen(!notificationsOpen)}
             >
-              <span className="material-symbols-outlined text-2xl">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-secondary rounded-full animate-pulse" />
+              <span className="material-symbols-outlined text-xl">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full animate-pulse" />
             </button>
 
-            {/* Notifications Dropdown Preview */}
+            {/* Notifications Dropdown */}
             {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-1">
-                <div className="flex items-center justify-between pb-2 border-b border-outline-variant/40">
-                  <span className="font-label-md text-label-md font-semibold text-primary">
+              <div className="absolute right-0 top-full mt-3 w-72 sm:w-80 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-primary">
                     Activity Alerts
                   </span>
-                  <span className="font-label-sm text-[11px] text-secondary font-bold">
+                  <span className="text-[10px] bg-secondary/15 text-secondary px-2 py-0.5 rounded-md font-bold">
                     1 New
                   </span>
                 </div>
-                <div className="pt-2">
-                  <div className="p-2.5 bg-surface-container-low rounded-lg text-left">
-                    <span className="font-label-sm text-xs text-primary font-semibold block">
+                <div className="pt-3">
+                  <div className="p-3 bg-surface-container-low rounded-xl text-left border border-outline-variant/40">
+                    <span className="text-xs text-primary font-extrabold block">
                       Kitchen Preparing Order
                     </span>
-                    <span className="font-body-sm text-[11px] text-on-surface-variant mt-0.5 block">
+                    <span className="text-[11px] text-on-surface-variant mt-1 block font-medium">
                       The Maple &amp; Vine has confirmed your order #DD-23698.
                     </span>
                   </div>
@@ -138,99 +183,82 @@ export default function CustomerHeader({
             )}
           </div>
 
-          <div className="h-6 w-px bg-outline-variant hidden sm:block" />
+          <div className="h-6 w-px bg-outline-variant/60 hidden sm:block" />
 
-          {/* User Profile Pill & Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/60 transition-colors cursor-pointer"
-            >
-              <img
-                alt={userName}
-                className="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/60 bg-surface-container shrink-0"
-                src={avatarUrl}
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/avatars/tahmid-avatar.svg";
-                }}
-              />
-              <div className="hidden sm:flex flex-col text-left">
-                <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight">
-                  {displayName}
-                </span>
-                <span className="font-label-sm text-[11px] text-secondary font-medium leading-tight">
-                  {displayRole}
-                </span>
-              </div>
-              <span className="material-symbols-outlined text-base text-on-surface-variant hidden sm:block">
-                expand_more
-              </span>
-            </button>
+          {/* Unique Premium User Profile Dropdown Component */}
+          <UserProfileDropdown user={dropdownUser} logout={logout} />
 
-            {/* Profile Dropdown */}
-            {profileDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-2 z-50 animate-in fade-in slide-in-from-top-1">
-                <div className="px-3 py-2 border-b border-outline-variant/40">
-                  <span className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
-                    Account
-                  </span>
-                  <span className="text-xs font-bold text-primary block mt-0.5">
-                    {displayName}
-                  </span>
-                </div>
-                <div className="py-1">
-                  <Link
-                    href="/dashboard/customer/profile"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base text-primary">person</span>
-                    <span>My Profile &amp; Settings</span>
-                  </Link>
-                  <Link
-                    href="/dashboard/vendor"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base text-secondary">room_service</span>
-                    <span>GM Operations Console</span>
-                  </Link>
-                  <Link
-                    href="/dashboard/admin"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base text-primary">admin_panel_settings</span>
-                    <span>Governance Hub (Admin)</span>
-                  </Link>
-                  <Link
-                    href="/"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-on-surface hover:bg-surface-container font-medium transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base text-on-surface-variant">home</span>
-                    <span>Return to Public Homepage</span>
-                  </Link>
-                  <div className="my-1 border-t border-outline-variant/40" />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setProfileDropdownOpen(false);
-                      await logout();
-                      router.push("/sign-in");
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-error hover:bg-error-container/20 font-medium transition-colors text-left cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-base">logout</span>
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2.5 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high lg:hidden border border-outline-variant/40 cursor-pointer"
+            aria-label="Open Mobile Menu"
+          >
+            <span className="material-symbols-outlined text-xl">
+              {mobileMenuOpen ? "close" : "menu"}
+            </span>
+          </button>
         </div>
       </div>
+
+      {/* Mobile Dropdown Navigation Drawer */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden bg-surface-container-lowest border-b border-outline-variant px-6 py-4 flex flex-col gap-3 shadow-2xl"
+          >
+            <form onSubmit={handleSearch} className="relative w-full mb-2 md:hidden">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base">
+                search
+              </span>
+              <input
+                className="w-full pl-9 pr-3 py-2.5 bg-surface-container-low text-xs text-on-surface rounded-xl border border-outline-variant"
+                placeholder="Search dishes, kitchens..."
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </form>
+
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low font-bold text-xs text-on-surface"
+            >
+              <span className="material-symbols-outlined text-base text-primary">home</span>
+              <span>Home</span>
+            </Link>
+            <Link
+              href="/dashboard/customer/orders"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low font-bold text-xs text-on-surface"
+            >
+              <span className="material-symbols-outlined text-base text-primary">receipt</span>
+              <span>My Orders</span>
+            </Link>
+            <Link
+              href="/explore"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low font-bold text-xs text-on-surface"
+            >
+              <span className="material-symbols-outlined text-base text-primary">restaurant_menu</span>
+              <span>Browse Restaurants</span>
+            </Link>
+            <Link
+              href="/explore"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low font-bold text-xs text-on-surface"
+            >
+              <span className="material-symbols-outlined text-base text-secondary">table_restaurant</span>
+              <span>Reserve a Table</span>
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
