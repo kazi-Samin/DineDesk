@@ -67,14 +67,14 @@ export default function CheckoutPage() {
         address:
           fulfillmentMode === "delivery"
             ? {
-                id: selectedAddressId,
-                type: "custom",
-                label: "Delivery Address",
-                street: streetAddress,
-                apartment,
-                floor,
-                instructions,
-              }
+              id: selectedAddressId,
+              type: "custom",
+              label: "Delivery Address",
+              street: streetAddress,
+              apartment,
+              floor,
+              instructions,
+            }
             : undefined,
         contact,
         paymentMethod,
@@ -93,6 +93,18 @@ export default function CheckoutPage() {
             ? cart.total
             : Math.max(0, cart.subtotal + cart.packagingFee + cart.tax - cart.discount),
       });
+
+      // --- AUTOMATICALLY ADD +20 LOYALTY POINTS ON SUCCESSFUL ORDER/PAYMENT ---
+      try {
+        const existingPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+        const uniquePaymentId = `order_pay_${orderRes.orderId}_${Date.now()}`;
+        existingPayments.push(uniquePaymentId);
+        localStorage.setItem("dinedesk_stripe_payments", JSON.stringify(existingPayments));
+        window.dispatchEvent(new Event("storage"));
+      } catch (err) {
+        console.error("Failed to sync loyalty points:", err);
+      }
+      // ------------------------------------------------------------------------
 
       setConfirmedOrder(orderRes);
       clearCart();
@@ -250,11 +262,10 @@ export default function CheckoutPage() {
                   {/* Fulfillment Switcher Tabs */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-1.5 bg-surface-container rounded">
                     <button
-                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${
-                        fulfillmentMode === "delivery"
+                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "delivery"
                           ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
                           : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                        }`}
                       onClick={() => setFulfillmentMode("delivery")}
                       type="button"
                     >
@@ -262,11 +273,10 @@ export default function CheckoutPage() {
                       <span>Delivery</span>
                     </button>
                     <button
-                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${
-                        fulfillmentMode === "takeaway"
+                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "takeaway"
                           ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
                           : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                        }`}
                       onClick={() => setFulfillmentMode("takeaway")}
                       type="button"
                     >
@@ -274,11 +284,10 @@ export default function CheckoutPage() {
                       <span>Pickup / Takeaway</span>
                     </button>
                     <button
-                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${
-                        fulfillmentMode === "dinein"
+                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "dinein"
                           ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
                           : "text-on-surface-variant hover:text-on-surface"
-                      }`}
+                        }`}
                       onClick={() => setFulfillmentMode("dinein")}
                       type="button"
                     >
@@ -313,11 +322,10 @@ export default function CheckoutPage() {
                           <label
                             key={addr.id}
                             onClick={() => handleAddressSelect(addr)}
-                            className={`relative flex flex-col p-space-md rounded cursor-pointer transition-all group ${
-                              isSelected
+                            className={`relative flex flex-col p-space-md rounded cursor-pointer transition-all group ${isSelected
                                 ? "bg-surface-container-low border border-primary-container/40"
                                 : "bg-surface-container-lowest border border-outline-variant hover:bg-surface-container"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center justify-between mb-space-xs">
                               <span className="font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1">
@@ -338,11 +346,10 @@ export default function CheckoutPage() {
                               {addr.street}
                             </p>
                             <span
-                              className={`mt-space-sm font-label-sm text-[10px] uppercase tracking-wider ${
-                                addr.isDefault
+                              className={`mt-space-sm font-label-sm text-[10px] uppercase tracking-wider ${addr.isDefault
                                   ? "text-primary font-bold"
                                   : "text-on-surface-variant"
-                              }`}
+                                }`}
                             >
                               {addr.isDefault ? "Default Address" : "Secondary"}
                             </span>
@@ -526,11 +533,10 @@ export default function CheckoutPage() {
                     {/* Option 1: Credit / Debit Card */}
                     <div
                       onClick={() => setPaymentMethod("card")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${
-                        paymentMethod === "card"
+                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "card"
                           ? "bg-surface-container-low border border-primary-container/30"
                           : "bg-surface-container-lowest hover:bg-surface-container-low"
-                      }`}
+                        }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
                         <div className="flex items-center gap-space-sm">
@@ -628,11 +634,10 @@ export default function CheckoutPage() {
                     {/* Option 2: Cash on Delivery */}
                     <div
                       onClick={() => setPaymentMethod("cod")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${
-                        paymentMethod === "cod"
+                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "cod"
                           ? "bg-surface-container-low border border-primary-container/30"
                           : "bg-surface-container-lowest hover:bg-surface-container-low"
-                      }`}
+                        }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
                         <div className="flex items-center gap-space-sm">
@@ -662,11 +667,10 @@ export default function CheckoutPage() {
                     {/* Option 3: Direct Mobile Wallet (bKash / Nagad) */}
                     <div
                       onClick={() => setPaymentMethod("mfs")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${
-                        paymentMethod === "mfs"
+                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "mfs"
                           ? "bg-surface-container-low border border-primary-container/30"
                           : "bg-surface-container-lowest hover:bg-surface-container-low"
-                      }`}
+                        }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
                         <div className="flex items-center gap-space-sm">

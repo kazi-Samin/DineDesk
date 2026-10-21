@@ -25,11 +25,17 @@ import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
+import { useAuth } from "@/context/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function CustomerReviewsPage() {
+  const { user } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
+
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [savedSpotsCount, setSavedSpotsCount] = useState(14);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(1450);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
 
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [activeFilter, setActiveFilter] = useState<ReviewFilterType>("all");
@@ -37,26 +43,73 @@ export default function CustomerReviewsPage() {
 
   const [editingReview, setEditingReview] = useState<CustomerReview | null>(null);
   const [deletingReview, setDeletingReview] = useState<CustomerReview | null>(null);
-
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const realUserName = user?.name || profile.fullName || "Valued Diner";
+  const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
 
   const showToast = (message: string) => {
     setToastMessage(message);
     setTimeout(() => {
       setToastMessage((prev) => (prev === message ? null : prev));
-    }, 2800);
+    }, 3200);
+  };
+
+  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points
+  const syncTelemetryData = async () => {
+    try {
+      const [profileRes, paymentsRes] = await Promise.all([
+        fetch(`/api/customer/profile`, { credentials: "include" }).catch(() => null),
+        fetch(`/api/customer/payments`, { credentials: "include" }).catch(() => null),
+      ]);
+
+      let loadedProfile = getCustomerProfile();
+      if (profileRes && profileRes.ok) {
+        const pData = await profileRes.json();
+        loadedProfile = { ...loadedProfile, ...pData };
+      }
+      setProfile(loadedProfile);
+
+      const loadedReviews = getCustomerReviews();
+      setReviews(loadedReviews);
+
+      const savedRest = getSavedRestaurants();
+      const savedDish = getSavedDishes();
+      setSavedSpotsCount(savedRest.length + savedDish.length || 14);
+
+      // Dynamic calculation for payments / orders
+      let apiPaymentsCount = 0;
+      if (paymentsRes && paymentsRes.ok) {
+        const paymentData = await paymentsRes.json();
+        const paymentsList = paymentData.payments || paymentData.sessions || [];
+        apiPaymentsCount = paymentsList.length;
+      }
+
+      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+      const totalPayments = Math.max(apiPaymentsCount, storedPayments.length, 1);
+
+      setLoyaltyPoints(totalPayments * 20);
+      setTotalOrdersCount(Math.max(28, totalPayments));
+    } catch (err) {
+      console.error("Telemetry sync error:", err);
+    }
   };
 
   useEffect(() => {
-    const loadedProfile = getCustomerProfile();
-    const loadedReviews = getCustomerReviews();
-    const savedRest = getSavedRestaurants();
-    const savedDish = getSavedDishes();
+    syncTelemetryData();
 
-    setProfile(loadedProfile);
-    setReviews(loadedReviews);
-    setSavedSpotsCount(savedRest.length + savedDish.length || 14);
-  }, []);
+    const handleStorage = () => {
+      syncTelemetryData();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("dinedesk-points-updated", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("dinedesk-points-updated", handleStorage);
+    };
+  }, [user]);
 
   const counts = useMemo(() => {
     const all = reviews.length;
@@ -96,7 +149,7 @@ export default function CustomerReviewsPage() {
     const updated = updateCustomerReview(reviews, updatedReview);
     setReviews(updated);
     setEditingReview(null);
-    showToast(`Your review for ${updatedReview.restaurantName} was updated.`);
+    showToast(`Your review for ${updatedReview.restaurantName} was updated successfully.`);
   };
 
   const handleConfirmDelete = () => {
@@ -106,7 +159,7 @@ export default function CustomerReviewsPage() {
     setReviews(updated);
     setDeletingReview(null);
     setEditingReview(null);
-    showToast(`Review for ${restName} was deleted.`);
+    showToast(`Review for ${restName} was removed.`);
   };
 
   const handleToggleUpvote = (reviewId: string) => {
@@ -115,109 +168,116 @@ export default function CustomerReviewsPage() {
   };
 
   return (
-    <div className="bg-background min-h-screen text-on-surface flex flex-col font-body-md antialiased">
+    <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white relative">
       <CustomerHeader
-        userName={profile.fullName || "Diner"}
+        userName={realUserName}
         userRole="Verified Foodie"
         avatarUrl={profile.avatarUrl}
         onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
       />
 
-      <div className="flex pt-16 flex-1">
+      <div className="flex pt-20 flex-1">
         <CustomerSidebar
-          userName={`${profile.fullName.split(" ")[0]}'s Account`}
+          userName={`${realUserName.split(" ")[0]}'s Account`}
           memberSince={profile.memberSince || "Member since 2023"}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
           activeOrderCount={profile.stats?.activeBookings ?? 1}
-          loyaltyPoints={profile.stats?.loyaltyPoints ?? 1450}
+          loyaltyPoints={loyaltyPoints}
         />
 
         <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-          {/* Top Quick Stats */}
-          <section className="w-full px-6 py-5 bg-surface-container-low border-b border-outline-variant">
-            <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+          {/* Top Quick Stats Banner */}
+          <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6"
+            >
               <div>
-                <h2 className="text-xl font-bold text-on-surface">
-                  Welcome back, {profile.fullName.split(" ")[0] || "Diner"}
-                </h2>
-                <p className="text-xs text-on-surface-variant mt-0.5">
-                  {profile.email} • {profile.phone}
+                <h1 className="font-heading font-extrabold text-xl text-[#1b3b2b]">
+                  Welcome back, {realUserName.split(" ")[0]}
+                </h1>
+                <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
+                  {realUserEmail} {user?.phone && `• ${user.phone}`}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Total Orders
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
-                    {profile.stats?.totalOrders ?? 28}
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
+                    {totalOrdersCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Bookings
                   </span>
-                  <span className="text-lg font-bold text-secondary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
                     {profile.stats?.activeBookings ?? 1}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
                     Saved Spots
                   </span>
-                  <span className="text-lg font-bold text-primary mt-0.5 block">
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
                     {savedSpotsCount}
                   </span>
                 </div>
-                <div className="bg-surface-container-lowest px-4 py-2.5 rounded-lg border border-outline-variant shadow-2xs">
-                  <span className="text-[11px] font-medium text-on-surface-variant block uppercase tracking-wider">
-                    Points
+                <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
+                    Loyalty Pts
                   </span>
-                  <span className="text-lg font-bold text-primary-container mt-0.5 block">
-                    {profile.stats?.loyaltyPoints?.toLocaleString() ?? "1,450"}
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
+                    {loyaltyPoints.toLocaleString()}
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </section>
 
           {/* Main Content Area */}
-          <div className="w-full px-6 py-8 max-w-6xl mx-auto flex-1">
+          <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-8">
             <div className="flex flex-col w-full">
-              {/* Header */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+
+              {/* Header Title & Metrics */}
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight">
+                  <h1 className="font-heading font-black text-2xl sm:text-3xl text-[#1b3b2b] tracking-tight">
                     My Reviews
                   </h1>
-                  <p className="text-sm text-on-surface-variant mt-1">
-                    Manage and view all your reviews for restaurants across Dhaka.
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1 max-w-xl">
+                    Manage and view all your verified reviews for culinary destinations across Dhaka.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-2 bg-surface-container-lowest px-3.5 py-2 rounded-lg border border-outline-variant shadow-2xs">
+                  <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
                     <span
-                      className="material-symbols-outlined text-primary text-lg"
+                      className="material-symbols-outlined text-[#1b3b2b] text-lg"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
                       rate_review
                     </span>
-                    <span className="text-xs font-semibold text-primary">
+                    <span className="text-xs font-extrabold text-[#1b3b2b]">
                       {reviews.length} {reviews.length === 1 ? "Review" : "Reviews"}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 bg-surface-container-lowest px-3.5 py-2 rounded-lg border border-outline-variant shadow-2xs">
-                    <span className="material-symbols-outlined text-secondary text-lg">
+                  <div className="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
+                    <span className="material-symbols-outlined text-[#C05621] text-lg">
                       thumb_up
                     </span>
-                    <span className="text-xs font-semibold text-secondary">
+                    <span className="text-xs font-extrabold text-[#C05621]">
                       {totalHelpfulUpvotes} Helpful
                     </span>
                   </div>
@@ -235,7 +295,7 @@ export default function CustomerReviewsPage() {
 
               {/* Reviews List */}
               {displayedReviews.length > 0 ? (
-                <div className="flex flex-col gap-4 mb-10">
+                <div className="flex flex-col gap-6 mb-10">
                   {displayedReviews.map((review) => (
                     <ReviewCard
                       key={review.id}
@@ -247,38 +307,38 @@ export default function CustomerReviewsPage() {
                   ))}
                 </div>
               ) : reviews.length > 0 ? (
-                <div className="bg-surface-container-lowest rounded-2xl p-10 text-center border border-outline-variant/30 my-4 shadow-2xs flex flex-col items-center">
-                  <span className="material-symbols-outlined text-3xl text-on-surface-variant/60 mb-2">
+                <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-12 text-center border border-[#1b3b2b]/15 shadow-xl my-6 flex flex-col items-center">
+                  <span className="material-symbols-outlined text-4xl text-[#1b3b2b]/40 mb-3">
                     filter_alt_off
                   </span>
-                  <h3 className="text-base font-semibold text-primary">
+                  <h3 className="font-heading font-extrabold text-base text-[#1b3b2b]">
                     No reviews in this category
                   </h3>
-                  <p className="text-xs text-on-surface-variant mt-1">
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
                     Try selecting a different filter above.
                   </p>
                   <button
                     type="button"
                     onClick={() => setActiveFilter("all")}
-                    className="mt-4 px-4 py-2 bg-primary-container text-on-primary rounded-xl text-xs font-semibold hover:bg-primary transition-colors cursor-pointer"
+                    className="mt-5 px-5 py-2.5 bg-[#1b3b2b] text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider hover:bg-[#1b3b2b]/90 transition-all shadow-md cursor-pointer"
                   >
                     Show All Reviews
                   </button>
                 </div>
               ) : (
-                <div className="bg-surface-container-lowest rounded-2xl p-12 text-center border border-outline-variant/30 my-4 shadow-2xs flex flex-col items-center">
-                  <span className="material-symbols-outlined text-4xl text-on-surface-variant/60 mb-3">
+                <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-16 text-center border border-[#1b3b2b]/15 shadow-xl my-6 flex flex-col items-center">
+                  <span className="material-symbols-outlined text-5xl text-[#1b3b2b]/30 mb-4">
                     rate_review
                   </span>
-                  <h3 className="text-lg font-bold text-primary">
+                  <h3 className="font-heading font-black text-xl text-[#1b3b2b]">
                     No reviews written yet
                   </h3>
-                  <p className="text-sm text-on-surface-variant mt-1.5 max-w-sm">
-                    Leave reviews on restaurants you have visited or ordered from to help other diners.
+                  <p className="text-xs font-medium text-[#1b3b2b]/70 mt-2 max-w-sm leading-relaxed">
+                    Leave reviews on restaurants and dishes you have ordered from to help fellow foodies in the community.
                   </p>
                   <Link
                     href="/explore"
-                    className="mt-5 px-5 py-2.5 bg-primary-container text-on-primary rounded-xl text-xs font-semibold hover:bg-primary transition-colors"
+                    className="mt-6 px-6 py-3 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-2xl text-xs font-extrabold uppercase tracking-wider transition-all shadow-lg"
                   >
                     Browse Restaurants
                   </Link>
@@ -309,14 +369,21 @@ export default function CustomerReviewsPage() {
         onConfirm={handleConfirmDelete}
       />
 
-      {toastMessage && (
-        <div className="fixed bottom-10 right-8 z-50 bg-primary text-on-primary px-4 py-2.5 rounded-xl shadow-lg border border-outline-variant/30 flex items-center gap-2 text-xs font-medium animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-secondary-fixed text-base">
-            check_circle
-          </span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-8 right-8 z-50 bg-[#1b3b2b] text-white px-5 py-3 rounded-2xl shadow-2xl border border-white/20 flex items-center gap-3 text-xs font-extrabold tracking-wide"
+          >
+            <span className="material-symbols-outlined text-amber-400 text-lg">
+              check_circle
+            </span>
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

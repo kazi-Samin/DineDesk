@@ -17,23 +17,43 @@ export default function Navbar() {
   const { cartItems } = useCart() as any;
 
   const [localCount, setLocalCount] = useState(0);
+  const [syncedAvatar, setSyncedAvatar] = useState<string | null>(null);
+  const [syncedName, setSyncedName] = useState<string | null>(null);
 
-  // Dynamically sync badge count from localStorage and context items
+  // Dynamically sync badge count, avatar, and name from localStorage and context
   useEffect(() => {
-    const updateCount = () => {
+    const updateSyncData = () => {
       const saved = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
       const count = saved.reduce((acc: number, item: any) => acc + Number(item.quantity || 0), 0);
       setLocalCount(count);
+
+      try {
+        const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
+        if (storedProfile.avatarUrl) {
+          setSyncedAvatar(storedProfile.avatarUrl);
+        } else {
+          const directAvatar = localStorage.getItem("dinedesk_user_avatar");
+          if (directAvatar) setSyncedAvatar(directAvatar);
+        }
+
+        if (storedProfile.fullName) {
+          setSyncedName(storedProfile.fullName);
+        }
+      } catch (e) {
+        // ignore
+      }
     };
 
-    updateCount();
-    window.addEventListener("storage", updateCount);
+    updateSyncData();
+    window.addEventListener("storage", updateSyncData);
+    window.addEventListener("profile-updated", updateSyncData);
 
-    const handleCartUpdate = () => updateCount();
+    const handleCartUpdate = () => updateSyncData();
     window.addEventListener("open-cart-drawer", handleCartUpdate);
 
     return () => {
-      window.removeEventListener("storage", updateCount);
+      window.removeEventListener("storage", updateSyncData);
+      window.removeEventListener("profile-updated", updateSyncData);
       window.removeEventListener("open-cart-drawer", handleCartUpdate);
     };
   }, [cartItems]);
@@ -73,6 +93,13 @@ export default function Navbar() {
       router.push(`/explore`);
     }
   };
+
+  const activeAvatar = syncedAvatar || (user as any)?.avatar || "/avatars/tahmid-avatar.svg";
+  const activeName = syncedName || user?.name || "Diner";
+
+  const dropdownUser = user
+    ? { ...user, name: activeName, avatar: activeAvatar }
+    : { name: activeName, role: "USER", avatar: activeAvatar };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 lg:px-16 pt-4 pointer-events-none">
@@ -130,7 +157,7 @@ export default function Navbar() {
 
           {/* Authentication CTA or Ultra-Premium Animated Profile Dropdown */}
           {isAuthenticated && user ? (
-            <UserProfileDropdown user={user} logout={logout} />
+            <UserProfileDropdown user={dropdownUser} logout={logout} />
           ) : (
             <Link
               className="hidden md:inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-on-primary rounded-2xl font-semibold text-xs transition-all shadow-md hover:shadow-lg cursor-pointer"
@@ -199,11 +226,16 @@ export default function Navbar() {
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between p-3.5 rounded-2xl bg-surface-container border border-outline-variant">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm shadow-sm">
-                        {user.name ? user.name[0].toUpperCase() : "U"}
-                      </div>
+                      <img
+                        src={activeAvatar}
+                        alt={activeName}
+                        className="w-10 h-10 rounded-full object-cover shadow-sm bg-surface-container"
+                        onError={(e) => {
+                          e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                        }}
+                      />
                       <div className="flex flex-col">
-                        <span className="font-bold text-xs text-on-surface">{user.name}</span>
+                        <span className="font-bold text-xs text-on-surface">{activeName}</span>
                         <span className="text-[10px] text-on-surface-variant">{user.email}</span>
                       </div>
                     </div>
