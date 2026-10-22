@@ -21,12 +21,27 @@ import {
   deleteCustomerReview,
   toggleHelpfulVote,
 } from "@/services/mockCustomerReviewService";
-import { getCustomerProfile } from "@/services/mockCustomerProfileService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
+import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
 
 export default function CustomerReviewsPage() {
   const { user } = useAuth();
@@ -34,8 +49,9 @@ export default function CustomerReviewsPage() {
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(1450);
-  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
+  const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [activeFilter, setActiveFilter] = useState<ReviewFilterType>("all");
@@ -55,41 +71,88 @@ export default function CustomerReviewsPage() {
     }, 3200);
   };
 
-  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points
+  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points matching Overview page logic
   const syncTelemetryData = async () => {
     try {
-      const [profileRes, paymentsRes] = await Promise.all([
-        fetch(`/api/customer/profile`, { credentials: "include" }).catch(() => null),
-        fetch(`/api/customer/payments`, { credentials: "include" }).catch(() => null),
-      ]);
+      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-      let loadedProfile = getCustomerProfile();
-      if (profileRes && profileRes.ok) {
-        const pData = await profileRes.json();
-        loadedProfile = { ...loadedProfile, ...pData };
+      if (typeof window !== "undefined") {
+        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
+        if (storedProfile) {
+          try {
+            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
+          } catch (e) {
+            // ignore
+          }
+        }
       }
-      setProfile(loadedProfile);
+
+      const token = getAuthToken();
+
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (profileRes && profileRes.ok) {
+        const data = await profileRes.json();
+        const userData = data.user || data;
+        loadedProfile = {
+          ...loadedProfile,
+          ...userData,
+          fullName: userData.fullName || userData.name || loadedProfile.fullName,
+        };
+      }
+
+      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
+        loadedProfile.fullName = user.name;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+      }
+
+      // Fetch real orders and reservations dynamically matching Overview page
+      const [realOrders, realReservations] = await Promise.all([
+        fetchCustomerOrders(user?.id),
+        fetchCustomerReservations(user?.id),
+      ]);
 
       const loadedReviews = getCustomerReviews();
       setReviews(loadedReviews);
 
       const savedRest = getSavedRestaurants();
       const savedDish = getSavedDishes();
-      setSavedSpotsCount(savedRest.length + savedDish.length || 14);
-
-      // Dynamic calculation for payments / orders
-      let apiPaymentsCount = 0;
-      if (paymentsRes && paymentsRes.ok) {
-        const paymentData = await paymentsRes.json();
-        const paymentsList = paymentData.payments || paymentData.sessions || [];
-        apiPaymentsCount = paymentsList.length;
-      }
+      const totalSaved = Math.max(14, savedRest.length + savedDish.length);
+      setSavedSpotsCount(totalSaved);
 
       const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(apiPaymentsCount, storedPayments.length, 1);
+      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const calculatedPoints = totalPayments * 20;
 
-      setLoyaltyPoints(totalPayments * 20);
-      setTotalOrdersCount(Math.max(28, totalPayments));
+      const activeBookings = realReservations.filter(
+        (r) => {
+          const st = (r.status || "").toLowerCase();
+          return st === "confirmed" || st === "upcoming" || st === "pending";
+        }
+      ).length;
+      const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
+
+      loadedProfile.stats = {
+        ...loadedProfile.stats,
+        totalOrders: totalPayments,
+        activeBookings: finalActiveBookings,
+        savedSpots: totalSaved,
+        loyaltyPoints: calculatedPoints,
+      };
+
+      setProfile(loadedProfile);
+      setTotalOrdersCount(totalPayments);
+      setActiveBookingsCount(finalActiveBookings);
+      setLoyaltyPoints(calculatedPoints);
+      setSavedSpotsCount(totalSaved);
     } catch (err) {
       console.error("Telemetry sync error:", err);
     }
@@ -103,10 +166,16 @@ export default function CustomerReviewsPage() {
     };
 
     window.addEventListener("storage", handleStorage);
+    window.addEventListener("profile-updated", handleStorage);
+    window.addEventListener("booking-updated", handleStorage);
+    window.addEventListener("order-updated", handleStorage);
     window.addEventListener("dinedesk-points-updated", handleStorage);
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("profile-updated", handleStorage);
+      window.removeEventListener("booking-updated", handleStorage);
+      window.removeEventListener("order-updated", handleStorage);
       window.removeEventListener("dinedesk-points-updated", handleStorage);
     };
   }, [user]);
@@ -185,7 +254,8 @@ export default function CustomerReviewsPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={profile.stats?.activeBookings ?? 1}
+          activeOrderCount={activeBookingsCount}
+          upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />
 
@@ -222,7 +292,7 @@ export default function CustomerReviewsPage() {
                     Bookings
                   </span>
                   <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
-                    {profile.stats?.activeBookings ?? 1}
+                    {activeBookingsCount}
                   </span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">

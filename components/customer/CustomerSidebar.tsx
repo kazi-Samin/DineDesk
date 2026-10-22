@@ -19,6 +19,21 @@ interface CustomerSidebarProps {
   loyaltyPoints?: number;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
+
 export default function CustomerSidebar({
   isOpen = true,
   onClose,
@@ -28,23 +43,24 @@ export default function CustomerSidebar({
   avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
   activeOrderCount,
   activeOrdersCount = 1,
-  upcomingReservationsCount = 2,
+  upcomingReservationsCount,
   loyaltyPoints,
 }: CustomerSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Dynamic state for real points fetched from Stripe payments API / localStorage
+  // Dynamic states
   const [realPoints, setRealPoints] = useState<number>(loyaltyPoints ?? 20);
   const [currentAvatar, setCurrentAvatar] = useState<string>(
     avatarUrl && avatarUrl.trim() !== "" ? avatarUrl : "/avatars/tahmid-avatar.svg"
   );
   const [currentName, setCurrentName] = useState<string>(userName);
+  const [dynamicBookingsCount, setDynamicBookingsCount] = useState<number>(upcomingReservationsCount ?? 0);
 
-  // Real-time synchronization for avatar, name, and loyalty points
+  // Real-time synchronization for profile, points, and reservations count
   useEffect(() => {
-    const syncProfileFromStorage = () => {
+    const syncProfileFromStorage = async () => {
       try {
         const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
         if (storedProfile.avatarUrl && storedProfile.avatarUrl.trim() !== "") {
@@ -66,6 +82,30 @@ export default function CustomerSidebar({
         } else if (loyaltyPoints !== undefined) {
           setRealPoints(loyaltyPoints);
         }
+
+        // Fetch dynamic reservations count from backend API securely
+        const token = getAuthToken();
+        if (token) {
+          const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            credentials: "include",
+          }).catch(() => null);
+
+          if (resApi && resApi.ok) {
+            const apiData = await resApi.json();
+            const list = apiData.reservations || apiData.data || apiData || [];
+            // Count upcoming / confirmed bookings
+            const activeCount = list.filter((item: any) => {
+              const status = (item.status || "confirmed").toLowerCase();
+              return status === "confirmed" || status === "upcoming" || status === "pending";
+            }).length;
+            setDynamicBookingsCount(activeCount);
+          }
+        }
       } catch (e) {
         // fallback
       }
@@ -75,12 +115,14 @@ export default function CustomerSidebar({
 
     window.addEventListener("storage", syncProfileFromStorage);
     window.addEventListener("profile-updated", syncProfileFromStorage);
+    window.addEventListener("booking-updated", syncProfileFromStorage);
 
     return () => {
       window.removeEventListener("storage", syncProfileFromStorage);
       window.removeEventListener("profile-updated", syncProfileFromStorage);
+      window.removeEventListener("booking-updated", syncProfileFromStorage);
     };
-  }, [avatarUrl, userName, loyaltyPoints]);
+  }, [avatarUrl, userName, loyaltyPoints, upcomingReservationsCount]);
 
   const resolvedName = user?.name
     ? `${user.name.split(" ")[0]}`
@@ -98,6 +140,7 @@ export default function CustomerSidebar({
   const isLoyaltyActive = pathname === "/dashboard/customer/loyalty";
 
   const totalActiveOrders = activeOrderCount ?? activeOrdersCount;
+  const totalUpcomingBookings = dynamicBookingsCount;
   const isPremiumUser = realPoints >= 2000;
 
   const navItems = [
@@ -123,9 +166,9 @@ export default function CustomerSidebar({
       label: "Table Reservations",
       href: "/dashboard/customer/reservations",
       icon: "table_restaurant",
-      badge: upcomingReservationsCount > 0 ? (
+      badge: totalUpcomingBookings > 0 ? (
         <span className="bg-[#1b3b2b]/10 text-[#1b3b2b] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-          {upcomingReservationsCount}
+          {totalUpcomingBookings}
         </span>
       ) : null,
       isActive: isReservationsActive,
@@ -254,7 +297,7 @@ export default function CustomerSidebar({
                 </div>
                 <div className="bg-white/80 border border-[#1b3b2b]/10 py-1.5 px-1 rounded-xl shadow-2xs">
                   <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">Bookings</span>
-                  <span className="font-heading font-black text-xs text-[#C05621]">{upcomingReservationsCount}</span>
+                  <span className="font-heading font-black text-xs text-[#C05621]">{totalUpcomingBookings}</span>
                 </div>
                 <div className="bg-white/80 border border-[#1b3b2b]/10 py-1.5 px-1 rounded-xl shadow-2xs">
                   <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">Points</span>
