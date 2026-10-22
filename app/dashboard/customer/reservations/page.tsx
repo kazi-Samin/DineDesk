@@ -19,16 +19,28 @@ import {
   ReservationTabFilter,
 } from "@/types/customerReservation";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { useReservation } from "@/context/ReservationContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 
 const ITEMS_PER_PAGE = 5;
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
+// Helper to reliably grab the auth token from local storage keys
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
+
 export default function CustomerReservationsPage() {
   const router = useRouter();
-  const { openReservationModal } = useReservation();
   const { user } = useAuth();
 
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
@@ -37,14 +49,15 @@ export default function CustomerReservationsPage() {
   const [reservations, setReservations] = useState<CustomerReservation[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(20);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   const [activeTab, setActiveTab] = useState<ReservationTabFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Modals state
   const [passModalRes, setPassModalRes] = useState<CustomerReservation | null>(null);
   const [modifyModalRes, setModifyModalRes] = useState<CustomerReservation | null>(null);
   const [cancelModalRes, setCancelModalRes] = useState<CustomerReservation | null>(null);
@@ -64,7 +77,8 @@ export default function CustomerReservationsPage() {
     }, 3800);
   };
 
-  const loadDynamicData = async () => {
+  // Fetch real data securely from PostgreSQL backend API with explicit Bearer token header
+  const loadDatabaseReservations = async () => {
     try {
       let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
@@ -79,9 +93,14 @@ export default function CustomerReservationsPage() {
         }
       }
 
+      const token = getAuthToken();
+
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         credentials: "include",
       }).catch(() => null);
 
@@ -97,74 +116,67 @@ export default function CustomerReservationsPage() {
 
       setProfile(loadedProfile);
 
-      let userReservations: CustomerReservation[] = [];
-      if (typeof window !== "undefined") {
-        const storedBookings = localStorage.getItem("dinedesk_customer_bookings");
-        if (storedBookings) {
-          try {
-            userReservations = JSON.parse(storedBookings);
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
-
+      // Fetch dynamic database reservations with explicit Bearer token & credentials
       const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         credentials: "include",
       }).catch(() => null);
 
+      let dbReservations: CustomerReservation[] = [];
       if (resApi && resApi.ok) {
         const apiData = await resApi.json();
-        const list = apiData.reservations || apiData || [];
-        if (Array.isArray(list) && list.length > 0) {
-          userReservations = list.map((item: any) => ({
-            id: item.id || Math.random().toString(36).substring(2, 8),
-            restaurantId: item.restaurantId || "restaurant-1",
-            restaurantName: item.restaurantName || item.restaurant?.name || "The Culinary House",
-            restaurantImage: item.restaurantImage || item.restaurant?.coverUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
-            neighborhood: item.neighborhood || item.restaurant?.neighborhood || "Gulshan, Dhaka",
-            fullAddress: item.fullAddress || item.restaurant?.address || "Dhaka, Bangladesh",
+        const list = apiData.reservations || apiData.data || apiData || [];
+        dbReservations = list.map((item: any) => {
+          const rawStatus = (item.status || "confirmed").toLowerCase();
+          return {
+            id: item.id,
+            restaurantId: item.restaurantId,
+            restaurantName: item.restaurantName,
+            restaurantImage: item.restaurantImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+            neighborhood: item.neighborhood || "Downtown",
+            fullAddress: item.fullAddress || "Global City",
             cuisine: item.cuisine || "Fine Dining",
-            date: item.date || new Date(item.reservedFor || Date.now()).toISOString().split("T")[0],
-            displayDate: item.displayDate || new Date(item.reservedFor || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-            time: item.time || "07:30 PM",
+            date: item.date,
+            displayDate: item.displayDate || item.date,
+            time: item.time,
             mealPeriod: item.mealPeriod || "Dinner",
-            partySize: item.partySize || 2,
-            seatingArea: item.seatingArea || "Main Dining Hall",
-            tableNumber: item.tableNumber || "12",
-            status: (item.status ? item.status.toLowerCase() : "confirmed") as any,
-            statusDisplay: item.statusDisplay || "Confirmed",
-            specialNotes: item.note || item.specialNotes || "",
-            isFeaturedUpcoming: item.isFeaturedUpcoming ?? false,
-            createdAt: item.createdAt || new Date().toISOString(),
-          }));
-        }
+            partySize: item.partySize,
+            seatingArea: item.seatingArea,
+            tableNumber: item.tableNumber || "1",
+            status: rawStatus,
+            statusDisplay: item.statusDisplay || (rawStatus === "confirmed" ? "Confirmed" : "Pending"),
+            specialNotes: item.specialNotes || "",
+            isFeaturedUpcoming: item.isFeaturedUpcoming ?? true,
+            createdAt: item.createdAt,
+          };
+        });
       }
 
-      setReservations(userReservations);
+      setReservations(dbReservations);
 
       const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(1, storedPayments.length);
-      setLoyaltyPoints(totalPayments * 20);
-      setTotalOrdersCount(Math.max(28, totalPayments));
+      setLoyaltyPoints(storedPayments.length * 20);
+      setTotalOrdersCount(storedPayments.length);
 
       const savedRest = JSON.parse(localStorage.getItem("dinedesk_saved_restaurants") || "[]");
       const savedDish = JSON.parse(localStorage.getItem("dinedesk_saved_dishes") || "[]");
-      setSavedSpotsCount(Math.max(14, savedRest.length + savedDish.length));
+      setSavedSpotsCount(savedRest.length + savedDish.length);
 
     } catch (err) {
-      console.error("Error loading dynamic reservation data:", err);
+      console.error("Error fetching database reservations:", err);
     } finally {
       setIsLoaded(true);
     }
   };
 
   useEffect(() => {
-    loadDynamicData();
+    loadDatabaseReservations();
 
-    const handleSync = () => loadDynamicData();
+    const handleSync = () => loadDatabaseReservations();
     window.addEventListener("storage", handleSync);
     window.addEventListener("profile-updated", handleSync);
     window.addEventListener("booking-updated", handleSync);
@@ -236,27 +248,64 @@ export default function CustomerReservationsPage() {
   }, [filteredReservations, currentPage]);
 
   const handleSaveModification = async (updated: CustomerReservation) => {
-    const updatedList: CustomerReservation[] = reservations.map((r) => (r.id === updated.id ? updated : r));
-    setReservations(updatedList);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/reservations/${updated.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          date: updated.date,
+          time: updated.time,
+          partySize: updated.partySize,
+          specialNotes: updated.specialNotes,
+        }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        showToast(`Seating hold for "${updated.restaurantName}" updated successfully.`);
+        loadDatabaseReservations();
+      } else {
+        showToast("Failed to update reservation.", "error");
+      }
+    } catch (err) {
+      showToast("Network error updating reservation.", "error");
+    } finally {
+      setModifyModalRes(null);
     }
-    setModifyModalRes(null);
-    showToast(`Seating hold for "${updated.restaurantName}" updated successfully.`);
   };
 
   const handleConfirmCancellation = async () => {
     if (!cancelModalRes) return;
-    const updatedList: CustomerReservation[] = reservations.map((r) =>
-      r.id === cancelModalRes.id ? { ...r, status: "cancelled" as any, statusDisplay: "Cancelled" } : r
-    );
-    setReservations(updatedList);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/reservations/${cancelModalRes.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          status: "CANCELLED",
+          statusDisplay: "Cancelled",
+        }),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        showToast(`Seating hold for "${cancelModalRes.restaurantName}" has been cancelled.`, "info");
+        loadDatabaseReservations();
+      } else {
+        showToast("Failed to cancel reservation.", "error");
+      }
+    } catch (err) {
+      showToast("Network error cancelling reservation.", "error");
+    } finally {
+      setCancelModalRes(null);
     }
-    const targetName = cancelModalRes.restaurantName;
-    setCancelModalRes(null);
-    showToast(`Seating hold for "${targetName}" has been cancelled.`, "info");
   };
 
   const handleSubmitRating = (
@@ -268,19 +317,8 @@ export default function CustomerReservationsPage() {
       r.id === reservationId ? { ...r, rating, specialNotes: comment || r.specialNotes } : r
     );
     setReservations(updatedList);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("dinedesk_customer_bookings", JSON.stringify(updatedList));
-    }
     setRateModalRes(null);
     showToast(`Thank you! Your ${rating}-star dining review has been submitted.`);
-  };
-
-  const handleBookAgain = (restaurant: {
-    id: string;
-    name: string;
-    neighborhood: string;
-  }) => {
-    openReservationModal(restaurant);
   };
 
   const handleDownloadTranscript = () => {
@@ -294,7 +332,7 @@ export default function CustomerReservationsPage() {
   if (!isLoaded) {
     return (
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex items-center justify-center font-bold">
-        Loading live reservations...
+        Loading database reservations...
       </div>
     );
   }
@@ -368,13 +406,7 @@ export default function CustomerReservationsPage() {
                 <div className="flex items-center gap-space-sm self-start md:self-auto">
                   <button
                     type="button"
-                    onClick={() =>
-                      openReservationModal({
-                        id: "the-maple-and-vine",
-                        name: "The Maple & Vine",
-                        neighborhood: "Corktown, Detroit",
-                      })
-                    }
+                    onClick={() => router.push("/reservations")}
                     className="inline-flex items-center gap-space-xs px-space-md py-2.5 bg-primary-container text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary transition-colors shadow-xs font-semibold cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-base">add</span>
@@ -489,13 +521,7 @@ export default function CustomerReservationsPage() {
                   </p>
                   <button
                     type="button"
-                    onClick={() =>
-                      openReservationModal({
-                        id: "the-maple-and-vine",
-                        name: "The Maple & Vine",
-                        neighborhood: "Corktown, Detroit",
-                      })
-                    }
+                    onClick={() => router.push("/reservations")}
                     className="mt-2 px-space-lg py-2 bg-primary-container text-on-primary rounded-xl font-label-md text-label-md hover:bg-primary transition-colors shadow-xs cursor-pointer"
                   >
                     Book a Table Tonight
