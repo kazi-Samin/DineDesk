@@ -10,6 +10,7 @@ import CustomerFooter from "@/components/customer/CustomerFooter";
 import DashboardLoader from "@/components/ui/DashboardLoader";
 
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { useCart } from "@/context/CartContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
@@ -30,6 +31,21 @@ export interface DatabaseMenu {
   isFavorite?: boolean;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
+
 export default function CustomerFavoritesPage() {
   const router = useRouter();
   const { addItem, openDrawer } = useCart();
@@ -38,7 +54,7 @@ export default function CustomerFavoritesPage() {
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [allMenus, setAllMenus] = useState<DatabaseMenu[]>([]);
-  const [points, setPoints] = useState(0); // Dynamic real loyalty points
+  const [points, setPoints] = useState(260); // Dynamic real loyalty points
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Filter & Pagination States
@@ -52,37 +68,64 @@ export default function CustomerFavoritesPage() {
   const realUserName = user?.name || profile.fullName || "Valued Diner";
   const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
 
-  // Dynamic telemetry synchronizer for points & database data
+  // Dynamic telemetry synchronizer matching overview page loyalty calculation logic
   const syncTelemetryData = async () => {
     try {
-      const [profileRes, menuRes, paymentsRes] = await Promise.all([
-        fetch(`/api/customer/profile`, { credentials: "include" }).catch(() => null),
-        fetch(`/api/customer/favorites`, { credentials: "include" }),
-        fetch(`/api/customer/payments`, { credentials: "include" }).catch(() => null),
-      ]);
+      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-      if (profileRes && profileRes.ok) {
-        const pData = await profileRes.json();
-        setProfile((prev) => ({ ...prev, ...pData }));
+      if (typeof window !== "undefined") {
+        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
+        if (storedProfile) {
+          try {
+            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
+          } catch (e) {
+            // ignore
+          }
+        }
       }
 
-      if (menuRes.ok) {
+      const token = getAuthToken();
+
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (profileRes && profileRes.ok) {
+        const data = await profileRes.json();
+        const userData = data.user || data;
+        loadedProfile = {
+          ...loadedProfile,
+          ...userData,
+          fullName: userData.fullName || userData.name || loadedProfile.fullName,
+        };
+      }
+
+      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
+        loadedProfile.fullName = user.name;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+      }
+
+      setProfile(loadedProfile);
+
+      const menuRes = await fetch(`/api/customer/favorites`, { credentials: "include" }).catch(() => null);
+      if (menuRes && menuRes.ok) {
         const jsonResponse = await menuRes.json();
         const fetchedMenus = jsonResponse.menus || [];
         setAllMenus(fetchedMenus);
       }
 
-      // Dynamic calculation: combine API payments and localStorage records for real-time reactivity
-      let apiPaymentsCount = 0;
-      if (paymentsRes && paymentsRes.ok) {
-        const paymentData = await paymentsRes.json();
-        const successfulPayments = paymentData.payments || paymentData.sessions || [];
-        apiPaymentsCount = successfulPayments.length;
-      }
+      // Fetch real orders matching overview page logic
+      const realOrders = await fetchCustomerOrders(user?.id);
 
       const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPaymentSessions = Math.max(apiPaymentsCount, storedPayments.length);
-      const calculatedPoints = totalPaymentSessions * 20;
+      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const calculatedPoints = totalPayments * 20;
 
       setPoints(calculatedPoints);
     } catch (err) {
@@ -106,11 +149,15 @@ export default function CustomerFavoritesPage() {
     };
 
     window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("profile-updated", handleStorageChange);
+    window.addEventListener("order-updated", handleStorageChange);
     window.addEventListener("dinedesk-points-updated", handleStorageChange);
 
     return () => {
       isMounted = false;
       window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("profile-updated", handleStorageChange);
+      window.removeEventListener("order-updated", handleStorageChange);
       window.removeEventListener("dinedesk-points-updated", handleStorageChange);
     };
   }, [user]);

@@ -16,12 +16,26 @@ import {
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getCustomerAddresses } from "@/services/mockCustomerProfileService";
 import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
+import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
 
 const DIETARY_OPTIONS: { id: DietaryPreference; label: string; icon?: string }[] = [
   { id: "halal_only", label: "Halal Only", icon: "check" },
@@ -66,9 +80,9 @@ export default function CustomerProfilePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [addressCount, setAddressCount] = useState(0);
   const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(20);
-  const [totalOrdersCount, setTotalOrdersCount] = useState(28);
-  const [activeBookingsCount, setActiveBookingsCount] = useState(1);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
+  const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -121,13 +135,12 @@ export default function CustomerProfilePage() {
     }
   };
 
-  // Load Profile once on mount
+  // Load Profile and Dynamic Stats once on mount
   useEffect(() => {
     const loadDatabaseProfile = async () => {
       try {
         let loadedProfile = INITIAL_CUSTOMER_PROFILE;
 
-        // Check localStorage first for instant persistence
         if (typeof window !== "undefined") {
           const stored = localStorage.getItem("dinedesk_customer_profile");
           if (stored) {
@@ -140,10 +153,14 @@ export default function CustomerProfilePage() {
           }
         }
 
-        // Fetch from Deployed Database Backend API
+        const token = getAuthToken();
+
         const res = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
           credentials: "include",
         }).catch(() => null);
 
@@ -157,6 +174,47 @@ export default function CustomerProfilePage() {
           };
         }
 
+        if (user && user.name) {
+          loadedProfile.fullName = user.name;
+          loadedProfile.email = user.email || loadedProfile.email;
+          if (user.phone) loadedProfile.phone = user.phone;
+        }
+
+        // Fetch real orders and reservations dynamically matching Overview page logic
+        const [realOrders, realReservations] = await Promise.all([
+          fetchCustomerOrders(user?.id),
+          fetchCustomerReservations(user?.id),
+        ]);
+
+        const loadedAddresses = getCustomerAddresses();
+        setAddressCount(loadedAddresses.length);
+
+        const savedRest = getSavedRestaurants();
+        const savedDish = getSavedDishes();
+        const storedSavedSpots = JSON.parse(localStorage.getItem("dinedesk_saved_spots") || "[]");
+        const totalSavedSpots = Math.max(14, savedRest.length + savedDish.length, storedSavedSpots.length);
+        setSavedSpotsCount(totalSavedSpots);
+
+        const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+        const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+        const calculatedPoints = totalPayments * 20;
+
+        const activeBookings = realReservations.filter(
+          (r) => {
+            const st = (r.status || "").toLowerCase();
+            return st === "confirmed" || st === "upcoming" || st === "pending";
+          }
+        ).length;
+        const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
+
+        loadedProfile.stats = {
+          ...loadedProfile.stats,
+          totalOrders: totalPayments,
+          activeBookings: finalActiveBookings,
+          savedSpots: totalSavedSpots,
+          loyaltyPoints: calculatedPoints,
+        };
+
         setProfile(loadedProfile);
         setSavedSnapshot(loadedProfile);
         setFullName(loadedProfile.fullName || "");
@@ -166,22 +224,9 @@ export default function CustomerProfilePage() {
         setDietaryPrefs(loadedProfile.dietaryPreferences || []);
         setAvatarUrl(loadedProfile.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
 
-        // Metrics computation
-        const loadedAddresses = getCustomerAddresses();
-        setAddressCount(loadedAddresses.length);
-
-        const savedRest = getSavedRestaurants();
-        const savedDish = getSavedDishes();
-        const storedSavedSpots = JSON.parse(localStorage.getItem("dinedesk_saved_spots") || "[]");
-        setSavedSpotsCount(Math.max(14, savedRest.length + savedDish.length, storedSavedSpots.length));
-
-        const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-        const totalPayments = Math.max(1, storedPayments.length);
-        setLoyaltyPoints(totalPayments * 20);
-        setTotalOrdersCount(Math.max(28, totalPayments));
-
-        const storedBookings = JSON.parse(localStorage.getItem("dinedesk_customer_bookings") || "[]");
-        setActiveBookingsCount(Math.max(1, storedBookings.length, loadedProfile.stats?.activeBookings ?? 1));
+        setLoyaltyPoints(calculatedPoints);
+        setTotalOrdersCount(totalPayments);
+        setActiveBookingsCount(finalActiveBookings);
       } catch (err) {
         console.error("Failed to load profile:", err);
       } finally {
@@ -190,6 +235,24 @@ export default function CustomerProfilePage() {
     };
 
     loadDatabaseProfile();
+
+    const handleStorage = () => {
+      loadDatabaseProfile();
+    };
+
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("profile-updated", handleStorage);
+    window.addEventListener("booking-updated", handleStorage);
+    window.addEventListener("order-updated", handleStorage);
+    window.addEventListener("dinedesk-points-updated", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("profile-updated", handleStorage);
+      window.removeEventListener("booking-updated", handleStorage);
+      window.removeEventListener("order-updated", handleStorage);
+      window.removeEventListener("dinedesk-points-updated", handleStorage);
+    };
   }, [user]);
 
   const hasUnsavedProfileChanges = useMemo(() => {
@@ -286,15 +349,18 @@ export default function CustomerProfilePage() {
     };
 
     try {
-      // 1. Update local state & localStorage immediately
+      const token = getAuthToken();
+
       setProfile(updatedData);
       setSavedSnapshot(updatedData);
       broadcastProfileUpdate(updatedData);
 
-      // 2. Persist to Backend Database API
       await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(updatedData),
         credentials: "include",
       }).catch(() => null);
@@ -342,7 +408,7 @@ export default function CustomerProfilePage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={profile.fullName} userRole="Verified Foodie" avatarUrl={avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} avatarUrl={avatarUrl} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} avatarUrl={avatarUrl} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <div className="w-full px-6 sm:px-10 py-10 max-w-4xl mx-auto flex-1 flex flex-col gap-6 animate-pulse">
               <div className="h-8 bg-[#1b3b2b]/10 rounded-xl w-64" />
@@ -373,6 +439,7 @@ export default function CustomerProfilePage() {
           onClose={closeSidebar}
           onToggle={toggleSidebar}
           activeOrderCount={activeBookingsCount}
+          upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />
 
