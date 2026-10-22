@@ -270,7 +270,8 @@ export default function CustomerDashboardOverviewPage() {
                 </div>
               </Link>
 
-              <button
+              <Link
+                href="/reservations"
                 type="button"
                 onClick={() =>
                   openReservationModal({
@@ -288,7 +289,7 @@ export default function CustomerDashboardOverviewPage() {
                   <h3 className="font-heading font-bold text-sm text-[#1b3b2b]">Reserve Table</h3>
                   <p className="text-[11px] text-[#1b3b2b]/70 font-medium">Book ahead</p>
                 </div>
-              </button>
+              </Link>
 
               <Link
                 href="/dashboard/customer/addresses"

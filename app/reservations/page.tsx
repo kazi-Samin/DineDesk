@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+
 const DATES = [
     { label: "TODAY", date: "OCT 20", raw: "2026-10-20" },
     { label: "TMRW", date: "OCT 21", raw: "2026-10-21" },
@@ -28,7 +30,8 @@ const SEATING_AREAS = [
 
 export default function ReservationsPage() {
     const router = useRouter();
-    const { isAuthenticated } = useAuth();
+    const authContext = useAuth() as any;
+    const { isAuthenticated } = authContext;
     const {
         restaurantInfo,
         guests,
@@ -44,13 +47,13 @@ export default function ReservationsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
 
-    const currentRestaurant = restaurantInfo?.name || "Sultan's Heritage Kitchen, Dhaka";
+    const currentRestaurant = restaurantInfo?.name || "The Culinary House";
+    const restaurantId = restaurantInfo?.id || "restaurant-1";
 
     const handleConfirmReservation = async (e: React.FormEvent) => {
         e.preventDefault();
         setAuthRestrictionMessage(null);
 
-        // Authentication restriction check
         if (!isAuthenticated) {
             setAuthRestrictionMessage("Authentication required! Please sign in first to confirm your table reservation.");
             return;
@@ -58,11 +61,65 @@ export default function ReservationsPage() {
 
         setIsSubmitting(true);
 
-        // Simulate secure API confirmation delay
-        await new Promise((resolve) => setTimeout(resolve, 1200));
+        try {
+            // Retrieve token robustly from AuthContext or LocalStorage/Cookies
+            const token =
+                authContext?.token ||
+                authContext?.user?.token ||
+                authContext?.user?.accessToken ||
+                (typeof window !== "undefined" ? (
+                    localStorage.getItem("token") ||
+                    localStorage.getItem("accessToken") ||
+                    localStorage.getItem("authToken") ||
+                    localStorage.getItem("dinedesk_token") ||
+                    localStorage.getItem("auth_token") ||
+                    JSON.parse(localStorage.getItem("user") || "{}")?.token ||
+                    JSON.parse(localStorage.getItem("user") || "{}")?.accessToken
+                ) : "");
 
-        toast.success(`Table successfully reserved at ${currentRestaurant} for ${guests} guests on ${selectedDate} at ${selectedTime}!`);
-        setIsSubmitting(false);
+            console.log("Resolved Auth Token:", token ? "Found ✅" : "Missing ❌");
+
+            const reservationPayload = {
+                restaurantId: String(restaurantId),
+                restaurantName: String(currentRestaurant),
+                restaurantImage: String(restaurantInfo?.coverUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80"),
+                neighborhood: String(restaurantInfo?.neighborhood || "Downtown"),
+                fullAddress: String(restaurantInfo?.address || "Global City"),
+                cuisine: String(restaurantInfo?.cuisine || "Fine Dining"),
+                date: new Date().toISOString().split("T")[0],
+                displayDate: String(selectedDate || "Today"),
+                time: String(selectedTime || "8:00 PM"),
+                mealPeriod: "Dinner",
+                partySize: Number(guests) || 2,
+                seatingArea: String(seatingArea || "Main Hall"),
+                tableNumber: "12",
+                reservedFor: new Date().toISOString(), // Fixed: Sending a valid ISO date format to satisfy Zod!
+                specialNotes: "Confirmed via DineDesk Web Portal",
+            };
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify(reservationPayload),
+                credentials: "include",
+            });
+
+            if (response.ok) {
+                toast.success(`Table successfully reserved at ${currentRestaurant} for ${guests} guests!`);
+                router.push("/dashboard/customer/reservations");
+            } else {
+                const errData = await response.json();
+                toast.error(errData.message || "Failed to confirm reservation.");
+            }
+        } catch (error) {
+            console.error("Reservation submission network error:", error);
+            toast.error("Network error. Please check your connection.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -78,7 +135,7 @@ export default function ReservationsPage() {
                         Reserve Your Table Stewardship
                     </h1>
                     <p className="text-sm text-[#1b3b2b]/70 font-medium">
-                        Securing VIP seating across premier culinary establishments in Dhaka.
+                        Securing VIP seating across premier culinary establishments.
                     </p>
                 </div>
 
@@ -149,12 +206,10 @@ export default function ReservationsPage() {
                                 Select Reservation Date
                             </label>
 
-                            {/* Custom Native Date Picker (Blocks past dates automatically) */}
                             <div className="flex items-center gap-2 bg-[#f8f9f6] px-3 py-1.5 rounded-xl border border-[#1b3b2b]/20">
                                 <span className="material-symbols-outlined text-sm text-[#C05621]">calendar_month</span>
                                 <input
                                     type="date"
-                                    min="2026-10-20"
                                     onChange={(e) => {
                                         if (e.target.value) {
                                             const formatted = new Date(e.target.value).toLocaleDateString("en-US", {
@@ -307,7 +362,7 @@ export default function ReservationsPage() {
                         ) : (
                             <>
                                 <span className="material-symbols-outlined text-base">event_available</span>
-                                <span>Confirm Reservation for {guests} Guests at {selectedTime}</span>
+                                <span>Confirm Reservation for {guests} Guests at {selectedTime || "8:00 PM"}</span>
                             </>
                         )}
                     </button>
