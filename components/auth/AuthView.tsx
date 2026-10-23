@@ -10,6 +10,7 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
 import PhoneInput from "@/components/ui/PhoneInput";
+import toast from "react-hot-toast";
 
 // Helper: International phone number validation (7 to 16 digits)
 function isValidPhoneNumber(phone: string): boolean {
@@ -257,6 +258,7 @@ export default function AuthView({
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Google sign in failed. Please try again.";
       setGeneralError(message);
+      toast.error(message, { duration: 6000 });
       setIsLoading(false);
     }
   };

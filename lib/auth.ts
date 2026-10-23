@@ -12,13 +12,24 @@ const getBaseURL = () => {
   return url.trim().replace(/\/+$/, "");
 };
 
+const googleClientId =
+  process.env.GOOGLE_CLIENT_ID ||
+  process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ||
+  process.env.GOOGLE_ID ||
+  "";
+
+const googleClientSecret =
+  process.env.GOOGLE_CLIENT_SECRET ||
+  process.env.GOOGLE_SECRET ||
+  "";
+
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || defaultSecret,
   baseURL: getBaseURL(),
   socialProviders: {
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
     },
   },
 });
