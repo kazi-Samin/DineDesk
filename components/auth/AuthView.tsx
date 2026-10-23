@@ -8,20 +8,12 @@ import { useRouter } from "next/navigation";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
+import PhoneInput from "@/components/ui/PhoneInput";
 
-// Helper: US Phone format (XXX) XXX-XXXX input mask
-function formatUSPhoneNumber(value: string): string {
-  const cleaned = value.replace(/\D/g, "");
-  const digits = cleaned.startsWith("1") ? cleaned.slice(1, 11) : cleaned.slice(0, 10);
-  if (digits.length === 0) return "";
-  if (digits.length <= 3) return `(${digits}`;
-  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
-  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
-}
-
-function isValidUSPhone(phone: string): boolean {
+// Helper: International phone number validation (7 to 16 digits)
+function isValidPhoneNumber(phone: string): boolean {
   const digits = phone.replace(/\D/g, "");
-  return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+  return digits.length >= 7 && digits.length <= 16;
 }
 
 export interface AuthViewProps {
@@ -76,8 +68,8 @@ export default function AuthView({
       }
       if (!phone.trim()) {
         newErrors.phone = "Phone number is required for reservation confirmations.";
-      } else if (!isValidUSPhone(phone)) {
-        newErrors.phone = "Please enter a valid 10-digit US phone number (XXX) XXX-XXXX.";
+      } else if (!isValidPhoneNumber(phone)) {
+        newErrors.phone = "Please enter a valid phone number (at least 7 digits).";
       }
       if (!termsAccepted) {
         newErrors.terms = "You must agree to the Terms of Service.";
@@ -743,7 +735,7 @@ export default function AuthView({
                     )}
                   </div>
 
-                  {/* Phone (US Format with mask) */}
+                  {/* Phone with country code selector */}
                   <div>
                     <label
                       htmlFor="phone"
@@ -751,27 +743,15 @@ export default function AuthView({
                     >
                       Phone number
                     </label>
-                    <input
+                    <PhoneInput
                       id="phone"
-                      type="tel"
                       value={phone}
-                      onChange={(e) => {
-                        const formatted = formatUSPhoneNumber(e.target.value);
-                        setPhone(formatted);
+                      onChange={(fullNumber) => {
+                        setPhone(fullNumber);
                         if (errors.phone) setErrors({ ...errors, phone: "" });
                       }}
-                      maxLength={14}
-                      placeholder="(313) 555-0142"
-                      aria-invalid={!!errors.phone}
-                      aria-describedby={errors.phone ? "phone-error" : undefined}
-                      className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
-                        }`}
+                      error={errors.phone}
                     />
-                    {errors.phone && (
-                      <p id="phone-error" className="mt-1 text-xs text-red-600">
-                        {errors.phone}
-                      </p>
-                    )}
                   </div>
 
                   {/* Password with simple hint */}
