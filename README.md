@@ -40,7 +40,7 @@
 ![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
 ![API Status](https://img.shields.io/website?url=https%3A%2F%2Fdine-desk-backend.vercel.app&label=API&up_message=online&down_message=offline&style=flat-square)
 
-[**Live Demo**](YOUR_LIVE_URL) · [**Features**](#-key-features) · [**Dashboards**](#-role-based-dashboards) · [**Get Started**](#-getting-started) · [**Report a Bug**](YOUR_CLIENT_REPO_URL/issues)
+[**Live Demo**](https://dine-desk-one.vercel.app/) · [**Features**](#-key-features) · [**Dashboards**](#-role-based-dashboards) · [**Get Started**](#-getting-started) · [**Report a Bug**](YOUR_CLIENT_REPO_URL/issues)
 
 </div>
 
