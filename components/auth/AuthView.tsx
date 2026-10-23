@@ -1,5 +1,6 @@
-import { authClient } from "@/lib/auth-client";
 "use client";
+
+import { authClient } from "@/lib/auth-client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -223,14 +224,20 @@ export default function AuthView({
     }
   };
 
-  // Google Sign-In Simulation
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    setGeneralError("");
-    setTimeout(() => {
+  // Google Sign-In with Better-Auth
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      setGeneralError("");
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard/customer",
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Google sign in failed. Please try again.";
+      setGeneralError(message);
       setIsLoading(false);
-      router.push("/dashboard/customer");
-    }, 800);
+    }
   };
 
   // Demo Credentials Autofill for Evaluators
