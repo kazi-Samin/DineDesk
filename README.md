@@ -112,8 +112,10 @@ Traditional food ordering is fragmented across phone calls and commission-heavy 
 
 | Role | Email | Password |
 |---|---|---|
-| 👑 Super Admin | `superadmin@dinedesk.com` | `SuperSecurePassword123!` |
+| 🍜 Customer | `diner@dinedesk.com` | `DinerPassword123!` |
+| 👨‍🍳 Vendor | `owner@dinedesk.com` | `OwnerPassword123!` |
 | 🛡️ Admin | `admin@dinedesk.com` | `AdminSecurePassword123!` |
+| 👑 Super Admin | `superadmin@dinedesk.com` | `SuperSecurePassword123!` |
 
 > 💳 **Stripe test card:** `4242 4242 4242 4242` · any future expiry · any CVC · any ZIP
 
