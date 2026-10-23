@@ -23,7 +23,6 @@ import {
 } from "@/services/mockCustomerReviewService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
-import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -48,9 +47,9 @@ export default function CustomerReviewsPage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
-  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
@@ -71,19 +70,19 @@ export default function CustomerReviewsPage() {
     }, 3200);
   };
 
-  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points matching Overview page logic
+  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points scoped strictly to active user
   const syncTelemetryData = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-      if (typeof window !== "undefined") {
-        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
-        if (storedProfile) {
-          try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
-          } catch (e) {
-            // ignore
-          }
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
         }
       }
 
@@ -101,20 +100,17 @@ export default function CustomerReviewsPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
-      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-      }
-
-      // Fetch real orders and reservations dynamically matching Overview page
+      // Fetch real orders and reservations dynamically scoped to user
       const [realOrders, realReservations] = await Promise.all([
         fetchCustomerOrders(user?.id),
         fetchCustomerReservations(user?.id),
@@ -123,13 +119,18 @@ export default function CustomerReviewsPage() {
       const loadedReviews = getCustomerReviews();
       setReviews(loadedReviews);
 
-      const savedRest = getSavedRestaurants();
-      const savedDish = getSavedDishes();
-      const totalSaved = Math.max(14, savedRest.length + savedDish.length);
-      setSavedSpotsCount(totalSaved);
+      const userSpecificFavorites = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        : [];
+      const userSpecificDishes = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_dishes_${user.id}`) || "[]")
+        : [];
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const totalSaved = userSpecificFavorites.length + userSpecificDishes.length;
+      const totalPayments = realOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalPayments * 20;
 
       const activeBookings = realReservations.filter(
@@ -138,19 +139,18 @@ export default function CustomerReviewsPage() {
           return st === "confirmed" || st === "upcoming" || st === "pending";
         }
       ).length;
-      const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
         totalOrders: totalPayments,
-        activeBookings: finalActiveBookings,
+        activeBookings,
         savedSpots: totalSaved,
         loyaltyPoints: calculatedPoints,
       };
 
       setProfile(loadedProfile);
       setTotalOrdersCount(totalPayments);
-      setActiveBookingsCount(finalActiveBookings);
+      setActiveBookingsCount(activeBookings);
       setLoyaltyPoints(calculatedPoints);
       setSavedSpotsCount(totalSaved);
     } catch (err) {
@@ -249,7 +249,7 @@ export default function CustomerReviewsPage() {
       <div className="flex pt-20 flex-1">
         <CustomerSidebar
           userName={`${realUserName.split(" ")[0]}'s Account`}
-          memberSince={profile.memberSince || "Member since 2023"}
+          memberSince={profile.memberSince || "Member since 2026"}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
           onClose={closeSidebar}

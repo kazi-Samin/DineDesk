@@ -97,7 +97,7 @@ export default function CustomerLoyaltyPage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
-  const [points, setPoints] = useState(260);
+  const [points, setPoints] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
   const [ledger, setLedger] = useState<PointLedgerItem[]>([]);
   const [claimedPerks, setClaimedPerks] = useState<string[]>([]);
@@ -117,19 +117,19 @@ export default function CustomerLoyaltyPage() {
     }, 3200);
   };
 
-  // Synchronize and calculate loyalty points and active bookings dynamically matching Overview page logic
+  // Synchronize and calculate loyalty points and active bookings dynamically scoped to active user
   const syncLoyaltyTelemetry = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-      if (typeof window !== "undefined") {
-        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
-        if (storedProfile) {
-          try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
-          } catch (e) {
-            // ignore
-          }
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
         }
       }
 
@@ -147,39 +147,30 @@ export default function CustomerLoyaltyPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
-      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-      }
-
-      // Fetch real orders and reservations dynamically
+      // Fetch real orders and reservations dynamically scoped to user
       const [realOrders, realReservations] = await Promise.all([
         fetchCustomerOrders(user?.id),
         fetchCustomerReservations(user?.id),
       ]);
 
-      let userFavorites: any[] = [];
-      if (typeof window !== "undefined") {
-        const storedFavs = localStorage.getItem("dinedesk_saved_restaurants");
-        if (storedFavs) {
-          try {
-            userFavorites = JSON.parse(storedFavs);
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
+      const userSpecificFavorites = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        : [];
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const totalPayments = realOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalPayments * 20;
 
       const activeBookings = realReservations.filter(
@@ -188,8 +179,6 @@ export default function CustomerLoyaltyPage() {
           return st === "confirmed" || st === "upcoming" || st === "pending";
         }
       ).length;
-
-      const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
 
       const generatedLedger: PointLedgerItem[] = realOrders.map((ord: any, index: number) => ({
         id: `ledger-${index}-${ord.id || ord.orderId}`,
@@ -200,28 +189,17 @@ export default function CustomerLoyaltyPage() {
         stripeSessionId: ord.stripeSessionId || ord.id,
       }));
 
-      if (generatedLedger.length === 0) {
-        generatedLedger.push({
-          id: `ledger-default`,
-          activity: `Payment Verified (#sample-ref)`,
-          date: new Date().toLocaleDateString(),
-          points: 20,
-          type: "earned",
-          stripeSessionId: "sample",
-        });
-      }
-
       loadedProfile.stats = {
         ...loadedProfile.stats,
         totalOrders: totalPayments,
-        activeBookings: finalActiveBookings,
-        savedSpots: Math.max(14, userFavorites.length),
+        activeBookings,
+        savedSpots: userSpecificFavorites.length,
         loyaltyPoints: calculatedPoints,
       };
 
       setProfile(loadedProfile);
       setPoints(calculatedPoints);
-      setActiveBookingsCount(finalActiveBookings);
+      setActiveBookingsCount(activeBookings);
       setLedger(generatedLedger);
 
       // Gold Tier Milestone Check (>= 2000 pts)

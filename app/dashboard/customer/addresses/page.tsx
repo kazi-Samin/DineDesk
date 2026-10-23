@@ -37,9 +37,9 @@ export default function CustomerAddressesPage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
-  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
@@ -64,19 +64,19 @@ export default function CustomerAddressesPage() {
     }, 3200);
   };
 
-  // Synchronize telemetry matching the exact reservations page logic with Bearer token authentication
+  // Synchronize telemetry cleanly scoped to the active user
   const syncTelemetryData = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-      if (typeof window !== "undefined") {
-        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
-        if (storedProfile) {
-          try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
-          } catch (e) {
-            // ignore
-          }
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
         }
       }
 
@@ -94,47 +94,39 @@ export default function CustomerAddressesPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
-      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-      }
-
-      // Fetch orders and reservations dynamically
+      // Fetch orders and reservations dynamically scoped to user
       const [realOrders, realReservations] = await Promise.all([
         fetchCustomerOrders(user?.id),
         fetchCustomerReservations(user?.id),
       ]);
 
       const addressesRes = await fetch(`/api/customer/addresses`, { credentials: "include" }).catch(() => null);
+      let loadedAddresses: CustomerAddress[] = [];
       if (addressesRes && addressesRes.ok) {
-        const aData = await addressesRes.json();
-        setAddresses(aData);
+        loadedAddresses = await addressesRes.json();
+        setAddresses(loadedAddresses);
       }
 
-      let userFavorites: any[] = [];
-      if (typeof window !== "undefined") {
-        const storedFavs = localStorage.getItem("dinedesk_saved_restaurants");
-        if (storedFavs) {
-          try {
-            userFavorites = JSON.parse(storedFavs);
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
+      // Calculate user-scoped saved spots
+      const userSpecificSavedSpots = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_spots_${user.id}`) || "[]")
+        : [];
+      const totalSavedSpots = userSpecificSavedSpots.length + loadedAddresses.length;
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const totalOrders = realOrders.length;
+      const calculatedPoints = totalOrders * 20;
 
-      // Calculate active bookings matching reservation page filters (confirmed / upcoming / pending)
+      // Calculate active bookings matching reservation page filters
       const activeBookings = realReservations.filter(
         (r) => {
           const st = (r.status || "").toLowerCase();
@@ -144,17 +136,17 @@ export default function CustomerAddressesPage() {
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
-        totalOrders: totalPayments,
-        activeBookings: activeBookings > 0 ? activeBookings : 10, // Fallback to 10 if empty to match your test count
-        savedSpots: Math.max(14, userFavorites.length, addresses.length),
-        loyaltyPoints: totalPayments * 20,
+        totalOrders,
+        activeBookings,
+        savedSpots: totalSavedSpots,
+        loyaltyPoints: calculatedPoints,
       };
 
       setProfile(loadedProfile);
-      setTotalOrdersCount(totalPayments);
-      setActiveBookingsCount(loadedProfile.stats.activeBookings);
-      setLoyaltyPoints(totalPayments * 20);
-      setSavedSpotsCount(loadedProfile.stats.savedSpots);
+      setTotalOrdersCount(totalOrders);
+      setActiveBookingsCount(activeBookings);
+      setLoyaltyPoints(calculatedPoints);
+      setSavedSpotsCount(totalSavedSpots);
     } catch (err) {
       console.error("Failed to sync customer telemetry ledger:", err);
     } finally {

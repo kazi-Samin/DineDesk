@@ -39,7 +39,7 @@ export default function CustomerOrdersPage() {
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState<OrderTabFilter>("all");
@@ -59,14 +59,16 @@ export default function CustomerOrdersPage() {
 
   const loadDatabaseOrders = async () => {
     setLoading(true);
-    let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+    let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("dinedesk_customer_profile");
-      if (stored) {
-        try {
-          loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(stored) };
-        } catch (e) { }
+    if (user) {
+      loadedProfile.fullName = user.name || loadedProfile.fullName;
+      loadedProfile.email = user.email || loadedProfile.email;
+      if (user.phone) loadedProfile.phone = user.phone;
+      if (user.avatarUrl) {
+        loadedProfile.avatarUrl = user.avatarUrl;
+      } else {
+        loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
       }
     }
 
@@ -85,27 +87,26 @@ export default function CustomerOrdersPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
-      if (user && user.name) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-      }
-
-      // Fetch live orders and reservations dynamically matching Overview page logic
+      // Fetch live orders and reservations dynamically scoped to active user
       const [realOrders, realReservations] = await Promise.all([
         fetchCustomerOrders(user?.id),
         fetchCustomerReservations(user?.id),
       ]);
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+      const totalPayments = realOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalPayments * 20;
 
       const activeBookings = realReservations.filter(
@@ -115,10 +116,8 @@ export default function CustomerOrdersPage() {
         }
       ).length;
 
-      const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
-
       setLoyaltyPoints(calculatedPoints);
-      setActiveBookingsCount(finalActiveBookings);
+      setActiveBookingsCount(activeBookings);
 
       const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
         method: "GET",
@@ -152,7 +151,7 @@ export default function CustomerOrdersPage() {
         stats: {
           ...prev.stats,
           totalOrders: totalPayments,
-          activeBookings: finalActiveBookings,
+          activeBookings: activeBookings,
           loyaltyPoints: calculatedPoints,
         }
       }));
@@ -332,8 +331,8 @@ export default function CustomerOrdersPage() {
                       type="button"
                       onClick={() => setActiveTab(tab.id as OrderTabFilter)}
                       className={`px-3 py-1.5 rounded-md font-label-md text-xs transition-all ${isActive
-                        ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
-                        : "text-on-surface-variant hover:text-on-surface"
+                          ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
+                          : "text-on-surface-variant hover:text-on-surface"
                         }`}
                     >
                       {tab.label} <span className="opacity-70">({tab.count})</span>

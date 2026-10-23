@@ -73,15 +73,15 @@ const AVAILABLE_LANGUAGES: { code: string; label: string; nativeName: string; fl
 
 export default function CustomerProfilePage() {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
-  const { user } = useAuth();
+  const { user, updateUserAvatar } = useAuth();
 
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [savedSnapshot, setSavedSnapshot] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [addressCount, setAddressCount] = useState(0);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
-  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -135,21 +135,21 @@ export default function CustomerProfilePage() {
     }
   };
 
-  // Load Profile and Dynamic Stats once on mount
+  // Load Profile and Dynamic Stats cleanly scoped to the current user
   useEffect(() => {
     const loadDatabaseProfile = async () => {
       try {
-        let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+        let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-        if (typeof window !== "undefined") {
-          const stored = localStorage.getItem("dinedesk_customer_profile");
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...parsed };
-            } catch (e) {
-              // ignore
-            }
+        // If user is authenticated, populate with real user info
+        if (user) {
+          loadedProfile.fullName = user.name || loadedProfile.fullName;
+          loadedProfile.email = user.email || loadedProfile.email;
+          if (user.phone) loadedProfile.phone = user.phone;
+          if (user.avatarUrl) {
+            loadedProfile.avatarUrl = user.avatarUrl;
+          } else {
+            loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
           }
         }
 
@@ -167,20 +167,17 @@ export default function CustomerProfilePage() {
         if (res && res.ok) {
           const data = await res.json();
           const userData = data.user || data;
-          loadedProfile = {
-            ...loadedProfile,
-            ...userData,
-            fullName: userData.fullName || userData.name || loadedProfile.fullName,
-          };
+          if (userData && (!user || userData.email === user.email)) {
+            loadedProfile = {
+              ...loadedProfile,
+              ...userData,
+              fullName: userData.fullName || userData.name || loadedProfile.fullName,
+              avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+            };
+          }
         }
 
-        if (user && user.name) {
-          loadedProfile.fullName = user.name;
-          loadedProfile.email = user.email || loadedProfile.email;
-          if (user.phone) loadedProfile.phone = user.phone;
-        }
-
-        // Fetch real orders and reservations dynamically matching Overview page logic
+        // Fetch real orders and reservations scoped strictly to this user
         const [realOrders, realReservations] = await Promise.all([
           fetchCustomerOrders(user?.id),
           fetchCustomerReservations(user?.id),
@@ -189,28 +186,29 @@ export default function CustomerProfilePage() {
         const loadedAddresses = getCustomerAddresses();
         setAddressCount(loadedAddresses.length);
 
-        const savedRest = getSavedRestaurants();
-        const savedDish = getSavedDishes();
-        const storedSavedSpots = JSON.parse(localStorage.getItem("dinedesk_saved_spots") || "[]");
-        const totalSavedSpots = Math.max(14, savedRest.length + savedDish.length, storedSavedSpots.length);
+        // Calculate saved spots strictly from user-scoped storage / records
+        const userSpecificSavedSpots = user?.id
+          ? JSON.parse(localStorage.getItem(`dinedesk_saved_spots_${user.id}`) || "[]")
+          : [];
+        const totalSavedSpots = userSpecificSavedSpots.length;
         setSavedSpotsCount(totalSavedSpots);
 
-        const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-        const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
-        const calculatedPoints = totalPayments * 20;
+        // Real orders count (0 for new users)
+        const totalOrders = realOrders.length;
+        const calculatedPoints = totalOrders * 20;
 
+        // Real active bookings count (0 for new users)
         const activeBookings = realReservations.filter(
           (r) => {
             const st = (r.status || "").toLowerCase();
             return st === "confirmed" || st === "upcoming" || st === "pending";
           }
         ).length;
-        const finalActiveBookings = activeBookings > 0 ? activeBookings : 10;
 
         loadedProfile.stats = {
           ...loadedProfile.stats,
-          totalOrders: totalPayments,
-          activeBookings: finalActiveBookings,
+          totalOrders,
+          activeBookings,
           savedSpots: totalSavedSpots,
           loyaltyPoints: calculatedPoints,
         };
@@ -222,11 +220,14 @@ export default function CustomerProfilePage() {
         setPhone(loadedProfile.phone || "");
         setLanguage(loadedProfile.language || "en");
         setDietaryPrefs(loadedProfile.dietaryPreferences || []);
-        setAvatarUrl(loadedProfile.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
+
+        // Prioritize AuthContext user avatar if available
+        const currentActiveAvatar = user?.avatarUrl || loadedProfile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(loadedProfile.fullName || "Diner")}`;
+        setAvatarUrl(currentActiveAvatar);
 
         setLoyaltyPoints(calculatedPoints);
-        setTotalOrdersCount(totalPayments);
-        setActiveBookingsCount(finalActiveBookings);
+        setTotalOrdersCount(totalOrders);
+        setActiveBookingsCount(activeBookings);
       } catch (err) {
         console.error("Failed to load profile:", err);
       } finally {
@@ -292,7 +293,8 @@ export default function CustomerProfilePage() {
 
       if (result.success && result.url) {
         setAvatarUrl(result.url);
-        showToast("Photo uploaded successfully! Click 'Save Profile' to store in DB.", "success");
+        updateUserAvatar(result.url); // Instantly update global auth context and navbar/sidebar
+        showToast("Photo uploaded and synchronized successfully!", "success");
       } else {
         showToast("Failed to upload image.", "error");
       }
@@ -304,9 +306,10 @@ export default function CustomerProfilePage() {
   };
 
   const handleRemovePhoto = () => {
-    const defaultAvatar = INITIAL_CUSTOMER_PROFILE.avatarUrl;
+    const defaultAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || "Diner")}`;
     setAvatarUrl(defaultAvatar);
-    showToast("Photo reset to default.", "info");
+    updateUserAvatar(defaultAvatar);
+    showToast("Photo reset to default initials.", "info");
   };
 
   const toggleDietaryPreference = (pref: DietaryPreference) => {
@@ -354,6 +357,7 @@ export default function CustomerProfilePage() {
       setProfile(updatedData);
       setSavedSnapshot(updatedData);
       broadcastProfileUpdate(updatedData);
+      updateUserAvatar(avatarUrl); // Ensure global auth context is synced
 
       await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "PUT",
@@ -379,7 +383,7 @@ export default function CustomerProfilePage() {
     setPhone(profile.phone || "");
     setLanguage(profile.language || "en");
     setDietaryPrefs(profile.dietaryPreferences || []);
-    setAvatarUrl(profile.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
+    setAvatarUrl(profile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.fullName || "Diner")}`);
     setIsEditing(true);
   };
 
@@ -397,7 +401,7 @@ export default function CustomerProfilePage() {
     setPhone(savedSnapshot.phone || "");
     setLanguage(savedSnapshot.language || "en");
     setDietaryPrefs(savedSnapshot.dietaryPreferences || []);
-    setAvatarUrl(savedSnapshot.avatarUrl || INITIAL_CUSTOMER_PROFILE.avatarUrl);
+    setAvatarUrl(savedSnapshot.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(savedSnapshot.fullName || "Diner")}`);
     setIsDiscardModalOpen(false);
     setIsEditing(false);
     showToast("Changes discarded.", "info");
@@ -433,7 +437,7 @@ export default function CustomerProfilePage() {
       <div className="flex pt-20 flex-1">
         <CustomerSidebar
           userName={`${profile.fullName.split(" ")[0]}'s Account`}
-          memberSince="Member since 2023"
+          memberSince="Member since 2026"
           avatarUrl={avatarUrl}
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
@@ -566,11 +570,11 @@ export default function CustomerProfilePage() {
                   <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-[#1b3b2b]/15 flex flex-col gap-6">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                       <img
-                        src={profile.avatarUrl || "/avatars/tahmid-avatar.svg"}
+                        src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.fullName || "Diner")}`}
                         alt={profile.fullName}
                         className="w-20 h-20 rounded-full object-cover shadow-md ring-2 ring-[#1b3b2b]/20 shrink-0 bg-white"
                         onError={(e) => {
-                          e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                          e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(profile.fullName || "Diner")}`;
                         }}
                       />
                       <div className="flex-1 flex flex-col items-center sm:items-start text-center sm:text-left">
@@ -589,7 +593,7 @@ export default function CustomerProfilePage() {
                           </div>
                         </div>
                         <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
-                          Member since 2023 • Dhaka, Bangladesh
+                          Member since 2026 • Dhaka, Bangladesh
                         </p>
                       </div>
 
@@ -721,9 +725,9 @@ export default function CustomerProfilePage() {
                       <img
                         alt={fullName}
                         className="w-16 h-16 rounded-full object-cover ring-2 ring-[#1b3b2b]/20 bg-white shadow-md"
-                        src={avatarUrl || "/avatars/tahmid-avatar.svg"}
+                        src={avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || "Diner")}`}
                         onError={(e) => {
-                          e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                          e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName || "Diner")}`;
                         }}
                       />
                       {isUploadingPhoto && (
