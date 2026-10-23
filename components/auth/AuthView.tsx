@@ -224,15 +224,37 @@ export default function AuthView({
     }
   };
 
-  // Google Sign-In with Better-Auth
+  // Google Sign-In with Better-Auth & explicit redirect
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
       setGeneralError("");
-      await authClient.signIn.social({
+      const res = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard/customer",
       });
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+        return;
+      }
+      if (res?.error) {
+        throw new Error(res.error.message || "Google sign in error");
+      }
+      // Direct API fallback if client method did not redirect
+      const directRes = await fetch("/api/auth/sign-in/social", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "google",
+          callbackURL: "/dashboard/customer",
+        }),
+      });
+      const data = await directRes.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data?.message || "Failed to get Google sign in URL");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Google sign in failed. Please try again.";
       setGeneralError(message);
