@@ -224,36 +224,35 @@ export default function AuthView({
     }
   };
 
-  // Google Sign-In with Better-Auth & explicit redirect
+  // Google Sign-In Direct Dispatch
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
       setGeneralError("");
-      const res = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard/customer",
-      });
-      if (res?.data?.url) {
-        window.location.href = res.data.url;
-        return;
-      }
-      if (res?.error) {
-        throw new Error(res.error.message || "Google sign in error");
-      }
-      // Direct API fallback if client method did not redirect
-      const directRes = await fetch("/api/auth/sign-in/social", {
+
+      const origin = typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : "https://dine-desk-one.vercel.app";
+
+      const response = await fetch(`${origin}/api/auth/sign-in/social`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider: "google",
-          callbackURL: "/dashboard/customer",
+          callbackURL: `${origin}/dashboard/customer`,
         }),
       });
-      const data = await directRes.json();
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.message || errorData?.error || `Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        throw new Error(data?.message || "Failed to get Google sign in URL");
+        throw new Error("No Google sign-in URL returned from server.");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Google sign in failed. Please try again.";

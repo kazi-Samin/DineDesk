@@ -6,13 +6,10 @@ if (!process.env.BETTER_AUTH_SECRET) {
 }
 
 const getBaseURL = () => {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-  if (process.env.NODE_ENV === "production") {
-    return "https://dine-desk-one.vercel.app";
-  }
-  return "http://localhost:3000";
+  const url =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.NODE_ENV === "production" ? "https://dine-desk-one.vercel.app" : "http://localhost:3000");
+  return url.trim().replace(/\/+$/, "");
 };
 
 export const auth = betterAuth({
