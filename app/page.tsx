@@ -5,6 +5,15 @@ import CategoriesSection from "@/components/home/CategoriesSection";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import EditorialCtaSection from "@/components/home/EditorialCtaSection";
 import SponsorsSection from "@/components/home/SponsorsSection";
+import { Metadata } from "next";
+
+
+export const metadata: Metadata = {
+  title: "DineDesk | Order Food Online & Reserve a Table",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 export default function HomePage() {
   return (
