@@ -23,6 +23,7 @@ interface AuthContextType {
   register: (credentials: RegisterCredentials) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateUserAvatar: (newAvatarUrl: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Helper to enrich user with dynamic avatar fallback if missing
+  const enrichUserWithAvatar = (userData: AuthUser): AuthUser => {
+    if (!userData.avatarUrl || userData.avatarUrl.trim() === "") {
+      const nameSeed = userData.name || userData.email || "User";
+      userData.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(nameSeed)}`;
+    }
+    return userData;
+  };
 
   // Initialize auth state on client mount
   useEffect(() => {
@@ -42,24 +52,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedToken) {
           setToken(storedToken);
           if (storedUser) {
-            setUser(storedUser);
+            setUser(enrichUserWithAvatar(storedUser));
           }
 
           // Verify and refresh with live backend /api/v1/auth/me
           const meResult = await getMeApi();
           if (meResult.success && meResult.data) {
-            const meUser = meResult.data;
-            if (!meUser.avatarUrl && meUser.email && typeof window !== "undefined") {
-              const cachedAvatar = localStorage.getItem(`dinedesk_avatar_${meUser.email.toLowerCase()}`);
-              if (cachedAvatar) {
-                meUser.avatarUrl = cachedAvatar;
-              }
-            }
+            const meUser = enrichUserWithAvatar(meResult.data);
             setUser(meUser);
             setStoredUser(meUser);
           } else if (!storedUser) {
             // Token invalid or expired
             clearStoredAuth();
+            localStorage.removeItem("dinedesk_customer_profile");
             setToken(null);
             setUser(null);
           }
@@ -77,11 +82,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (credentials: LoginCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
     try {
+      // Clear any previous user's cached profile storage before logging in new user
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("dinedesk_customer_profile");
+      }
+
       const result = await loginApi(credentials);
       if (result.success && result.token) {
         setToken(result.token);
         if (result.data) {
-          setUser(result.data);
+          const enrichedUser = enrichUserWithAvatar(result.data);
+          setUser(enrichedUser);
+          setStoredUser(enrichedUser);
         }
       }
       return result;
@@ -93,7 +105,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
     try {
+      // Clear any previous user's cached profile storage before registering new user
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("dinedesk_customer_profile");
+      }
+
       const result = await registerApi(credentials);
+      if (result.success && result.token && result.data) {
+        setToken(result.token);
+        const enrichedUser = enrichUserWithAvatar(result.data);
+        setUser(enrichedUser);
+        setStoredUser(enrichedUser);
+      }
       return result;
     } finally {
       setIsLoading(false);
@@ -105,6 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await logoutApi();
     } finally {
+      // Completely clear auth and local profile caches on logout
+      clearStoredAuth();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("dinedesk_customer_profile");
+        localStorage.removeItem("dinedesk_user_avatar");
+      }
       setToken(null);
       setUser(null);
       setIsLoading(false);
@@ -114,7 +143,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     const result = await getMeApi();
     if (result.success && result.data) {
-      setUser(result.data);
+      const enrichedUser = enrichUserWithAvatar(result.data);
+      setUser(enrichedUser);
+      setStoredUser(enrichedUser);
+    }
+  }, []);
+
+  const updateUserAvatar = useCallback((newAvatarUrl: string) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      const updated = { ...prevUser, avatarUrl: newAvatarUrl };
+      setStoredUser(updated);
+      return updated;
+    });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dinedesk_user_avatar", newAvatarUrl);
+      const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
+      storedProfile.avatarUrl = newAvatarUrl;
+      localStorage.setItem("dinedesk_customer_profile", JSON.stringify(storedProfile));
+      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("profile-updated"));
     }
   }, []);
 
@@ -129,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         refreshUser,
+        updateUserAvatar,
       }}
     >
       {children}

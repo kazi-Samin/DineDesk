@@ -54,7 +54,7 @@ export default function CustomerFavoritesPage() {
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [allMenus, setAllMenus] = useState<DatabaseMenu[]>([]);
-  const [points, setPoints] = useState(260); // Dynamic real loyalty points
+  const [points, setPoints] = useState(0); // Dynamic real loyalty points starting at 0
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Filter & Pagination States
@@ -68,19 +68,19 @@ export default function CustomerFavoritesPage() {
   const realUserName = user?.name || profile.fullName || "Valued Diner";
   const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
 
-  // Dynamic telemetry synchronizer matching overview page loyalty calculation logic
+  // Dynamic telemetry synchronizer scoping points strictly to real orders
   const syncTelemetryData = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-      if (typeof window !== "undefined") {
-        const storedProfile = localStorage.getItem("dinedesk_customer_profile");
-        if (storedProfile) {
-          try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
-          } catch (e) {
-            // ignore
-          }
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
         }
       }
 
@@ -98,17 +98,14 @@ export default function CustomerFavoritesPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
-      }
-
-      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
       setProfile(loadedProfile);
@@ -120,11 +117,13 @@ export default function CustomerFavoritesPage() {
         setAllMenus(fetchedMenus);
       }
 
-      // Fetch real orders matching overview page logic
+      // Fetch real orders scoped strictly to user
       const realOrders = await fetchCustomerOrders(user?.id);
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const totalPayments = realOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalPayments * 20;
 
       setPoints(calculatedPoints);

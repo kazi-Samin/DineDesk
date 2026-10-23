@@ -50,9 +50,9 @@ export default function CustomerReservationsPage() {
   const [reservations, setReservations] = useState<CustomerReservation[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const [totalOrdersCount, setTotalOrdersCount] = useState(13);
-  const [savedSpotsCount, setSavedSpotsCount] = useState(14);
-  const [loyaltyPoints, setLoyaltyPoints] = useState(260);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
   const [activeTab, setActiveTab] = useState<ReservationTabFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,19 +78,19 @@ export default function CustomerReservationsPage() {
     }, 3800);
   };
 
-  // Fetch real data securely from PostgreSQL backend API with explicit Bearer token header matching Overview page logic
+  // Fetch real data securely from PostgreSQL backend API with explicit Bearer token header
   const loadDatabaseReservations = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("dinedesk_customer_profile");
-        if (stored) {
-          try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(stored) };
-          } catch (e) {
-            // ignore
-          }
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
         }
       }
 
@@ -108,11 +108,14 @@ export default function CustomerReservationsPage() {
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
       setProfile(loadedProfile);
@@ -159,28 +162,21 @@ export default function CustomerReservationsPage() {
 
       setReservations(dbReservations);
 
-      // Fetch real orders matching overview page logic
+      // Fetch real orders scoped strictly to active user
       const realOrders = await fetchCustomerOrders(user?.id);
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+      const userSpecificFavorites = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        : [];
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length, 13);
+      const totalPayments = realOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalPayments * 20;
 
       setLoyaltyPoints(calculatedPoints);
       setTotalOrdersCount(totalPayments);
-
-      let userFavorites: any[] = [];
-      if (typeof window !== "undefined") {
-        const storedFavs = localStorage.getItem("dinedesk_saved_restaurants");
-        if (storedFavs) {
-          try {
-            userFavorites = JSON.parse(storedFavs);
-          } catch (e) {
-            // ignore
-          }
-        }
-      }
-      setSavedSpotsCount(Math.max(14, userFavorites.length));
+      setSavedSpotsCount(userSpecificFavorites.length);
 
     } catch (err) {
       console.error("Error fetching database reservations:", err);
@@ -566,8 +562,8 @@ export default function CustomerReservationsPage() {
                           type="button"
                           onClick={() => setActiveTab(tab.id as ReservationTabFilter)}
                           className={`booking-tab px-space-md py-1.5 rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-all cursor-pointer ${isActive
-                            ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
-                            : "text-on-surface-variant hover:text-on-surface"
+                              ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
+                              : "text-on-surface-variant hover:text-on-surface"
                             }`}
                         >
                           {tab.label} <span className="ml-1 font-normal">({tab.count})</span>

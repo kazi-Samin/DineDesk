@@ -39,10 +39,10 @@ export default function CustomerSidebar({
   onClose,
   onToggle,
   userName = "Diner",
-  memberSince = "Patron since Jan 2024",
+  memberSince = "Patron since 2026",
   avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
   activeOrderCount,
-  activeOrdersCount = 1,
+  activeOrdersCount = 0,
   upcomingReservationsCount,
   loyaltyPoints,
 }: CustomerSidebarProps) {
@@ -50,42 +50,60 @@ export default function CustomerSidebar({
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Dynamic states
-  const [realPoints, setRealPoints] = useState<number>(loyaltyPoints ?? 20);
+  // Dynamic states initialized from props or 0
+  const [realPoints, setRealPoints] = useState<number>(loyaltyPoints ?? 0);
   const [currentAvatar, setCurrentAvatar] = useState<string>(
     avatarUrl && avatarUrl.trim() !== "" ? avatarUrl : "/avatars/tahmid-avatar.svg"
   );
   const [currentName, setCurrentName] = useState<string>(userName);
   const [dynamicBookingsCount, setDynamicBookingsCount] = useState<number>(upcomingReservationsCount ?? 0);
 
-  // Real-time synchronization for profile, points, and reservations count
+  // Sync state whenever props change from parent dashboard pages
+  useEffect(() => {
+    if (loyaltyPoints !== undefined) {
+      setRealPoints(loyaltyPoints);
+    }
+  }, [loyaltyPoints]);
+
+  useEffect(() => {
+    if (upcomingReservationsCount !== undefined) {
+      setDynamicBookingsCount(upcomingReservationsCount);
+    }
+  }, [upcomingReservationsCount]);
+
+  // Real-time synchronization for profile and fallback telemetry scoped to active user
   useEffect(() => {
     const syncProfileFromStorage = async () => {
       try {
         const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
         if (storedProfile.avatarUrl && storedProfile.avatarUrl.trim() !== "") {
           setCurrentAvatar(storedProfile.avatarUrl);
+        } else if (user?.avatarUrl) {
+          setCurrentAvatar(user.avatarUrl);
         } else {
-          const directAvatar = localStorage.getItem("dinedesk_user_avatar");
-          if (directAvatar && directAvatar.trim() !== "") {
-            setCurrentAvatar(directAvatar);
-          }
+          setCurrentAvatar(`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || userName || "Diner")}`);
         }
 
         if (storedProfile.fullName) {
           setCurrentName(storedProfile.fullName);
+        } else if (user?.name) {
+          setCurrentName(user.name);
         }
 
-        const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-        if (storedPayments.length > 0) {
-          setRealPoints(storedPayments.length * 20);
-        } else if (loyaltyPoints !== undefined) {
-          setRealPoints(loyaltyPoints);
+        if (loyaltyPoints === undefined) {
+          const userSpecificPayments = user?.id
+            ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+            : [];
+          const userSpecificOrders = user?.id
+            ? JSON.parse(localStorage.getItem(`dinedesk_orders_${user.id}`) || "[]")
+            : [];
+          const totalOrders = userSpecificOrders.length + userSpecificPayments.length;
+          setRealPoints(totalOrders * 20);
         }
 
-        // Fetch dynamic reservations count from backend API securely
+        // Fetch dynamic reservations count from backend API securely if needed
         const token = getAuthToken();
-        if (token) {
+        if (token && upcomingReservationsCount === undefined) {
           const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
             method: "GET",
             headers: {
@@ -98,7 +116,6 @@ export default function CustomerSidebar({
           if (resApi && resApi.ok) {
             const apiData = await resApi.json();
             const list = apiData.reservations || apiData.data || apiData || [];
-            // Count upcoming / confirmed bookings
             const activeCount = list.filter((item: any) => {
               const status = (item.status || "confirmed").toLowerCase();
               return status === "confirmed" || status === "upcoming" || status === "pending";
@@ -116,13 +133,17 @@ export default function CustomerSidebar({
     window.addEventListener("storage", syncProfileFromStorage);
     window.addEventListener("profile-updated", syncProfileFromStorage);
     window.addEventListener("booking-updated", syncProfileFromStorage);
+    window.addEventListener("order-updated", syncProfileFromStorage);
+    window.addEventListener("dinedesk-points-updated", syncProfileFromStorage);
 
     return () => {
       window.removeEventListener("storage", syncProfileFromStorage);
       window.removeEventListener("profile-updated", syncProfileFromStorage);
       window.removeEventListener("booking-updated", syncProfileFromStorage);
+      window.removeEventListener("order-updated", syncProfileFromStorage);
+      window.removeEventListener("dinedesk-points-updated", syncProfileFromStorage);
     };
-  }, [avatarUrl, userName, loyaltyPoints, upcomingReservationsCount]);
+  }, [user, avatarUrl, userName, loyaltyPoints, upcomingReservationsCount]);
 
   const resolvedName = user?.name
     ? `${user.name.split(" ")[0]}`
@@ -228,7 +249,9 @@ export default function CustomerSidebar({
     }
   };
 
-  const safeAvatar = currentAvatar && currentAvatar.trim() !== "" ? currentAvatar : "/avatars/tahmid-avatar.svg";
+  const safeAvatar = currentAvatar && currentAvatar.trim() !== ""
+    ? currentAvatar
+    : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
 
   return (
     <>
@@ -270,7 +293,7 @@ export default function CustomerSidebar({
                     className="w-full h-full rounded-[14px] object-cover bg-white"
                     src={safeAvatar}
                     onError={(e) => {
-                      e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                      e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
                     }}
                   />
                   {isPremiumUser && (
@@ -317,7 +340,7 @@ export default function CustomerSidebar({
                   src={safeAvatar}
                   title={`${resolvedName} (${memberSince})${isPremiumUser ? " - Gold Tier VIP" : ""}`}
                   onError={(e) => {
-                    e.currentTarget.src = "/avatars/tahmid-avatar.svg";
+                    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
                   }}
                 />
                 {isPremiumUser && (
@@ -340,11 +363,13 @@ export default function CustomerSidebar({
                   key={item.label}
                   href={item.href}
                   onClick={handleNavClick}
-                  className={`flex items-center ${isOpen ? "justify-between px-4 py-3" : "justify-center px-2 py-3"} rounded-2xl text-xs tracking-tight transition-all group ${activeClass}`}
+                  className={`flex items-center ${isOpen ? "justify-between px-4 py-3" : "justify-center px-2 py-3"
+                    } rounded-2xl text-xs tracking-tight transition-all group ${activeClass}`}
                   title={!isOpen ? item.label : undefined}
                 >
                   <div className="flex items-center gap-3.5">
-                    <span className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${item.isActive ? "text-[#C05621]" : "text-[#1b3b2b]/70 group-hover:text-[#1b3b2b]"}`}>
+                    <span className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${item.isActive ? "text-[#C05621]" : "text-[#1b3b2b]/70 group-hover:text-[#1b3b2b]"
+                      }`}>
                       {item.icon}
                     </span>
                     {isOpen && <span className="truncate">{item.label}</span>}
@@ -359,7 +384,8 @@ export default function CustomerSidebar({
         <div className={`border-t border-[#1b3b2b]/10 flex flex-col gap-2 bg-[#f8f9f6]/50 ${isOpen ? "p-4" : "p-2"}`}>
           <Link
             href="/"
-            className={`w-full flex items-center ${isOpen ? "gap-3.5 px-4 py-3" : "justify-center px-2 py-3"} rounded-2xl text-xs font-bold text-[#1b3b2b]/80 hover:bg-[#1b3b2b]/10 hover:text-[#1b3b2b] transition-all group`}
+            className={`w-full flex items-center ${isOpen ? "gap-3.5 px-4 py-3" : "justify-center px-2 py-3"
+              } rounded-2xl text-xs font-bold text-[#1b3b2b]/80 hover:bg-[#1b3b2b]/10 hover:text-[#1b3b2b] transition-all group`}
             title="Return to Home"
           >
             <span className="material-symbols-outlined text-xl text-[#1b3b2b]/70 group-hover:text-[#1b3b2b] group-hover:scale-110 transition-transform">
@@ -374,7 +400,8 @@ export default function CustomerSidebar({
               await logout();
               router.push("/sign-in");
             }}
-            className={`w-full flex items-center ${isOpen ? "gap-3.5 px-4 py-3" : "justify-center px-2 py-3"} rounded-2xl text-xs font-bold text-red-700 hover:bg-red-50 hover:text-red-900 transition-all cursor-pointer group`}
+            className={`w-full flex items-center ${isOpen ? "gap-3.5 px-4 py-3" : "justify-center px-2 py-3"
+              } rounded-2xl text-xs font-bold text-red-700 hover:bg-red-50 hover:text-red-900 transition-all cursor-pointer group`}
             title="Sign Out"
           >
             <span className="material-symbols-outlined text-xl text-red-500 group-hover:scale-110 transition-transform">
