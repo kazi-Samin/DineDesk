@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { AuthResponse, AuthUser, LoginCredentials, RegisterCredentials } from "@/types/auth";
+import { AuthResponse, AuthUser, LoginCredentials, RegisterCredentials, UserRole } from "@/types/auth";
 import {
   getMeApi,
   getStoredToken,
@@ -13,6 +13,8 @@ import {
   setStoredUser,
   clearStoredAuth,
 } from "@/services/authService";
+import { authClient } from "@/lib/auth-client";
+import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -44,6 +46,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize auth state on client mount
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       try {
         const storedToken = getStoredToken();
@@ -55,28 +59,102 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(enrichUserWithAvatar(storedUser));
           }
 
-          // Verify and refresh with live backend /api/v1/auth/me
-          const meResult = await getMeApi();
-          if (meResult.success && meResult.data) {
-            const meUser = enrichUserWithAvatar(meResult.data);
-            setUser(meUser);
-            setStoredUser(meUser);
-          } else if (!storedUser) {
-            // Token invalid or expired
-            clearStoredAuth();
-            localStorage.removeItem("dinedesk_customer_profile");
-            setToken(null);
-            setUser(null);
+          if (storedToken.startsWith("better_auth_")) {
+            // Better-Auth OAuth Session - verify with better-auth client
+            try {
+              const sessionRes = await authClient.getSession();
+              if (isMounted) {
+                if (sessionRes?.data?.user) {
+                  const bUser = sessionRes.data.user;
+                  const enriched = enrichUserWithAvatar({
+                    id: bUser.id,
+                    name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+                    email: bUser.email,
+                    role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+                    avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+                    createdAt: storedUser?.createdAt || new Date().toISOString(),
+                  });
+                  setUser(enriched);
+                  setStoredUser(enriched);
+                } else if (!storedUser) {
+                  clearStoredAuth();
+                  setToken(null);
+                  setUser(null);
+                }
+              }
+            } catch (sessionErr) {
+              console.error("Better-Auth session verification failed:", sessionErr);
+            }
+          } else {
+            // Verify and refresh with live backend /api/v1/auth/me
+            const meResult = await getMeApi();
+            if (isMounted) {
+              if (meResult.success && meResult.data) {
+                const meUser = enrichUserWithAvatar(meResult.data);
+                setUser(meUser);
+                setStoredUser(meUser);
+              } else if (!storedUser) {
+                // Token invalid or expired
+                clearStoredAuth();
+                localStorage.removeItem("dinedesk_customer_profile");
+                setToken(null);
+                setUser(null);
+              }
+            }
+          }
+        } else {
+          // No stored token in localStorage - check if arriving via Better-Auth OAuth (e.g. Google)
+          try {
+            const sessionRes = await authClient.getSession();
+            if (isMounted && sessionRes?.data?.user) {
+              const bUser = sessionRes.data.user;
+              const bSession = sessionRes.data.session;
+              const gToken = `better_auth_${bSession?.token || bSession?.id || bUser.id}`;
+              const gUser: AuthUser = enrichUserWithAvatar({
+                id: bUser.id,
+                name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+                email: bUser.email,
+                role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+                avatarUrl: bUser.image || "",
+                createdAt: new Date().toISOString(),
+              });
+
+              setStoredToken(gToken);
+              setStoredUser(gUser);
+              setToken(gToken);
+              setUser(gUser);
+
+              try {
+                const existingProfile = getCustomerProfile();
+                saveCustomerProfile({
+                  ...existingProfile,
+                  fullName: gUser.name,
+                  email: gUser.email,
+                  phone: existingProfile.phone || "(313) 555-0142",
+                  roleBadge: "Diner",
+                });
+              } catch (profileErr) {
+                console.error("Failed to sync customer profile:", profileErr);
+              }
+            }
+          } catch (sessionErr) {
+            console.error("Better-Auth session check failed:", sessionErr);
           }
         }
       } catch (err) {
         console.error("Auth initialization failed:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = useCallback(async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -126,7 +204,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
-      await logoutApi();
+      if (token?.startsWith("better_auth_")) {
+        await authClient.signOut().catch(() => {});
+      } else {
+        await logoutApi().catch(() => {});
+      }
     } finally {
       // Completely clear auth and local profile caches on logout
       clearStoredAuth();
@@ -138,16 +220,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       setIsLoading(false);
     }
-  }, []);
+  }, [token]);
 
   const refreshUser = useCallback(async () => {
+    if (token?.startsWith("better_auth_")) {
+      try {
+        const sessionRes = await authClient.getSession();
+        if (sessionRes?.data?.user) {
+          const bUser = sessionRes.data.user;
+          const updatedUser: AuthUser = enrichUserWithAvatar({
+            id: bUser.id,
+            name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+            email: bUser.email,
+            role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+            avatarUrl: bUser.image || user?.avatarUrl || "",
+            createdAt: user?.createdAt || new Date().toISOString(),
+          });
+          setUser(updatedUser);
+          setStoredUser(updatedUser);
+        }
+      } catch (err) {
+        console.error("Failed to refresh Better-Auth session:", err);
+      }
+      return;
+    }
+
     const result = await getMeApi();
     if (result.success && result.data) {
       const enrichedUser = enrichUserWithAvatar(result.data);
       setUser(enrichedUser);
       setStoredUser(enrichedUser);
     }
-  }, []);
+  }, [token, user]);
 
   const updateUserAvatar = useCallback((newAvatarUrl: string) => {
     setUser((prevUser) => {

@@ -32,4 +32,13 @@ export const auth = betterAuth({
       clientSecret: googleClientSecret,
     },
   },
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 7 * 24 * 60 * 60,
+    },
+  },
+  account: {
+    storeAccountCookie: true,
+  },
 });
