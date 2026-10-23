@@ -1,3 +1,4 @@
+import { authClient } from "@/lib/auth-client";
 "use client";
 
 import React, { useState } from "react";
@@ -37,7 +38,7 @@ export default function AuthView({
 
   // Mode: "signin" | "signup"
   const [authMode, setAuthMode] = useState<"signin" | "signup">(initialMode);
-  const [signupRole, setSignupRole] = useState<"USER" | "VENDOR">(initialRole);
+  const [signupRole, setSignupRole] = useState<"USER" | "VENDOR">("USER");
 
   // Form Fields (all start empty, placeholders only)
   const [fullName, setFullName] = useState("");
@@ -278,9 +279,7 @@ export default function AuthView({
     }, 800);
   };
 
-  const isDemoVisible =
-    process.env.NODE_ENV !== "production" ||
-    process.env.NEXT_PUBLIC_ENABLE_DEMO === "true";
+  const isDemoVisible = false;
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-neutral-900 flex flex-col justify-between selection:bg-primary/20 selection:text-primary">
@@ -510,7 +509,7 @@ export default function AuthView({
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
                   {/* Email */}
                   <div>
                     <label
@@ -582,7 +581,7 @@ export default function AuthView({
                   </div>
 
                   {/* Remember me & Forgot password row */}
-                  <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center justify-between pt-1 mb-2">
                     <label htmlFor="rememberMe" className="flex items-center gap-2 cursor-pointer select-none">
                       <input
                         id="rememberMe"
@@ -608,13 +607,15 @@ export default function AuthView({
                   </div>
 
                   {/* Primary Sign In Button */}
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full h-12 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/95 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center mt-2"
-                  >
-                    {isLoading ? "Signing in..." : "Sign In"}
-                  </button>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full h-12 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/95 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center shadow-sm"
+                    >
+                      {isLoading ? "Signing in..." : "Sign In"}
+                    </button>
+                  </div>
 
                   {/* Demo Login under button */}
                   {isDemoVisible && (
@@ -666,77 +667,29 @@ export default function AuthView({
                   </button>
                 </p>
 
-                {/* Quiet Manager Sign In Link */}
-                <p className="text-xs text-neutral-400 text-center mt-3">
-                  Restaurant management or staff?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setAuthMode("signup");
-                      setSignupRole("VENDOR");
-                      setErrors({});
-                      setGeneralError("");
-                    }}
-                    className="text-neutral-600 hover:text-neutral-900 transition-colors font-medium cursor-pointer"
-                  >
-                    Manager portal →
-                  </button>
-                </p>
+                
               </div>
             ) : (
               /* ════════════════ 5. CREATE ACCOUNT FORM ════════════════ */
               <div>
-                {/* Role Switch: Plain text tabs */}
-                <div className="flex items-center gap-6 border-b border-neutral-200 mb-6">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSignupRole("USER");
-                      setErrors({});
-                      setGeneralError("");
-                    }}
-                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${signupRole === "USER"
-                        ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
-                        : "text-neutral-400 hover:text-neutral-700"
-                      }`}
-                  >
-                    Diner
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSignupRole("VENDOR");
-                      setErrors({});
-                      setGeneralError("");
-                    }}
-                    className={`pb-2.5 text-xs uppercase tracking-wider transition-colors cursor-pointer ${signupRole === "VENDOR"
-                        ? "font-semibold text-neutral-900 border-b-2 border-primary -mb-[1px]"
-                        : "text-neutral-400 hover:text-neutral-700"
-                      }`}
-                  >
-                    Restaurant Manager
-                  </button>
-                </div>
-
+                
                 <div className="mb-6">
                   <h1 className="font-serif text-3xl font-normal text-neutral-900 tracking-tight">
-                    {signupRole === "USER" ? "Create your account" : "Management & Executive Portal"}
+                    Create your account
                   </h1>
                   <p className="text-sm text-neutral-500 mt-1">
-                    {signupRole === "USER"
-                      ? "Book tables and order from Michigan's finest dining experience."
-                      : "Manage reservations, kitchen orders, menu items, and dining room service."}
+                    Book tables and order from Michigan's finest dining experience.
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3.5">
+                <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3.5">
                   {/* Full Name */}
                   <div>
                     <label
                       htmlFor="fullName"
                       className="block text-xs font-medium text-neutral-700 mb-1.5"
                     >
-                      {signupRole === "VENDOR" ? "Manager name" : "Full name"}
+                      Full name
                     </label>
                     <input
                       id="fullName"
@@ -746,7 +699,7 @@ export default function AuthView({
                         setFullName(e.target.value);
                         if (errors.fullName) setErrors({ ...errors, fullName: "" });
                       }}
-                      placeholder={signupRole === "VENDOR" ? "Marcus Vance" : "Jordan Smith"}
+                      placeholder="Jordan Smith"
                       aria-invalid={!!errors.fullName}
                       aria-describedby={errors.fullName ? "fullName-error" : undefined}
                       className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.fullName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
@@ -765,19 +718,19 @@ export default function AuthView({
                       htmlFor="email"
                       className="block text-xs font-medium text-neutral-700 mb-1.5"
                     >
-                      {signupRole === "VENDOR" ? "Work email" : "Email address"}
+                      Email address
                     </label>
                     <input
-                      id="email"
                       type="email"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
                         if (errors.email) setErrors({ ...errors, email: "" });
                       }}
-                      placeholder={
-                        signupRole === "VENDOR" ? "manager@dinedesk.com" : "jordan@example.com"
-                      }
+                      placeholder="jordan@example.com"
+                      id="signup-email"
+                      name="dinedesk_reg_email"
+                      autoComplete="off"
                       aria-invalid={!!errors.email}
                       aria-describedby={errors.email ? "email-error" : undefined}
                       className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : "border-neutral-300"
@@ -789,39 +742,6 @@ export default function AuthView({
                       </p>
                     )}
                   </div>
-
-                  {/* Role / Title (Manager Only) */}
-                  {signupRole === "VENDOR" && (
-                    <div>
-                      <label
-                        htmlFor="restaurantName"
-                        className="block text-xs font-medium text-neutral-700 mb-1.5"
-                      >
-                        Position / role
-                      </label>
-                      <input
-                        id="restaurantName"
-                        type="text"
-                        value={restaurantName}
-                        onChange={(e) => {
-                          setRestaurantName(e.target.value);
-                          if (errors.restaurantName) setErrors({ ...errors, restaurantName: "" });
-                        }}
-                        placeholder="General Manager / Operations Lead"
-                        aria-invalid={!!errors.restaurantName}
-                        aria-describedby={errors.restaurantName ? "restaurantName-error" : undefined}
-                        className={`w-full h-12 px-3.5 bg-white border rounded-lg text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors ${errors.restaurantName
-                            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                            : "border-neutral-300"
-                          }`}
-                      />
-                      {errors.restaurantName && (
-                        <p id="restaurantName-error" className="mt-1 text-xs text-red-600">
-                          {errors.restaurantName}
-                        </p>
-                      )}
-                    </div>
-                  )}
 
                   {/* Phone (US Format with mask) */}
                   <div>
