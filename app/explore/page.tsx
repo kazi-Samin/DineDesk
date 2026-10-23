@@ -9,6 +9,8 @@ import ExploreToolbar from "@/components/explore/ExploreToolbar";
 import ExploreSidebar from "@/components/explore/ExploreSidebar";
 import ExplorePagination from "@/components/explore/ExplorePagination";
 
+
+
 function ExploreContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";

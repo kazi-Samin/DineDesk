@@ -8,6 +8,8 @@ import { placeOrder } from "@/services/mockOrderService";
 import { SAVED_ADDRESSES, DEFAULT_CONTACT } from "@/data/mockCartData";
 import { FulfillmentMode, PaymentMethod, DeliveryAddress, CustomerContact, OrderConfirmation } from "@/types/order";
 
+
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, toggleDrawer, clearCart, applyCoupon, removeCoupon } = useCart();
@@ -263,8 +265,8 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-1.5 bg-surface-container rounded">
                     <button
                       className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "delivery"
-                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
+                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       onClick={() => setFulfillmentMode("delivery")}
                       type="button"
@@ -274,8 +276,8 @@ export default function CheckoutPage() {
                     </button>
                     <button
                       className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "takeaway"
-                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
+                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       onClick={() => setFulfillmentMode("takeaway")}
                       type="button"
@@ -285,8 +287,8 @@ export default function CheckoutPage() {
                     </button>
                     <button
                       className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "dinein"
-                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                          : "text-on-surface-variant hover:text-on-surface"
+                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                        : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       onClick={() => setFulfillmentMode("dinein")}
                       type="button"
@@ -323,8 +325,8 @@ export default function CheckoutPage() {
                             key={addr.id}
                             onClick={() => handleAddressSelect(addr)}
                             className={`relative flex flex-col p-space-md rounded cursor-pointer transition-all group ${isSelected
-                                ? "bg-surface-container-low border border-primary-container/40"
-                                : "bg-surface-container-lowest border border-outline-variant hover:bg-surface-container"
+                              ? "bg-surface-container-low border border-primary-container/40"
+                              : "bg-surface-container-lowest border border-outline-variant hover:bg-surface-container"
                               }`}
                           >
                             <div className="flex items-center justify-between mb-space-xs">
@@ -347,8 +349,8 @@ export default function CheckoutPage() {
                             </p>
                             <span
                               className={`mt-space-sm font-label-sm text-[10px] uppercase tracking-wider ${addr.isDefault
-                                  ? "text-primary font-bold"
-                                  : "text-on-surface-variant"
+                                ? "text-primary font-bold"
+                                : "text-on-surface-variant"
                                 }`}
                             >
                               {addr.isDefault ? "Default Address" : "Secondary"}
@@ -534,8 +536,8 @@ export default function CheckoutPage() {
                     <div
                       onClick={() => setPaymentMethod("card")}
                       className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "card"
-                          ? "bg-surface-container-low border border-primary-container/30"
-                          : "bg-surface-container-lowest hover:bg-surface-container-low"
+                        ? "bg-surface-container-low border border-primary-container/30"
+                        : "bg-surface-container-lowest hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -635,8 +637,8 @@ export default function CheckoutPage() {
                     <div
                       onClick={() => setPaymentMethod("cod")}
                       className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "cod"
-                          ? "bg-surface-container-low border border-primary-container/30"
-                          : "bg-surface-container-lowest hover:bg-surface-container-low"
+                        ? "bg-surface-container-low border border-primary-container/30"
+                        : "bg-surface-container-lowest hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -668,8 +670,8 @@ export default function CheckoutPage() {
                     <div
                       onClick={() => setPaymentMethod("mfs")}
                       className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "mfs"
-                          ? "bg-surface-container-low border border-primary-container/30"
-                          : "bg-surface-container-lowest hover:bg-surface-container-low"
+                        ? "bg-surface-container-low border border-primary-container/30"
+                        : "bg-surface-container-lowest hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">

@@ -1,4 +1,8 @@
-import { Suspense } from "react";
+// app/menus/[id]/page.tsx
+
+
+import { cache } from "react";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BackToExploreButton from "@/components/menus/BackToExploreButton";
 import MenuHero from "@/components/menus/MenuHero";
@@ -8,11 +12,11 @@ interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-async function getMenuDetails(id: string) {
+// Wrap getMenuDetails with React cache() to prevent duplicate fetches between generateMetadata and the page component
+const getMenuDetails = cache(async (id: string) => {
     try {
         const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
-        // Fetch the full list of menus from the working public endpoint
         const res = await fetch(`${baseUrl}/api/v1/menus/featured`, {
             cache: "no-store",
         });
@@ -37,6 +41,30 @@ async function getMenuDetails(id: string) {
         console.error("Failed to fetch menu details:", error);
         return null;
     }
+});
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+    const { id } = await params;
+    const rawData = await getMenuDetails(id);
+
+    if (!rawData) {
+        return {
+            title: "Restaurant Not Found",
+            robots: { index: false, follow: false },
+        };
+    }
+
+    const name = rawData.restaurantName || rawData.name || "DineDesk Restaurant";
+    const cuisine = rawData.cuisineCategory || rawData.category || "Fine Dining";
+    const city = rawData.neighborhood || "Dhaka";
+    const image = rawData.image || rawData.imageUrl || "/og-image.png";
+
+    return {
+        title: `${name} Menu & Table Booking`,
+        description: `See the ${name} menu, read reviews, order online or reserve a table. ${cuisine} cuisine in ${city}.`,
+        alternates: { canonical: `/menus/${id}` },
+        openGraph: { images: [image] },
+    };
 }
 
 export default async function MenuDetailsPage({ params }: PageProps) {
@@ -47,7 +75,6 @@ export default async function MenuDetailsPage({ params }: PageProps) {
         notFound();
     }
 
-    // Sanitize data and provide premium fallbacks so empty database fields never show raw/missing data
     const menuData = {
         ...rawData,
         restaurantName: rawData.restaurantName || "Sultan's Heritage Kitchen",
@@ -65,10 +92,8 @@ export default async function MenuDetailsPage({ params }: PageProps) {
         <main className="w-full min-h-screen bg-surface pb-32 pt-28 lg:pt-32">
             <div className="max-w-[1440px] mx-auto px-6 lg:px-12 flex flex-col gap-6">
 
-                {/* Step 4: Responsive Back to Explore Dynamic Button */}
                 <BackToExploreButton itemId={resolvedParams.id} />
 
-                {/* 1. Immersive Hero & Restaurant Banner */}
                 <MenuHero
                     restaurantName={menuData.restaurantName}
                     neighborhood={menuData.neighborhood}
@@ -76,7 +101,6 @@ export default async function MenuDetailsPage({ params }: PageProps) {
                     reviewCount={menuData.reviewCount}
                 />
 
-                {/* Step 2: Interactive Container managing state between MenuCategoriesNav, MenuListSection, and OrderCartModal */}
                 <MenuDetailsContainer menuData={menuData} />
 
             </div>
