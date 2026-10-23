@@ -15,7 +15,7 @@
 <table>
   <tr>
     <td align="center"><b>4</b><br/><sub>User Roles</sub></td>
-    <td align="center"><b>16</b><br/><sub>Dashboard Pages</sub></td>
+    <td align="center"><b>18</b><br/><sub>Dashboard Pages</sub></td>
     <td align="center"><b>2</b><br/><sub>Payment Methods</sub></td>
     <td align="center"><b>AI</b><br/><sub>Food Assistant</sub></td>
     <td align="center"><b>Live</b><br/><sub>Order Tracking</sub></td>
@@ -103,9 +103,9 @@ Traditional food ordering is fragmented across phone calls and commission-heavy 
 
 | | |
 |---|---|
-| 🌍 **Live Site** | [YOUR_LIVE_URL](YOUR_LIVE_URL) |
+| 🌍 **Live Site** | [LIVE_URL_NOT_GENERATE_YET](YOUR_LIVE_URL) |
 | 🔌 **Live API** | [dine-desk-backend.vercel.app](https://dine-desk-backend.vercel.app) |
-| 💻 **Client Repo** | [YOUR_CLIENT_REPO_URL](YOUR_CLIENT_REPO_URL) |
+| 💻 **Client Repo** | [kazi-Samin/DineDesk](https://github.com/kazi-Samin/DineDesk#-role-based-dashboards) |
 | ⚙️ **Server Repo** | [Pinon1345/DineDesk-Backend](https://github.com/Pinon1345/DineDesk-Backend) |
 
 ### 🔑 Demo Credentials
