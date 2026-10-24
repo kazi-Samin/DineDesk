@@ -103,7 +103,7 @@ Traditional food ordering is fragmented across phone calls and commission-heavy 
 
 | | |
 |---|---|
-| 🌍 **Live Site** | [LIVE_URL_NOT_GENERATE_YET](YOUR_LIVE_URL) |
+| 🌍 **Live Site** | [dine-desk-one.vercel.app](https://dine-desk-one.vercel.app/) |
 | 🔌 **Live API** | [dine-desk-backend.vercel.app](https://dine-desk-backend.vercel.app) |
 | 💻 **Client Repo** | [kazi-Samin/DineDesk](https://github.com/kazi-Samin/DineDesk#-role-based-dashboards) |
 | ⚙️ **Server Repo** | [Pinon1345/DineDesk-Backend](https://github.com/Pinon1345/DineDesk-Backend) |
