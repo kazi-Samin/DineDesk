@@ -11,7 +11,7 @@ import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface RewardPerk {
@@ -99,6 +99,9 @@ export default function CustomerLoyaltyPage() {
   const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
   const [points, setPoints] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [ledger, setLedger] = useState<PointLedgerItem[]>([]);
   const [claimedPerks, setClaimedPerks] = useState<string[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -117,7 +120,6 @@ export default function CustomerLoyaltyPage() {
     }, 3200);
   };
 
-  // Synchronize and calculate loyalty points and active bookings dynamically scoped to active user
   const syncLoyaltyTelemetry = async () => {
     try {
       let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
@@ -135,11 +137,12 @@ export default function CustomerLoyaltyPage() {
 
       const token = getAuthToken();
 
+      // Fetch user profile from backend
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         credentials: "include",
       }).catch(() => null);
@@ -157,30 +160,69 @@ export default function CustomerLoyaltyPage() {
         }
       }
 
-      // Fetch real orders and reservations dynamically scoped to user
-      const [realOrders, realReservations] = await Promise.all([
-        fetchCustomerOrders(user?.id),
-        fetchCustomerReservations(user?.id),
-      ]);
+      // 1. Fetch live reservations securely with Authorization token header
+      let liveReservations: any[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
+      }
+
+      // 2. Fetch live database orders directly from backend API
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      let liveOrders: any[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        liveOrders = apiData.data || apiData.orders || [];
+      } else {
+        liveOrders = await fetchCustomerOrders(user?.id);
+      }
 
       const userSpecificFavorites = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        ? JSON.parse(
+          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
+          "[]"
+        )
         : [];
       const userSpecificPayments = user?.id
         ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
         : [];
 
-      const totalPayments = realOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalPayments * 20;
+      // Exclude cancelled orders from valid totals
+      const nonCancelledOrders = liveOrders.filter(
+        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalOrders * 20;
 
-      const activeBookings = realReservations.filter(
-        (r) => {
-          const st = (r.status || "").toLowerCase();
-          return st === "confirmed" || st === "upcoming" || st === "pending";
-        }
-      ).length;
+      const activeOrders = liveOrders.filter((o: any) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
 
-      const generatedLedger: PointLedgerItem[] = realOrders.map((ord: any, index: number) => ({
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
+
+      const generatedLedger: PointLedgerItem[] = nonCancelledOrders.map((ord: any, index: number) => ({
         id: `ledger-${index}-${ord.id || ord.orderId}`,
         activity: `Payment Verified (#${String(ord.id || ord.orderId).slice(-10)})`,
         date: new Date(ord.createdAt || Date.now()).toLocaleDateString(),
@@ -191,7 +233,7 @@ export default function CustomerLoyaltyPage() {
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
-        totalOrders: totalPayments,
+        totalOrders,
         activeBookings,
         savedSpots: userSpecificFavorites.length,
         loyaltyPoints: calculatedPoints,
@@ -199,7 +241,10 @@ export default function CustomerLoyaltyPage() {
 
       setProfile(loadedProfile);
       setPoints(calculatedPoints);
+      setTotalOrdersCount(totalOrders);
+      setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
+      setSavedSpotsCount(userSpecificFavorites.length);
       setLedger(generatedLedger);
 
       // Gold Tier Milestone Check (>= 2000 pts)
@@ -219,32 +264,22 @@ export default function CustomerLoyaltyPage() {
   };
 
   useEffect(() => {
-    let isMounted = true;
+    syncLoyaltyTelemetry();
 
-    async function initPage() {
-      await syncLoyaltyTelemetry();
-      if (isMounted) setIsLoaded(true);
-    }
+    const handleSync = () => syncLoyaltyTelemetry();
 
-    initPage();
-
-    const handleStorage = () => {
-      syncLoyaltyTelemetry();
-    };
-
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("profile-updated", handleStorage);
-    window.addEventListener("booking-updated", handleStorage);
-    window.addEventListener("order-updated", handleStorage);
-    window.addEventListener("dinedesk-points-updated", handleStorage);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("profile-updated", handleSync);
+    window.addEventListener("booking-updated", handleSync);
+    window.addEventListener("order-updated", handleSync);
+    window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      isMounted = false;
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("profile-updated", handleStorage);
-      window.removeEventListener("booking-updated", handleStorage);
-      window.removeEventListener("order-updated", handleStorage);
-      window.removeEventListener("dinedesk-points-updated", handleStorage);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("profile-updated", handleSync);
+      window.removeEventListener("booking-updated", handleSync);
+      window.removeEventListener("order-updated", handleSync);
+      window.removeEventListener("dinedesk-points-updated", handleSync);
     };
   }, [user]);
 
@@ -294,7 +329,7 @@ export default function CustomerLoyaltyPage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={profile.fullName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} upcomingReservationsCount={activeBookingsCount} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} upcomingReservationsCount={activeBookingsCount} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <DashboardLoader />
           </main>
@@ -361,7 +396,8 @@ export default function CustomerLoyaltyPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={activeBookingsCount}
+          activeOrderCount={activeOrdersCount}
+          activeOrdersCount={totalOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={points}
         />
@@ -392,7 +428,7 @@ export default function CustomerLoyaltyPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Total Orders</span>
-                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{profile.stats.totalOrders}</span>
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{totalOrdersCount}</span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Bookings</span>
@@ -400,7 +436,7 @@ export default function CustomerLoyaltyPage() {
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Saved Spots</span>
-                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{profile.stats.savedSpots}</span>
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{savedSpotsCount}</span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Points Balance</span>

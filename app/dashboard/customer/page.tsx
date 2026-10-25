@@ -7,7 +7,7 @@ import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import DashboardLoader from "@/components/ui/DashboardLoader";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { CustomerProfileData } from "@/types/customerProfile";
 import { CustomerReservation } from "@/types/customerReservation";
 import { FavoriteRestaurant } from "@/types/customerFavorites";
@@ -20,6 +20,19 @@ import { motion } from "framer-motion";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  );
+};
+
 export default function CustomerDashboardOverviewPage() {
   const { openReservationModal } = useReservation();
   const { addItem, openDrawer } = useCart();
@@ -31,80 +44,178 @@ export default function CustomerDashboardOverviewPage() {
   const [favorites, setFavorites] = useState<FavoriteRestaurant[]>([]);
   const [orders, setOrders] = useState<OrderConfirmation[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   const loadDynamicOverviewData = async () => {
     try {
-      let loadedProfile = INITIAL_CUSTOMER_PROFILE;
+      let loadedProfile: CustomerProfileData = { ...INITIAL_CUSTOMER_PROFILE };
 
-      // 1. Load from localStorage first for instant rendering
+      // 1. Authenticated user details
+      if (user) {
+        loadedProfile.fullName = user.name || loadedProfile.fullName;
+        loadedProfile.email = user.email || loadedProfile.email;
+        if (user.phone) loadedProfile.phone = user.phone;
+        if (user.avatarUrl) {
+          loadedProfile.avatarUrl = user.avatarUrl;
+        } else {
+          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
+        }
+      }
+
+      // 2. Load from localStorage if available
       if (typeof window !== "undefined") {
         const storedProfile = localStorage.getItem("dinedesk_customer_profile");
         if (storedProfile) {
           try {
-            loadedProfile = { ...INITIAL_CUSTOMER_PROFILE, ...JSON.parse(storedProfile) };
+            loadedProfile = { ...loadedProfile, ...JSON.parse(storedProfile) };
           } catch (e) {
             // ignore
           }
         }
       }
 
-      // 2. Fetch live user profile from backend API
+      const token = getAuthToken();
+
+      // 3. Fetch live user profile from backend API
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         credentials: "include",
       }).catch(() => null);
 
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
         const userData = data.user || data;
-        loadedProfile = {
-          ...loadedProfile,
-          ...userData,
-          fullName: userData.fullName || userData.name || loadedProfile.fullName,
-        };
+        if (userData && (!user || userData.email === user.email)) {
+          loadedProfile = {
+            ...loadedProfile,
+            ...userData,
+            fullName: userData.fullName || userData.name || loadedProfile.fullName,
+            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
+          };
+        }
       }
 
-      if (user && user.name && loadedProfile.fullName === INITIAL_CUSTOMER_PROFILE.fullName) {
-        loadedProfile.fullName = user.name;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
+      // 4. Fetch live reservations with Authorization token
+      let liveReservations: CustomerReservation[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        const list = apiData.reservations || apiData.data || apiData || [];
+        liveReservations = list.map((item: any) => {
+          const rawStatus = (item.status || "confirmed").toLowerCase();
+          return {
+            id: item.id,
+            restaurantId: item.restaurantId,
+            restaurantName: item.restaurantName,
+            restaurantImage: item.restaurantImage || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+            neighborhood: item.neighborhood || "Downtown",
+            fullAddress: item.fullAddress || "Global City",
+            cuisine: item.cuisine || "Fine Dining",
+            date: item.date,
+            displayDate: item.displayDate || item.date,
+            time: item.time,
+            mealPeriod: item.mealPeriod || "Dinner",
+            partySize: item.partySize,
+            seatingArea: item.seatingArea,
+            tableNumber: item.tableNumber || "1",
+            status: rawStatus,
+            statusDisplay: item.statusDisplay || (rawStatus === "confirmed" ? "Confirmed" : rawStatus === "cancelled" ? "Cancelled" : "Pending"),
+            specialNotes: item.specialNotes || "",
+            isFeaturedUpcoming: item.isFeaturedUpcoming ?? (rawStatus === "confirmed"),
+            createdAt: item.createdAt,
+          };
+        });
       }
 
-      // 3. Fetch real orders and reservations dynamically
-      const [realOrders, realReservations] = await Promise.all([
-        fetchCustomerOrders(user?.id),
-        fetchCustomerReservations(user?.id),
-      ]);
+      // 5. Fetch live database orders directly from backend API
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      }).catch(() => null);
 
-      // 4. Compute dynamic metrics & storage favorites
+      let dbOrders: OrderConfirmation[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        const list = apiData.data || apiData.orders || [];
+        dbOrders = list.map((item: any) => ({
+          orderId: item.id,
+          restaurantName: item.restaurant?.name || "Partner Restaurant",
+          items: item.items || [],
+          total: Number(item.total || 0),
+          status: (item.status || "pending").toLowerCase(),
+          fulfillmentMode: (item.orderType || "delivery").toLowerCase(),
+          timeline: {
+            placedAt: item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"
+          },
+        }));
+      }
+
+      const realOrders = dbOrders.length > 0 ? dbOrders : await fetchCustomerOrders(user?.id);
+
+      // 6. Compute user-scoped favorites
       let userFavorites: FavoriteRestaurant[] = [];
-      if (typeof window !== "undefined") {
-        const storedFavs = localStorage.getItem("dinedesk_saved_restaurants");
+      if (typeof window !== "undefined" && user?.id) {
+        const storedFavs =
+          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+          localStorage.getItem(`dinedesk_saved_spots_${user.id}`);
         if (storedFavs) {
           try {
             userFavorites = JSON.parse(storedFavs);
           } catch (e) {
-            // ignore
+            userFavorites = [];
           }
         }
       }
 
-      const storedPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-      const totalPayments = Math.max(realOrders.length, storedPayments.length);
+      // 7. Calculate valid (non-cancelled) orders
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+
+      const nonCancelledOrders = realOrders.filter(
+        (o) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalValidOrders = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalValidOrders * 20;
+
+      const activeOrders = realOrders.filter((o) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
+
+      const activeBookingsCount = liveReservations.filter((r) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
+
+      setActiveOrdersCount(activeOrders);
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
-        totalOrders: totalPayments,
-        activeBookings: realReservations.filter(
-          (r) => r.status === "confirmed" || r.status === "pending"
-        ).length,
-        savedSpots: Math.max(14, userFavorites.length),
-        loyaltyPoints: totalPayments * 20,
+        totalOrders: totalValidOrders,
+        activeBookings: activeBookingsCount,
+        savedSpots: userFavorites.length,
+        loyaltyPoints: calculatedPoints,
       };
 
       setProfile(loadedProfile);
-      setReservations(realReservations);
+      setReservations(liveReservations);
       setFavorites(userFavorites);
       setOrders(realOrders);
     } catch (err) {
@@ -121,11 +232,15 @@ export default function CustomerDashboardOverviewPage() {
     window.addEventListener("storage", handleSync);
     window.addEventListener("profile-updated", handleSync);
     window.addEventListener("booking-updated", handleSync);
+    window.addEventListener("order-updated", handleSync);
+    window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
       window.removeEventListener("storage", handleSync);
       window.removeEventListener("profile-updated", handleSync);
       window.removeEventListener("booking-updated", handleSync);
+      window.removeEventListener("order-updated", handleSync);
+      window.removeEventListener("dinedesk-points-updated", handleSync);
     };
   }, [user]);
 
@@ -137,13 +252,15 @@ export default function CustomerDashboardOverviewPage() {
     );
   }
 
-  const upcomingReservation = reservations.find(
-    (res) => res.status === "confirmed" || res.status === "pending"
-  );
+  const upcomingReservation = reservations.find((res) => {
+    const st = (res.status || "").toLowerCase();
+    return st === "confirmed" || st === "pending" || st === "upcoming";
+  });
 
-  const activeOrder = orders.find(
-    (ord) => ord.status !== "delivered" && ord.status !== "completed" && ord.status !== "cancelled"
-  );
+  const activeOrder = orders.find((ord) => {
+    const st = (ord.status || "").toLowerCase();
+    return st !== "delivered" && st !== "completed" && st !== "cancelled";
+  });
 
   const recentOrders = orders.slice(0, 3);
   const topFavorites = favorites.slice(0, 3);
@@ -169,7 +286,9 @@ export default function CustomerDashboardOverviewPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={profile.stats.activeBookings}
+          activeOrderCount={activeOrdersCount}
+          activeOrdersCount={profile.stats.totalOrders}
+          upcomingReservationsCount={profile.stats.activeBookings}
           loyaltyPoints={profile.stats.loyaltyPoints}
         />
 
@@ -502,43 +621,68 @@ export default function CustomerDashboardOverviewPage() {
 
                 <div className="flex flex-col gap-3">
                   {recentOrders.length > 0 ? (
-                    recentOrders.map((ord) => (
-                      <div
-                        key={ord.orderId}
-                        className="bg-white/90 backdrop-blur-xl p-5 rounded-2xl border border-[#1b3b2b]/15 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#1b3b2b] transition-all"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-xl bg-[#1b3b2b]/10 text-[#1b3b2b] flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-xl">receipt</span>
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2.5">
-                              <h3 className="font-heading font-bold text-sm text-[#1b3b2b]">
-                                {ord.restaurantName}
-                              </h3>
-                              <span className="px-2 py-0.5 rounded bg-[#f8f9f6] text-[#1b3b2b]/70 text-[10px] font-mono font-bold">
-                                #{ord.orderId}
+                    recentOrders.map((ord) => {
+                      const isCancelled = (ord.status || "").toLowerCase() === "cancelled";
+
+                      return (
+                        <div
+                          key={ord.orderId}
+                          className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isCancelled
+                              ? "bg-red-50/50 border-red-200 opacity-80"
+                              : "bg-white/90 backdrop-blur-xl border-[#1b3b2b]/15 shadow-sm hover:border-[#1b3b2b]"
+                            }`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isCancelled ? "bg-red-100 text-red-600" : "bg-[#1b3b2b]/10 text-[#1b3b2b]"
+                                }`}
+                            >
+                              <span className="material-symbols-outlined text-xl">
+                                {isCancelled ? "cancel" : "receipt"}
                               </span>
                             </div>
-                            <p className="text-xs text-[#1b3b2b]/70 font-medium mt-1 line-clamp-1">
-                              {ord.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
-                            </p>
+                            <div>
+                              <div className="flex items-center gap-2.5 flex-wrap">
+                                <h3 className={`font-heading font-bold text-sm ${isCancelled ? "text-red-950 line-through" : "text-[#1b3b2b]"}`}>
+                                  {ord.restaurantName}
+                                </h3>
+                                <span className="px-2 py-0.5 rounded bg-[#f8f9f6] text-[#1b3b2b]/70 text-[10px] font-mono font-bold">
+                                  #{ord.orderId}
+                                </span>
+                                {isCancelled ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
+                                    Cancelled
+                                  </span>
+                                ) : null}
+                              </div>
+
+                              {isCancelled ? (
+                                <p className="text-[11px] text-red-600 font-semibold mt-1 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-xs">info</span>
+                                  This item was cancelled / deleted from orders page
+                                </p>
+                              ) : (
+                                <p className="text-xs text-[#1b3b2b]/70 font-medium mt-1 line-clamp-1">
+                                  {ord.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#1b3b2b]/10">
+                            <span className={`font-heading font-black text-base ${isCancelled ? "text-gray-400 line-through" : "text-[#1b3b2b]"}`}>
+                              ${ord.total.toLocaleString()}
+                            </span>
+                            <Link
+                              href={`/order-confirmation/${ord.orderId}`}
+                              className="px-4 py-2 bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-[#1b3b2b] rounded-xl text-xs font-bold transition-all border border-[#1b3b2b]/15"
+                            >
+                              Receipt
+                            </Link>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#1b3b2b]/10">
-                          <span className="font-heading font-black text-[#1b3b2b] text-base">
-                            ${ord.total.toLocaleString()}
-                          </span>
-                          <Link
-                            href={`/order-confirmation/${ord.orderId}`}
-                            className="px-4 py-2 bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-[#1b3b2b] rounded-xl text-xs font-bold transition-all border border-[#1b3b2b]/15"
-                          >
-                            Receipt
-                          </Link>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="bg-white/90 backdrop-blur-xl p-10 rounded-2xl border border-[#1b3b2b]/15 shadow-sm flex flex-col items-center justify-center text-center gap-3">
                       <span className="material-symbols-outlined text-3xl text-[#1b3b2b]/40">

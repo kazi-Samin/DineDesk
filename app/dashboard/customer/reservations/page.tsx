@@ -51,6 +51,7 @@ export default function CustomerReservationsPage() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
 
@@ -120,7 +121,7 @@ export default function CustomerReservationsPage() {
 
       setProfile(loadedProfile);
 
-      // Fetch dynamic database reservations with explicit Bearer token & credentials
+      // 1. Fetch dynamic database reservations with explicit Bearer token & credentials
       const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
         method: "GET",
         headers: {
@@ -152,9 +153,9 @@ export default function CustomerReservationsPage() {
             seatingArea: item.seatingArea,
             tableNumber: item.tableNumber || "1",
             status: rawStatus,
-            statusDisplay: item.statusDisplay || (rawStatus === "confirmed" ? "Confirmed" : "Pending"),
+            statusDisplay: item.statusDisplay || (rawStatus === "confirmed" ? "Confirmed" : rawStatus === "cancelled" ? "Cancelled" : "Pending"),
             specialNotes: item.specialNotes || "",
-            isFeaturedUpcoming: item.isFeaturedUpcoming ?? true,
+            isFeaturedUpcoming: item.isFeaturedUpcoming ?? (rawStatus === "confirmed"),
             createdAt: item.createdAt,
           };
         });
@@ -162,20 +163,50 @@ export default function CustomerReservationsPage() {
 
       setReservations(dbReservations);
 
-      // Fetch real orders scoped strictly to active user
-      const realOrders = await fetchCustomerOrders(user?.id);
+      // 2. Fetch live database orders to ensure cancelled orders are excluded
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      let liveOrders: any[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        liveOrders = apiData.data || apiData.orders || [];
+      } else {
+        liveOrders = await fetchCustomerOrders(user?.id);
+      }
+
       const userSpecificPayments = user?.id
         ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
         : [];
       const userSpecificFavorites = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        ? JSON.parse(
+          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
+          "[]"
+        )
         : [];
 
-      const totalPayments = realOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalPayments * 20;
+      // Valid non-cancelled orders count
+      const nonCancelledOrders = liveOrders.filter(
+        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalValidOrders = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalValidOrders * 20;
+
+      const activeOrders = liveOrders.filter((o: any) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
 
       setLoyaltyPoints(calculatedPoints);
-      setTotalOrdersCount(totalPayments);
+      setTotalOrdersCount(totalValidOrders);
+      setActiveOrdersCount(activeOrders);
       setSavedSpotsCount(userSpecificFavorites.length);
 
     } catch (err) {
@@ -283,6 +314,10 @@ export default function CustomerReservationsPage() {
 
       if (res.ok) {
         showToast(`Seating hold for "${updated.restaurantName}" updated successfully.`);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("booking-updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
         loadDatabaseReservations();
       } else {
         showToast("Failed to update reservation.", "error");
@@ -313,6 +348,10 @@ export default function CustomerReservationsPage() {
 
       if (res.ok) {
         showToast(`Seating hold for "${cancelModalRes.restaurantName}" has been cancelled.`, "info");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("booking-updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
         loadDatabaseReservations();
       } else {
         showToast("Failed to cancel reservation.", "error");
@@ -370,7 +409,9 @@ export default function CustomerReservationsPage() {
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
         onToggle={toggleSidebar}
-        activeOrderCount={tabCounts.upcoming}
+        activeOrderCount={activeOrdersCount}
+        activeOrdersCount={totalOrdersCount}
+        upcomingReservationsCount={tabCounts.upcoming}
         loyaltyPoints={loyaltyPoints}
       />
 
@@ -562,8 +603,8 @@ export default function CustomerReservationsPage() {
                           type="button"
                           onClick={() => setActiveTab(tab.id as ReservationTabFilter)}
                           className={`booking-tab px-space-md py-1.5 rounded-lg font-label-sm text-label-sm whitespace-nowrap transition-all cursor-pointer ${isActive
-                              ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
-                              : "text-on-surface-variant hover:text-on-surface"
+                            ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
+                            : "text-on-surface-variant hover:text-on-surface"
                             }`}
                         >
                           {tab.label} <span className="ml-1 font-normal">({tab.count})</span>
@@ -652,8 +693,11 @@ export default function CustomerReservationsPage() {
                                 </td>
 
                                 <td className="py-space-md px-space-md">
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm bg-primary-fixed text-on-primary-fixed font-semibold">
-                                    {item.statusDisplay || "Confirmed"}
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm font-semibold ${item.status === "cancelled"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-primary-fixed text-on-primary-fixed"
+                                    }`}>
+                                    {item.statusDisplay || (item.status === "cancelled" ? "Cancelled" : "Confirmed")}
                                   </span>
                                 </td>
 
