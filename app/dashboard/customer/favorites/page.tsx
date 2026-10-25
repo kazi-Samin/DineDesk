@@ -54,7 +54,10 @@ export default function CustomerFavoritesPage() {
 
   const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
   const [allMenus, setAllMenus] = useState<DatabaseMenu[]>([]);
-  const [points, setPoints] = useState(0); // Dynamic real loyalty points starting at 0
+  const [points, setPoints] = useState(0);
+  const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
+  const [activeBookingsCount, setActiveBookingsCount] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Filter & Pagination States
@@ -68,7 +71,7 @@ export default function CustomerFavoritesPage() {
   const realUserName = user?.name || profile.fullName || "Valued Diner";
   const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
 
-  // Dynamic telemetry synchronizer scoping points strictly to real orders
+  // Dynamic telemetry synchronizer scoping orders, bookings & points strictly to user
   const syncTelemetryData = async () => {
     try {
       let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
@@ -86,11 +89,12 @@ export default function CustomerFavoritesPage() {
 
       const token = getAuthToken();
 
+      // Fetch user profile from backend
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         credentials: "include",
       }).catch(() => null);
@@ -108,6 +112,73 @@ export default function CustomerFavoritesPage() {
         }
       }
 
+      // 1. Fetch live reservations securely with Authorization token header
+      let liveReservations: any[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
+      }
+
+      // 2. Fetch live database orders directly from backend API
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      let liveOrders: any[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        liveOrders = apiData.data || apiData.orders || [];
+      } else {
+        liveOrders = await fetchCustomerOrders(user?.id);
+      }
+
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+
+      // Exclude cancelled orders from valid totals
+      const nonCancelledOrders = liveOrders.filter(
+        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalOrders * 20;
+
+      const activeOrders = liveOrders.filter((o: any) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
+
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
+
+      setTotalOrdersCount(totalOrders);
+      setActiveOrdersCount(activeOrders);
+      setActiveBookingsCount(activeBookings);
+      setPoints(calculatedPoints);
+
+      loadedProfile.stats = {
+        ...loadedProfile.stats,
+        totalOrders,
+        activeBookings,
+        loyaltyPoints: calculatedPoints,
+      };
+
       setProfile(loadedProfile);
 
       const menuRes = await fetch(`/api/customer/favorites`, { credentials: "include" }).catch(() => null);
@@ -116,17 +187,6 @@ export default function CustomerFavoritesPage() {
         const fetchedMenus = jsonResponse.menus || [];
         setAllMenus(fetchedMenus);
       }
-
-      // Fetch real orders scoped strictly to user
-      const realOrders = await fetchCustomerOrders(user?.id);
-      const userSpecificPayments = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-        : [];
-
-      const totalPayments = realOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalPayments * 20;
-
-      setPoints(calculatedPoints);
     } catch (err) {
       console.error("Failed to sync telemetry:", err);
     }
@@ -142,13 +202,13 @@ export default function CustomerFavoritesPage() {
 
     loadInitialData();
 
-    // Listen to storage events so loyalty points update instantly across actions
     const handleStorageChange = () => {
       syncTelemetryData();
     };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("profile-updated", handleStorageChange);
+    window.addEventListener("booking-updated", handleStorageChange);
     window.addEventListener("order-updated", handleStorageChange);
     window.addEventListener("dinedesk-points-updated", handleStorageChange);
 
@@ -156,6 +216,7 @@ export default function CustomerFavoritesPage() {
       isMounted = false;
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("profile-updated", handleStorageChange);
+      window.removeEventListener("booking-updated", handleStorageChange);
       window.removeEventListener("order-updated", handleStorageChange);
       window.removeEventListener("dinedesk-points-updated", handleStorageChange);
     };
@@ -252,7 +313,7 @@ export default function CustomerFavoritesPage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={realUserName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} upcomingReservationsCount={activeBookingsCount} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <DashboardLoader />
           </main>
@@ -271,7 +332,6 @@ export default function CustomerFavoritesPage() {
         onToggleSidebar={toggleSidebar}
       />
 
-      {/* Dynamic Loyalty Points passed to Sidebar */}
       <CustomerSidebar
         userName={`${realUserName.split(" ")[0]}'s Account`}
         memberSince={profile.memberSince}
@@ -279,7 +339,9 @@ export default function CustomerFavoritesPage() {
         isOpen={isSidebarOpen}
         onClose={closeSidebar}
         onToggle={toggleSidebar}
-        activeOrderCount={profile.stats.activeBookings}
+        activeOrderCount={activeOrdersCount}
+        activeOrdersCount={totalOrdersCount}
+        upcomingReservationsCount={activeBookingsCount}
         loyaltyPoints={points}
       />
 

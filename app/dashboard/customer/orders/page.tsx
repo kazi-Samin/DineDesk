@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
@@ -9,7 +10,7 @@ import ProfileToast from "@/components/customer/profile/ProfileToast";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { OrderConfirmation } from "@/types/order";
 import { CustomerProfileData } from "@/types/customerProfile";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { useCart } from "@/context/CartContext";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
@@ -32,6 +33,7 @@ const getAuthToken = () => {
 };
 
 export default function CustomerOrdersPage() {
+  const router = useRouter();
   const { addItem, openDrawer } = useCart();
   const { user } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
@@ -41,6 +43,8 @@ export default function CustomerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
+  const [savedSpotsCount, setSavedSpotsCount] = useState(0);
+  const [validOrdersCount, setValidOrdersCount] = useState(0);
 
   const [activeTab, setActiveTab] = useState<OrderTabFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,28 +101,23 @@ export default function CustomerOrdersPage() {
         }
       }
 
-      // Fetch live orders and reservations dynamically scoped to active user
-      const [realOrders, realReservations] = await Promise.all([
-        fetchCustomerOrders(user?.id),
-        fetchCustomerReservations(user?.id),
-      ]);
+      // 1. Fetch live reservations with Bearer token header
+      let liveReservations: any[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
 
-      const userSpecificPayments = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-        : [];
-      const totalPayments = realOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalPayments * 20;
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
+      }
 
-      const activeBookings = realReservations.filter(
-        (r) => {
-          const st = (r.status || "").toLowerCase();
-          return st === "confirmed" || st === "upcoming" || st === "pending";
-        }
-      ).length;
-
-      setLoyaltyPoints(calculatedPoints);
-      setActiveBookingsCount(activeBookings);
-
+      // 2. Fetch live database orders from backend API
       const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
         method: "GET",
         headers: {
@@ -145,13 +144,40 @@ export default function CustomerOrdersPage() {
         }));
       }
 
-      setOrders(dbOrders);
+      const realOrders = dbOrders.length > 0 ? dbOrders : await fetchCustomerOrders(user?.id);
+
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+      const userSpecificFavorites = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || localStorage.getItem(`dinedesk_saved_spots_${user.id}`) || "[]")
+        : [];
+
+      // Valid orders: exclude cancelled orders so metrics reflect active/completed orders
+      const nonCancelledOrders = realOrders.filter(
+        (o) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalValidCount = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalValidCount * 20;
+
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
+
+      setOrders(realOrders);
+      setValidOrdersCount(totalValidCount);
+      setLoyaltyPoints(calculatedPoints);
+      setActiveBookingsCount(activeBookings);
+      setSavedSpotsCount(userSpecificFavorites.length);
+
       setProfile((prev) => ({
         ...prev,
         stats: {
           ...prev.stats,
-          totalOrders: totalPayments,
+          totalOrders: totalValidCount,
           activeBookings: activeBookings,
+          savedSpots: userSpecificFavorites.length,
           loyaltyPoints: calculatedPoints,
         }
       }));
@@ -199,9 +225,15 @@ export default function CustomerOrdersPage() {
 
       if (res.ok) {
         showToast("Order cancelled successfully.", "info");
-        loadDatabaseOrders();
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("order-updated"));
+          window.dispatchEvent(new Event("dinedesk-points-updated"));
+          window.dispatchEvent(new Event("storage"));
+        }
+        await loadDatabaseOrders();
       } else {
-        const errData = await res.json();
+        const errData = await res.json().catch(() => ({}));
         showToast(errData.message || "Failed to cancel order.", "error");
       }
     } catch (err) {
@@ -245,18 +277,35 @@ export default function CustomerOrdersPage() {
     });
   }, [orders, activeTab, searchQuery]);
 
-  const handleReorder = (order: OrderConfirmation) => {
-    order.items.forEach((item: any) => {
+  // Adds item to cart and redirects to explore page filtered to that specific menu dish
+  const handleReorder = (order: OrderConfirmation, specificItem?: any) => {
+    const targetItem = specificItem || order.items[0];
+
+    if (specificItem) {
       addItem({
-        id: item.menuItemId || item.id,
-        name: item.name,
-        price: Number(item.price),
-        quantity: item.quantity,
-        image: "/images/kacchi-biryani.png",
+        id: specificItem.menuItemId || specificItem.id,
+        name: specificItem.name,
+        price: Number(specificItem.price),
+        quantity: specificItem.quantity || 1,
+        image: specificItem.image || "/images/kacchi-biryani.png",
       });
-    });
-    showToast(`Added items from ${order.restaurantName} to your cart.`);
+    } else {
+      order.items.forEach((item: any) => {
+        addItem({
+          id: item.menuItemId || item.id,
+          name: item.name,
+          price: Number(item.price),
+          quantity: item.quantity || 1,
+          image: item.image || "/images/kacchi-biryani.png",
+        });
+      });
+    }
+
+    showToast(`Redirecting to explore "${targetItem?.name || order.restaurantName}"...`);
     openDrawer();
+
+    const searchDishName = targetItem?.name || "";
+    router.push(`/explore?search=${encodeURIComponent(searchDishName)}`);
   };
 
   return (
@@ -277,7 +326,8 @@ export default function CustomerOrdersPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={tabCounts.active}
+          activeOrderCount={validOrdersCount}
+          activeOrdersCount={validOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />
@@ -297,7 +347,7 @@ export default function CustomerOrdersPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-md">
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl border border-outline-variant shadow-xs">
                   <span className="font-label-sm text-xs text-on-surface-variant block uppercase tracking-wider">Total Orders</span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-semibold mt-0.5 block">{profile.stats.totalOrders}</span>
+                  <span className="font-headline-sm text-headline-sm text-primary font-semibold mt-0.5 block">{validOrdersCount}</span>
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl border border-outline-variant shadow-xs">
                   <span className="font-label-sm text-xs text-on-surface-variant block uppercase tracking-wider">Active</span>
@@ -305,7 +355,7 @@ export default function CustomerOrdersPage() {
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl border border-outline-variant shadow-xs">
                   <span className="font-label-sm text-xs text-on-surface-variant block uppercase tracking-wider">Saved Spots</span>
-                  <span className="font-headline-sm text-headline-sm text-primary font-semibold mt-0.5 block">{profile.stats.savedSpots}</span>
+                  <span className="font-headline-sm text-headline-sm text-primary font-semibold mt-0.5 block">{savedSpotsCount}</span>
                 </div>
                 <div className="bg-surface-container-lowest px-space-md py-space-sm rounded-xl border border-outline-variant shadow-xs">
                   <span className="font-label-sm text-xs text-on-surface-variant block uppercase tracking-wider">Points</span>
@@ -330,9 +380,9 @@ export default function CustomerOrdersPage() {
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTab(tab.id as OrderTabFilter)}
-                      className={`px-3 py-1.5 rounded-md font-label-md text-xs transition-all ${isActive
-                          ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
-                          : "text-on-surface-variant hover:text-on-surface"
+                      className={`px-3 py-1.5 rounded-md font-label-md text-xs transition-all cursor-pointer ${isActive
+                        ? "bg-surface-container-lowest text-primary shadow-xs font-semibold"
+                        : "text-on-surface-variant hover:text-on-surface"
                         }`}
                     >
                       {tab.label} <span className="opacity-70">({tab.count})</span>
@@ -356,7 +406,7 @@ export default function CustomerOrdersPage() {
                 </div>
                 <Link
                   href="/explore"
-                  className="px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary rounded-lg text-xs font-semibold transition-colors shrink-0 shadow-xs flex items-center gap-1"
+                  className="px-3.5 py-1.5 bg-primary-container hover:bg-primary text-on-primary rounded-lg text-xs font-semibold transition-colors shrink-0 shadow-xs flex items-center gap-1 cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">add</span>
                   <span>New Order</span>
@@ -403,15 +453,32 @@ export default function CustomerOrdersPage() {
                               {order.restaurantName}
                             </h3>
                             <span className="font-mono text-xs text-on-surface-variant">#{order.orderId}</span>
-                            <span className="px-2 py-0.5 rounded-sm text-[11px] font-medium uppercase tracking-wider bg-primary-fixed text-on-primary-fixed">
+                            <span className={`px-2 py-0.5 rounded-sm text-[11px] font-medium uppercase tracking-wider ${isCancelled
+                              ? "bg-red-100 text-red-700"
+                              : "bg-primary-fixed text-on-primary-fixed"
+                              }`}>
                               {order.status}
                             </span>
                           </div>
 
-                          <p className="font-body-sm text-xs text-on-surface-variant mt-0.5">
-                            {order.items.reduce((sum, item) => sum + item.quantity, 0)} items:{" "}
-                            {order.items.map((i) => `${i.quantity}x ${i.name}`).join(", ")}
-                          </p>
+                          {/* Individual clickable item line to reorder specific menu item directly */}
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">
+                            <span className="font-semibold text-on-surface">
+                              {order.items.reduce((sum, item) => sum + item.quantity, 0)} items:
+                            </span>
+                            {order.items.map((i, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => handleReorder(order, i)}
+                                className="hover:underline hover:text-primary transition-colors cursor-pointer text-left inline-flex items-center gap-0.5 bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/30"
+                                title={`Reorder & explore "${i.name}"`}
+                              >
+                                <span>{i.quantity}x {i.name}</span>
+                                <span className="material-symbols-outlined text-[11px] text-primary">open_in_new</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
@@ -437,6 +504,7 @@ export default function CustomerOrdersPage() {
                             type="button"
                             onClick={() => handleReorder(order)}
                             className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg text-xs font-medium transition-colors border border-outline-variant/60 flex items-center gap-1 cursor-pointer"
+                            title={`Reorder and explore items from ${order.restaurantName}`}
                           >
                             <span className="material-symbols-outlined text-sm">replay</span>
                             <span>Reorder</span>

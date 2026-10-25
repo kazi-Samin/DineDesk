@@ -22,7 +22,7 @@ import {
   toggleHelpfulVote,
 } from "@/services/mockCustomerReviewService";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -50,6 +50,7 @@ export default function CustomerReviewsPage() {
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
@@ -70,7 +71,6 @@ export default function CustomerReviewsPage() {
     }, 3200);
   };
 
-  // Synchronize telemetry, real profiles, orders, and payment-based loyalty points scoped strictly to active user
   const syncTelemetryData = async () => {
     try {
       let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
@@ -88,11 +88,12 @@ export default function CustomerReviewsPage() {
 
       const token = getAuthToken();
 
+      // Fetch user profile from backend
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         credentials: "include",
       }).catch(() => null);
@@ -110,49 +111,88 @@ export default function CustomerReviewsPage() {
         }
       }
 
-      // Fetch real orders and reservations dynamically scoped to user
-      const [realOrders, realReservations] = await Promise.all([
-        fetchCustomerOrders(user?.id),
-        fetchCustomerReservations(user?.id),
-      ]);
+      // 1. Fetch live reservations with Bearer token header
+      let liveReservations: any[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
+      }
+
+      // 2. Fetch live database orders directly from backend API
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      let liveOrders: any[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        liveOrders = apiData.data || apiData.orders || [];
+      } else {
+        liveOrders = await fetchCustomerOrders(user?.id);
+      }
 
       const loadedReviews = getCustomerReviews();
       setReviews(loadedReviews);
 
+      // User-scoped favorites
       const userSpecificFavorites = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) || "[]")
+        ? JSON.parse(
+          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
+          "[]"
+        )
         : [];
-      const userSpecificDishes = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_saved_dishes_${user.id}`) || "[]")
-        : [];
+
       const userSpecificPayments = user?.id
         ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
         : [];
 
-      const totalSaved = userSpecificFavorites.length + userSpecificDishes.length;
-      const totalPayments = realOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalPayments * 20;
+      // Exclude cancelled orders from valid totals
+      const nonCancelledOrders = liveOrders.filter(
+        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
+      const calculatedPoints = totalOrders * 20;
 
-      const activeBookings = realReservations.filter(
-        (r) => {
-          const st = (r.status || "").toLowerCase();
-          return st === "confirmed" || st === "upcoming" || st === "pending";
-        }
-      ).length;
+      const activeOrders = liveOrders.filter((o: any) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
+
+      // Active bookings filter
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
-        totalOrders: totalPayments,
+        totalOrders,
         activeBookings,
-        savedSpots: totalSaved,
+        savedSpots: userSpecificFavorites.length,
         loyaltyPoints: calculatedPoints,
       };
 
       setProfile(loadedProfile);
-      setTotalOrdersCount(totalPayments);
+      setTotalOrdersCount(totalOrders);
+      setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
       setLoyaltyPoints(calculatedPoints);
-      setSavedSpotsCount(totalSaved);
+      setSavedSpotsCount(userSpecificFavorites.length);
     } catch (err) {
       console.error("Telemetry sync error:", err);
     }
@@ -161,22 +201,20 @@ export default function CustomerReviewsPage() {
   useEffect(() => {
     syncTelemetryData();
 
-    const handleStorage = () => {
-      syncTelemetryData();
-    };
+    const handleSync = () => syncTelemetryData();
 
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("profile-updated", handleStorage);
-    window.addEventListener("booking-updated", handleStorage);
-    window.addEventListener("order-updated", handleStorage);
-    window.addEventListener("dinedesk-points-updated", handleStorage);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("profile-updated", handleSync);
+    window.addEventListener("booking-updated", handleSync);
+    window.addEventListener("order-updated", handleSync);
+    window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("profile-updated", handleStorage);
-      window.removeEventListener("booking-updated", handleStorage);
-      window.removeEventListener("order-updated", handleStorage);
-      window.removeEventListener("dinedesk-points-updated", handleStorage);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("profile-updated", handleSync);
+      window.removeEventListener("booking-updated", handleSync);
+      window.removeEventListener("order-updated", handleSync);
+      window.removeEventListener("dinedesk-points-updated", handleSync);
     };
   }, [user]);
 
@@ -254,7 +292,8 @@ export default function CustomerReviewsPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={activeBookingsCount}
+          activeOrderCount={activeOrdersCount}
+          activeOrdersCount={totalOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />

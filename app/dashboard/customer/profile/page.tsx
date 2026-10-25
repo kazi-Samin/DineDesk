@@ -15,8 +15,7 @@ import {
 } from "@/types/customerProfile";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
 import { getCustomerAddresses } from "@/services/mockCustomerProfileService";
-import { getSavedRestaurants, getSavedDishes } from "@/services/mockCustomerFavoritesService";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
@@ -82,11 +81,11 @@ export default function CustomerProfilePage() {
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [isEditing, setIsEditing] = useState(false);
 
-  // Independent form states so user can type freely without interference
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -135,13 +134,11 @@ export default function CustomerProfilePage() {
     }
   };
 
-  // Load Profile and Dynamic Stats cleanly scoped to the current user
   useEffect(() => {
     const loadDatabaseProfile = async () => {
       try {
         let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
 
-        // If user is authenticated, populate with real user info
         if (user) {
           loadedProfile.fullName = user.name || loadedProfile.fullName;
           loadedProfile.email = user.email || loadedProfile.email;
@@ -177,33 +174,73 @@ export default function CustomerProfilePage() {
           }
         }
 
-        // Fetch real orders and reservations scoped strictly to this user
-        const [realOrders, realReservations] = await Promise.all([
-          fetchCustomerOrders(user?.id),
-          fetchCustomerReservations(user?.id),
-        ]);
+        // 1. Fetch live database reservations
+        let liveReservations: any[] = [];
+        const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          credentials: "include",
+        }).catch(() => null);
+
+        if (resApi && resApi.ok) {
+          const apiData = await resApi.json();
+          liveReservations = apiData.reservations || apiData.data || apiData || [];
+        }
+
+        // 2. Fetch live database orders directly from backend API
+        const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          },
+          credentials: "include",
+        }).catch(() => null);
+
+        let liveOrders: any[] = [];
+        if (ordersRes && ordersRes.ok) {
+          const apiData = await ordersRes.json();
+          liveOrders = apiData.data || apiData.orders || [];
+        } else {
+          liveOrders = await fetchCustomerOrders(user?.id);
+        }
 
         const loadedAddresses = getCustomerAddresses();
         setAddressCount(loadedAddresses.length);
 
-        // Calculate saved spots strictly from user-scoped storage / records
         const userSpecificSavedSpots = user?.id
-          ? JSON.parse(localStorage.getItem(`dinedesk_saved_spots_${user.id}`) || "[]")
+          ? JSON.parse(
+            localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+            localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
+            "[]"
+          )
           : [];
         const totalSavedSpots = userSpecificSavedSpots.length;
         setSavedSpotsCount(totalSavedSpots);
 
-        // Real orders count (0 for new users)
-        const totalOrders = realOrders.length;
+        const userSpecificPayments = user?.id
+          ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+          : [];
+
+        // Exclude cancelled orders from valid totals
+        const nonCancelledOrders = liveOrders.filter(
+          (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+        );
+        const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
         const calculatedPoints = totalOrders * 20;
 
-        // Real active bookings count (0 for new users)
-        const activeBookings = realReservations.filter(
-          (r) => {
-            const st = (r.status || "").toLowerCase();
-            return st === "confirmed" || st === "upcoming" || st === "pending";
-          }
-        ).length;
+        const activeOrders = liveOrders.filter((o: any) => {
+          const st = (o.status || "").toLowerCase();
+          return st !== "delivered" && st !== "completed" && st !== "cancelled";
+        }).length;
+
+        const activeBookings = liveReservations.filter((r: any) => {
+          const st = (r.status || "").toLowerCase();
+          return st === "confirmed" || st === "upcoming" || st === "pending";
+        }).length;
 
         loadedProfile.stats = {
           ...loadedProfile.stats,
@@ -221,12 +258,15 @@ export default function CustomerProfilePage() {
         setLanguage(loadedProfile.language || "en");
         setDietaryPrefs(loadedProfile.dietaryPreferences || []);
 
-        // Prioritize AuthContext user avatar if available
-        const currentActiveAvatar = user?.avatarUrl || loadedProfile.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(loadedProfile.fullName || "Diner")}`;
+        const currentActiveAvatar =
+          user?.avatarUrl ||
+          loadedProfile.avatarUrl ||
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(loadedProfile.fullName || "Diner")}`;
         setAvatarUrl(currentActiveAvatar);
 
         setLoyaltyPoints(calculatedPoints);
         setTotalOrdersCount(totalOrders);
+        setActiveOrdersCount(activeOrders);
         setActiveBookingsCount(activeBookings);
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -293,7 +333,7 @@ export default function CustomerProfilePage() {
 
       if (result.success && result.url) {
         setAvatarUrl(result.url);
-        updateUserAvatar(result.url); // Instantly update global auth context and navbar/sidebar
+        updateUserAvatar(result.url);
         showToast("Photo uploaded and synchronized successfully!", "success");
       } else {
         showToast("Failed to upload image.", "error");
@@ -357,7 +397,7 @@ export default function CustomerProfilePage() {
       setProfile(updatedData);
       setSavedSnapshot(updatedData);
       broadcastProfileUpdate(updatedData);
-      updateUserAvatar(avatarUrl); // Ensure global auth context is synced
+      updateUserAvatar(avatarUrl);
 
       await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "PUT",
@@ -412,7 +452,7 @@ export default function CustomerProfilePage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={profile.fullName} userRole="Verified Foodie" avatarUrl={avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} avatarUrl={avatarUrl} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} avatarUrl={avatarUrl} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <div className="w-full px-6 sm:px-10 py-10 max-w-4xl mx-auto flex-1 flex flex-col gap-6 animate-pulse">
               <div className="h-8 bg-[#1b3b2b]/10 rounded-xl w-64" />
@@ -442,7 +482,8 @@ export default function CustomerProfilePage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={activeBookingsCount}
+          activeOrderCount={activeOrdersCount}
+          activeOrdersCount={totalOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />

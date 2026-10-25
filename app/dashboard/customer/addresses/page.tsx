@@ -12,7 +12,7 @@ import DashboardLoader from "@/components/ui/DashboardLoader";
 
 import { CustomerAddress } from "@/types/customerProfile";
 import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders, fetchCustomerReservations } from "@/services/customerDataService";
+import { fetchCustomerOrders } from "@/services/customerDataService";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +40,7 @@ export default function CustomerAddressesPage() {
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
 
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
@@ -82,11 +83,12 @@ export default function CustomerAddressesPage() {
 
       const token = getAuthToken();
 
+      // Fetch user profile from backend
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         credentials: "include",
       }).catch(() => null);
@@ -104,11 +106,39 @@ export default function CustomerAddressesPage() {
         }
       }
 
-      // Fetch orders and reservations dynamically scoped to user
-      const [realOrders, realReservations] = await Promise.all([
-        fetchCustomerOrders(user?.id),
-        fetchCustomerReservations(user?.id),
-      ]);
+      // Fetch live reservations securely with Authorization token header
+      let liveReservations: any[] = [];
+      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
+      }
+
+      // Fetch live orders directly from database API to exclude cancelled orders
+      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        credentials: "include",
+      }).catch(() => null);
+
+      let liveOrders: any[] = [];
+      if (ordersRes && ordersRes.ok) {
+        const apiData = await ordersRes.json();
+        liveOrders = apiData.data || apiData.orders || [];
+      } else {
+        liveOrders = await fetchCustomerOrders(user?.id);
+      }
 
       const addressesRes = await fetch(`/api/customer/addresses`, { credentials: "include" }).catch(() => null);
       let loadedAddresses: CustomerAddress[] = [];
@@ -117,22 +147,37 @@ export default function CustomerAddressesPage() {
         setAddresses(loadedAddresses);
       }
 
-      // Calculate user-scoped saved spots
+      // Compute user-scoped saved spots
       const userSpecificSavedSpots = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_saved_spots_${user.id}`) || "[]")
+        ? JSON.parse(
+          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
+          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
+          "[]"
+        )
         : [];
-      const totalSavedSpots = userSpecificSavedSpots.length + loadedAddresses.length;
+      const totalSavedSpots = userSpecificSavedSpots.length;
 
-      const totalOrders = realOrders.length;
+      // Compute total valid orders (excluding cancelled)
+      const userSpecificPayments = user?.id
+        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
+        : [];
+
+      const nonCancelledOrders = liveOrders.filter(
+        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      );
+      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
       const calculatedPoints = totalOrders * 20;
 
-      // Calculate active bookings matching reservation page filters
-      const activeBookings = realReservations.filter(
-        (r) => {
-          const st = (r.status || "").toLowerCase();
-          return st === "confirmed" || st === "upcoming" || st === "pending";
-        }
-      ).length;
+      const activeOrders = liveOrders.filter((o: any) => {
+        const st = (o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      }).length;
+
+      // Calculate active bookings matching confirmed / pending statuses
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = (r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
 
       loadedProfile.stats = {
         ...loadedProfile.stats,
@@ -144,6 +189,7 @@ export default function CustomerAddressesPage() {
 
       setProfile(loadedProfile);
       setTotalOrdersCount(totalOrders);
+      setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
       setLoyaltyPoints(calculatedPoints);
       setSavedSpotsCount(totalSavedSpots);
@@ -157,22 +203,20 @@ export default function CustomerAddressesPage() {
   useEffect(() => {
     syncTelemetryData();
 
-    const handleStorage = () => {
-      syncTelemetryData();
-    };
+    const handleSync = () => syncTelemetryData();
 
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("profile-updated", handleStorage);
-    window.addEventListener("booking-updated", handleStorage);
-    window.addEventListener("order-updated", handleStorage);
-    window.addEventListener("dinedesk-points-updated", handleStorage);
+    window.addEventListener("storage", handleSync);
+    window.addEventListener("profile-updated", handleSync);
+    window.addEventListener("booking-updated", handleSync);
+    window.addEventListener("order-updated", handleSync);
+    window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("profile-updated", handleStorage);
-      window.removeEventListener("booking-updated", handleStorage);
-      window.removeEventListener("order-updated", handleStorage);
-      window.removeEventListener("dinedesk-points-updated", handleStorage);
+      window.removeEventListener("storage", handleSync);
+      window.removeEventListener("profile-updated", handleSync);
+      window.removeEventListener("booking-updated", handleSync);
+      window.removeEventListener("order-updated", handleSync);
+      window.removeEventListener("dinedesk-points-updated", handleSync);
     };
   }, [user]);
 
@@ -296,7 +340,7 @@ export default function CustomerAddressesPage() {
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
         <CustomerHeader userName={realUserName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} />
+          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} />
           <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
             <DashboardLoader />
           </main>
@@ -323,7 +367,8 @@ export default function CustomerAddressesPage() {
           isOpen={isSidebarOpen}
           onClose={closeSidebar}
           onToggle={toggleSidebar}
-          activeOrderCount={activeBookingsCount}
+          activeOrderCount={activeOrdersCount}
+          activeOrdersCount={totalOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />
