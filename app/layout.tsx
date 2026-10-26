@@ -4,7 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CookieConsent from "@/components/ui/CookieConsent";
-// import TableMateAIBadge from "@/components/ui/TableMateAIBadge";
+import TableMateAIBadge from "@/components/ui/TableMateAIBadge";
 import CartDrawer from "@/components/cart/CartDrawer";
 import GlobalLoader from "@/components/ui/GlobalLoader";
 import { CartProvider } from "@/context/CartContext";
@@ -157,7 +157,7 @@ export default function RootLayout({
               <CartDrawer />
               <CookieConsent />
               {/* TableMateAIBadge temporarily hidden from UI - file kept in components/ui/TableMateAIBadge.tsx */}
-              {/* <TableMateAIBadge /> */}
+              <TableMateAIBadge />
               <Footer />
             </ReservationProvider>
           </CartProvider>

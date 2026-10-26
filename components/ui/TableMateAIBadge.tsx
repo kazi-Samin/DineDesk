@@ -1,70 +1,38 @@
 "use client";
 
-import { useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
+import DineDeskAILogo from "@/components/ai/DineDeskAILogo";
 
 export default function TableMateAIBadge() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
 
+  // Hide on dashboard, auth, or if already on DineDesk AI page
   if (
     pathname?.startsWith("/dashboard") ||
     pathname === "/sign-in" ||
-    pathname === "/login"
+    pathname === "/login" ||
+    pathname === "/dinedesk-ai" ||
+    pathname === "/ai"
   ) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-space-lg right-space-lg z-40">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-space-sm px-space-lg py-space-md bg-surface-container-lowest border border-outline-variant rounded-full text-primary-container shadow-[0_4px_16px_rgba(30,27,22,0.06)] hover:border-primary-container transition-all group"
-        type="button"
-        aria-label="TableMate AI Assistant"
+    <div className="fixed bottom-6 right-6 z-40 group">
+      {/* Floating Restaurant AI Logo Launcher - EXACT MATCHING LOGO BADGE */}
+      <Link
+        href="/dinedesk-ai"
+        className="relative block rounded-[1.35rem] focus:outline-none"
+        aria-label="Open DineDesk AI Discovery"
       >
-        <span className="material-symbols-outlined text-xl text-primary-container group-hover:scale-110 transition-transform">
-          auto_awesome
-        </span>
-        <span className="font-label-lg text-label-lg font-medium tracking-tight text-on-surface">
-          TableMate AI
-        </span>
-      </button>
+        <DineDeskAILogo size="fab" iconOnly={true} withLink={false} framed={true} />
 
-      {isOpen && (
-        <div className="absolute bottom-16 right-0 w-80 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-[0_12px_36px_rgba(30,27,22,0.12)] p-space-md flex flex-col gap-space-sm">
-          <div className="flex items-center justify-between border-b border-outline-variant pb-space-xs">
-            <div className="flex items-center gap-space-xs text-primary">
-              <span className="material-symbols-outlined text-lg">auto_awesome</span>
-              <span className="font-label-md font-semibold">TableMate AI</span>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-on-surface-variant hover:text-on-surface"
-              aria-label="Close assistant"
-            >
-              <span className="material-symbols-outlined text-base">close</span>
-            </button>
-          </div>
-          <p className="font-body-sm text-[13px] text-on-surface-variant">
-            Craving recommendations or need help picking Dhaka’s best table tonight?
-          </p>
-          <div className="flex flex-col gap-1 text-[12px]">
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-left p-1.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors"
-            >
-              &ldquo;Find the best Mughlai kacchi in Gulshan&rdquo;
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-left p-1.5 rounded bg-surface-container-low hover:bg-surface-container text-on-surface transition-colors"
-            >
-              &ldquo;Where can I book an open garden table?&rdquo;
-            </button>
-          </div>
-        </div>
-      )}
+        {/* Minimal luxury hover tooltip */}
+        <span className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-[#132d20] text-white text-[11px] font-bold px-3 py-1 rounded-xl shadow-lg whitespace-nowrap border border-[#FFAA40]/30">
+          DineDesk AI
+        </span>
+      </Link>
     </div>
   );
 }

@@ -12,6 +12,13 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get("role")?.value;
   const token = request.cookies.get("token")?.value;
 
+  const hasBetterAuthSession = !!(
+    request.cookies.get("better-auth.session_token")?.value ||
+    request.cookies.get("__Secure-better-auth.session_token")?.value ||
+    request.cookies.get("better-auth.session_data")?.value ||
+    request.cookies.get("__Secure-better-auth.session_data")?.value
+  );
+
   // Root /dashboard redirect
   if (pathname === "/dashboard" || pathname === "/dashboard/") {
     if (role === "ADMIN" || role === "SUPERADMIN") {
@@ -20,7 +27,7 @@ export function middleware(request: NextRequest) {
     if (role === "VENDOR") {
       return NextResponse.redirect(new URL("/dashboard/vendor", request.url));
     }
-    if (role === "USER") {
+    if (role === "USER" || hasBetterAuthSession) {
       return NextResponse.redirect(new URL("/dashboard/customer", request.url));
     }
     return NextResponse.redirect(new URL(`/sign-in?redirect=${encodeURIComponent(pathname)}`, request.url));

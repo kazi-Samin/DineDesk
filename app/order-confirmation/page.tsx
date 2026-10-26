@@ -10,6 +10,39 @@ export default function OrderConfirmationPage() {
     const router = useRouter();
 
     useEffect(() => {
+        // Record payment for loyalty points & dashboard display
+        if (typeof window !== "undefined") {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const orderId = params.get("order_id");
+                const sessionId = params.get("session_id");
+                if (orderId || sessionId) {
+                    const paymentKey = `order_pay_${orderId || sessionId}`;
+                    const existing = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
+                    if (!existing.includes(paymentKey)) {
+                        existing.push(paymentKey);
+                        localStorage.setItem("dinedesk_stripe_payments", JSON.stringify(existing));
+
+                        // Also store user-specific key for customer dashboard
+                        const userRaw = localStorage.getItem("dinedesk_auth_user");
+                        if (userRaw) {
+                            const u = JSON.parse(userRaw);
+                            if (u?.id) {
+                                const userExisting = JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${u.id}`) || "[]");
+                                if (!userExisting.includes(paymentKey)) {
+                                    userExisting.push(paymentKey);
+                                    localStorage.setItem(`dinedesk_stripe_payments_${u.id}`, JSON.stringify(userExisting));
+                                }
+                            }
+                        }
+                        window.dispatchEvent(new Event("storage"));
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to record payment in confirmation:", e);
+            }
+        }
+
         // Fire celebratory confetti upon successful payment landing
         const duration = 3 * 1000;
         const animationEnd = Date.now() + duration;

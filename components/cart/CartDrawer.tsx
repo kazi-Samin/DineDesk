@@ -19,19 +19,35 @@ export default function CartDrawer() {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkCart = () => {
+  const checkCart = () => {
+    try {
+
       const saved = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
-      setCartItems(saved);
-    };
+      setCartItems(Array.isArray(saved) ? saved : []);
+    } catch (e) {
+      setCartItems([]);
+    }
+  };
+
+  useEffect(() => {
+
+
+
+
 
     checkCart();
     window.addEventListener("storage", checkCart);
-    window.addEventListener("open-cart-drawer", () => setIsOpen(true));
+    window.addEventListener("cart-updated", checkCart);
+    window.addEventListener("open-cart-drawer", () => {
+      checkCart();
+      setIsOpen(true);
+    });
 
     return () => {
       window.removeEventListener("storage", checkCart);
+      window.removeEventListener("cart-updated", checkCart);
       window.removeEventListener("open-cart-drawer", () => setIsOpen(true));
+
     };
   }, []);
 
@@ -40,6 +56,12 @@ export default function CartDrawer() {
       setIsOpen(cartContext.isCartOpen);
     }
   }, [cartContext?.isCartOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      checkCart();
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
     setIsOpen(false);

@@ -1,5 +1,6 @@
-import { authClient } from "@/lib/auth-client";
 "use client";
+
+import { authClient } from "@/lib/auth-client";
 
 import React, { useState } from "react";
 import Link from "next/link";
@@ -9,6 +10,7 @@ import Logo from "@/components/Logo";
 import { useAuth } from "@/context/AuthContext";
 import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
 import PhoneInput from "@/components/ui/PhoneInput";
+import toast from "react-hot-toast";
 
 // Helper: International phone number validation (7 to 16 digits)
 function isValidPhoneNumber(phone: string): boolean {
@@ -223,14 +225,42 @@ export default function AuthView({
     }
   };
 
-  // Google Sign-In Simulation
-  const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    setGeneralError("");
-    setTimeout(() => {
+  // Google Sign-In Direct Dispatch
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      setGeneralError("");
+
+      const origin = typeof window !== "undefined" && window.location.origin
+        ? window.location.origin
+        : "https://dine-desk-one.vercel.app";
+
+      const response = await fetch(`${origin}/api/auth/sign-in/social`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: "google",
+          callbackURL: `${origin}/dashboard/customer`,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.message || errorData?.error || `Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No Google sign-in URL returned from server.");
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Google sign in failed. Please try again.";
+      setGeneralError(message);
+      toast.error(message, { duration: 6000 });
       setIsLoading(false);
-      router.push("/dashboard/customer");
-    }, 800);
+    }
   };
 
   // Demo Credentials Autofill for Evaluators

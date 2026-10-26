@@ -82,7 +82,9 @@ export default function Footer() {
   if (
     pathname?.startsWith("/dashboard") ||
     pathname === "/sign-in" ||
-    pathname === "/login"
+    pathname === "/login" ||
+    pathname === "/dinedesk-ai" ||
+    pathname === "/ai"
   ) {
     return null;
   }
