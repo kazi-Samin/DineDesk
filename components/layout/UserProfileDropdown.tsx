@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import DineDeskAILogo from "@/components/ai/DineDeskAILogo";
 
 interface UserProfileDropdownProps {
     user: any;
@@ -144,6 +145,25 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                                     <div className="flex flex-col">
                                         <span>Explore Menus</span>
                                         <span className="text-[10px] text-on-surface-variant font-medium">Curated kitchens &amp; dishes</span>
+                                    </div>
+                                </Link>
+
+                                <Link
+                                    href="/dinedesk-ai"
+                                    onClick={() => setIsOpen(false)}
+                                    className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-on-surface hover:bg-primary/10 hover:text-primary transition-all group"
+                                >
+                                    <div className="group-hover:scale-105 transition-transform shrink-0 shadow-2xs">
+                                        <DineDeskAILogo size="sm" iconOnly={true} withLink={false} framed={false} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-1.5">
+                                            <span>DineDesk AI</span>
+                                            <span className="text-[9px] font-mono font-black uppercase bg-[#FFAA40]/20 text-[#C05621] px-1.5 py-0.2 rounded-sm border border-[#FFAA40]/30">
+                                                AI
+                                            </span>
+                                        </div>
+                                        <span className="text-[10px] text-on-surface-variant font-medium">Smart culinary concierge</span>
                                     </div>
                                 </Link>
                             </div>

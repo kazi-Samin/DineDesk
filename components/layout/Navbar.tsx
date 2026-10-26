@@ -46,6 +46,7 @@ export default function Navbar() {
 
     updateSyncData();
     window.addEventListener("storage", updateSyncData);
+    window.addEventListener("cart-updated", updateSyncData);
     window.addEventListener("profile-updated", updateSyncData);
 
     const handleCartUpdate = () => updateSyncData();
@@ -53,6 +54,7 @@ export default function Navbar() {
 
     return () => {
       window.removeEventListener("storage", updateSyncData);
+      window.removeEventListener("cart-updated", updateSyncData);
       window.removeEventListener("profile-updated", updateSyncData);
       window.removeEventListener("open-cart-drawer", handleCartUpdate);
     };
@@ -81,7 +83,7 @@ export default function Navbar() {
   const isDashboard = pathname?.startsWith("/dashboard");
   const isAuth = pathname === "/sign-in" || pathname === "/login";
 
-  if (isDashboard || isAuth) {
+  if (isDashboard || isAuth || pathname === "/dinedesk-ai" || pathname === "/ai") {
     return null;
   }
 
