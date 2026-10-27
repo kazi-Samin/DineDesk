@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:partner": "git fetch origin && git checkout developer && git merge origin/pinon --no-edit && git push origin developer && git checkout main && git merge developer --no-edit && git push origin main",
+    "deploy:main": "git checkout main && git merge developer --no-edit && git push origin main"
   },
   "dependencies": {
     "@stripe/stripe-js": "^10.1.0",
