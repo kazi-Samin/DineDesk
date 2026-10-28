@@ -156,6 +156,92 @@ export async function getMeApi(): Promise<{ success: boolean; data?: AuthUser; m
   return data;
 }
 
+/**
+ * Called after Google/social OAuth - exchanges the OAuth user info for a backend JWT.
+ * The backend creates or finds the user by email and returns its own JWT token.
+ */
+export async function socialLoginApi(userData: {
+  email: string;
+  name: string;
+  googleId?: string;
+  avatarUrl?: string;
+}): Promise<AuthResponse> {
+  try {
+    // Try /auth/social-login endpoint first
+    const response = await fetch(`${API_BASE_URL}/auth/social-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: userData.email,
+        name: userData.name,
+        googleId: userData.googleId,
+        avatarUrl: userData.avatarUrl,
+        provider: "google",
+      }),
+    });
+
+    if (response.ok) {
+      const data = await parseJsonResponse<AuthResponse>(response);
+      if (data.success && data.token) {
+        setStoredToken(data.token);
+        if (data.data) setStoredUser(data.data);
+        return data;
+      }
+    }
+
+    // Fallback: try /auth/google endpoint
+    const res2 = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: userData.email,
+        name: userData.name,
+        googleId: userData.googleId,
+        avatarUrl: userData.avatarUrl,
+      }),
+    });
+
+    if (res2.ok) {
+      const data2 = await parseJsonResponse<AuthResponse>(res2);
+      if (data2.success && data2.token) {
+        setStoredToken(data2.token);
+        if (data2.data) setStoredUser(data2.data);
+        return data2;
+      }
+    }
+
+    // Fallback: try /auth/oauth-callback
+    const res3 = await fetch(`${API_BASE_URL}/auth/oauth-callback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        email: userData.email,
+        name: userData.name,
+        provider: "google",
+        providerId: userData.googleId,
+        avatarUrl: userData.avatarUrl,
+      }),
+    });
+
+    if (res3.ok) {
+      const data3 = await parseJsonResponse<AuthResponse>(res3);
+      if (data3.success && data3.token) {
+        setStoredToken(data3.token);
+        if (data3.data) setStoredUser(data3.data);
+        return data3;
+      }
+    }
+
+    return { success: false, message: "Backend social login endpoint not available" };
+  } catch (err) {
+    console.error("socialLoginApi error:", err);
+    return { success: false, message: "Social login backend sync failed" };
+  }
+}
+
 export async function logoutApi(): Promise<{ success: boolean; message?: string }> {
   const token = getStoredToken();
   try {
