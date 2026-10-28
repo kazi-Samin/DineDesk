@@ -1,23 +1,20 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import Link from "next/link";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
 import AddressFormDrawer from "@/components/customer/profile/AddressFormDrawer";
 import DeleteAddressModal from "@/components/customer/profile/DeleteAddressModal";
-import ProfileToast from "@/components/customer/profile/ProfileToast";
 import DashboardLoader from "@/components/ui/DashboardLoader";
 
-import { CustomerAddress } from "@/types/customerProfile";
-import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders } from "@/services/customerDataService";
+import { CustomerAddress, CustomerProfileData } from "@/types/customerProfile";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
@@ -32,11 +29,34 @@ const getAuthToken = () => {
   );
 };
 
+const EMPTY_PROFILE: CustomerProfileData = {
+  fullName: "Diner",
+  email: "",
+  phone: "",
+  avatarUrl: "",
+  roleBadge: "Verified Foodie",
+  memberSince: "Member since 2026",
+  language: "en",
+  dietaryPreferences: [],
+  isEmailVerified: false,
+  isPhoneVerified: false,
+  passwordLastChangedDays: 0,
+  twoFactorPhone: "",
+  stats: {
+    totalOrders: 0,
+    activeBookings: 0,
+    savedSpots: 0,
+    loyaltyPoints: 0,
+  },
+};
+
 export default function CustomerAddressesPage() {
   const { user } = useAuth();
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle(
+    "dinedesk_customer_sidebar"
+  );
 
-  const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
+  const [profile, setProfile] = useState<CustomerProfileData>(EMPTY_PROFILE);
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
@@ -45,8 +65,12 @@ export default function CustomerAddressesPage() {
 
   const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [isAddressDrawerOpen, setIsAddressDrawerOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
-  const [deletingAddress, setDeletingAddress] = useState<CustomerAddress | null>(null);
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(
+    null
+  );
+  const [deletingAddress, setDeletingAddress] = useState<CustomerAddress | null>(
+    null
+  );
   const [isLoaded, setIsLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -55,181 +79,188 @@ export default function CustomerAddressesPage() {
     type: "success" | "error" | "info";
   }>({ message: null, type: "success" });
 
-  const realUserName = user?.name || profile.fullName || "Valued Diner";
-  const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
+  const realUserName = user?.name || profile.fullName || "Diner";
+  const realUserEmail = user?.email || profile.email || "";
 
-  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
     setToast({ message, type });
     setTimeout(() => {
-      setToast((prev) => (prev.message === message ? { ...prev, message: null } : prev));
+      setToast((prev) =>
+        prev.message === message ? { ...prev, message: null } : prev
+      );
     }, 3200);
   };
 
-  // Synchronize telemetry cleanly scoped to the active user
-  const syncTelemetryData = async () => {
+  const syncDatabaseData = useCallback(async () => {
     try {
-      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
-
-      if (user) {
-        loadedProfile.fullName = user.name || loadedProfile.fullName;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-        if (user.avatarUrl) {
-          loadedProfile.avatarUrl = user.avatarUrl;
-        } else {
-          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
-        }
-      }
-
       const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
-      // Fetch user profile from backend
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
+      const [profileRes, ordersRes, resApi, favsRes, addressesRes] =
+        await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/reservations`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/favorites`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/users/addresses`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+        ]);
+
+      // 1. Process Profile & Loyalty Points
+      let currentFullName = user?.name || "Diner";
+      let currentEmail = user?.email || "";
+      let currentPhone = user?.phone || "";
+      let currentAvatar =
+        user?.avatarUrl || (user as any)?.image || (user as any)?.avatar || "";
+      let dbLoyaltyPoints = 0;
 
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
-        const userData = data.user || data;
-        if (userData && (!user || userData.email === user.email)) {
-          loadedProfile = {
-            ...loadedProfile,
-            ...userData,
-            fullName: userData.fullName || userData.name || loadedProfile.fullName,
-            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
-          };
+        const userData = data.user || data.data || data;
+        if (userData) {
+          currentFullName =
+            userData.fullName || userData.name || currentFullName;
+          currentEmail = userData.email || currentEmail;
+          currentPhone = userData.phone || currentPhone;
+          currentAvatar =
+            userData.avatarUrl || userData.image || currentAvatar;
+          if (typeof userData.loyaltyPoints === "number") {
+            dbLoyaltyPoints = userData.loyaltyPoints;
+          }
         }
       }
 
-      // Fetch live reservations securely with Authorization token header
-      let liveReservations: any[] = [];
-      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
-
-      if (resApi && resApi.ok) {
-        const apiData = await resApi.json();
-        liveReservations = apiData.reservations || apiData.data || apiData || [];
-      }
-
-      // Fetch live orders directly from database API to exclude cancelled orders
-      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
-
-      let liveOrders: any[] = [];
+      // 2. Process Live Database Orders (Strict single source of truth)
+      let rawOrders: any[] = [];
       if (ordersRes && ordersRes.ok) {
         const apiData = await ordersRes.json();
-        liveOrders = apiData.data || apiData.orders || [];
-      } else {
-        liveOrders = await fetchCustomerOrders(user?.id);
+        rawOrders = apiData.data || apiData.orders || [];
       }
 
-      const addressesRes = await fetch(`/api/customer/addresses`, { credentials: "include" }).catch(() => null);
-      let loadedAddresses: CustomerAddress[] = [];
-      if (addressesRes && addressesRes.ok) {
-        loadedAddresses = await addressesRes.json();
-        setAddresses(loadedAddresses);
-      }
+      const validOrders = rawOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return !st.includes("cancel");
+      });
 
-      // Compute user-scoped saved spots
-      const userSpecificSavedSpots = user?.id
-        ? JSON.parse(
-          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
-          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
-          "[]"
-        )
-        : [];
-      const totalSavedSpots = userSpecificSavedSpots.length;
-
-      // Compute total valid orders (excluding cancelled)
-      const userSpecificPayments = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-        : [];
-
-      const nonCancelledOrders = liveOrders.filter(
-        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
-      );
-      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalOrders * 20;
-
-      const activeOrders = liveOrders.filter((o: any) => {
-        const st = (o.status || "").toLowerCase();
-        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      const totalValidOrders = validOrders.length;
+      const activeOrders = validOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed";
       }).length;
 
-      // Calculate active bookings matching confirmed / pending statuses
-      const activeBookings = liveReservations.filter((r: any) => {
-        const st = (r.status || "").toLowerCase();
+      // 3. Process Live Reservations
+      let rawReservations: any[] = [];
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        rawReservations =
+          apiData.reservations || apiData.data || apiData || [];
+      }
+
+      const activeBookings = rawReservations.filter((r: any) => {
+        const st = String(r.status || "").toLowerCase();
         return st === "confirmed" || st === "upcoming" || st === "pending";
       }).length;
 
-      loadedProfile.stats = {
-        ...loadedProfile.stats,
-        totalOrders,
-        activeBookings,
-        savedSpots: totalSavedSpots,
-        loyaltyPoints: calculatedPoints,
-      };
+      // 4. Process Live Favorites
+      let liveFavoritesCount = 0;
+      if (favsRes && favsRes.ok) {
+        const favsData = await favsRes.json();
+        const favList = favsData.data || favsData.menus || favsData.favorites || [];
+        liveFavoritesCount = favList.length;
+      }
 
-      setProfile(loadedProfile);
-      setTotalOrdersCount(totalOrders);
+      // 5. Process Live Saved Addresses
+      if (addressesRes && addressesRes.ok) {
+        const addrData = await addressesRes.json();
+        const addressList = addrData.data || addrData.addresses || addrData || [];
+        if (Array.isArray(addressList)) {
+          setAddresses(addressList);
+        }
+      }
+
+      const calculatedLoyalty =
+        dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalValidOrders * 20;
+
+      setProfile({
+        ...EMPTY_PROFILE,
+        fullName: currentFullName,
+        email: currentEmail,
+        phone: currentPhone,
+        avatarUrl: currentAvatar,
+        stats: {
+          totalOrders: totalValidOrders,
+          activeBookings,
+          savedSpots: liveFavoritesCount,
+          loyaltyPoints: calculatedLoyalty,
+        },
+      });
+
+      setTotalOrdersCount(totalValidOrders);
       setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
-      setLoyaltyPoints(calculatedPoints);
-      setSavedSpotsCount(totalSavedSpots);
+      setSavedSpotsCount(liveFavoritesCount);
+      setLoyaltyPoints(calculatedLoyalty);
     } catch (err) {
-      console.error("Failed to sync customer telemetry ledger:", err);
+      console.error("Failed to sync live address and dashboard data:", err);
     } finally {
       setIsLoaded(true);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    syncTelemetryData();
+    syncDatabaseData();
 
-    const handleSync = () => syncTelemetryData();
-
-    window.addEventListener("storage", handleSync);
+    const handleSync = () => syncDatabaseData();
     window.addEventListener("profile-updated", handleSync);
     window.addEventListener("booking-updated", handleSync);
     window.addEventListener("order-updated", handleSync);
-    window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      window.removeEventListener("storage", handleSync);
       window.removeEventListener("profile-updated", handleSync);
       window.removeEventListener("booking-updated", handleSync);
       window.removeEventListener("order-updated", handleSync);
-      window.removeEventListener("dinedesk-points-updated", handleSync);
     };
-  }, [user]);
+  }, [syncDatabaseData]);
 
   const filteredAddresses = useMemo(() => {
     if (!searchQuery.trim()) return addresses;
     const q = searchQuery.toLowerCase();
     return addresses.filter(
       (a) =>
-        a.label.toLowerCase().includes(q) ||
-        a.road.toLowerCase().includes(q) ||
-        a.building.toLowerCase().includes(q) ||
-        a.city.toLowerCase().includes(q) ||
-        a.recipientName.toLowerCase().includes(q)
+        (a.label && a.label.toLowerCase().includes(q)) ||
+        (a.road && a.road.toLowerCase().includes(q)) ||
+        (a.building && a.building.toLowerCase().includes(q)) ||
+        (a.city && a.city.toLowerCase().includes(q)) ||
+        (a.recipientName && a.recipientName.toLowerCase().includes(q))
     );
   }, [addresses, searchQuery]);
 
@@ -239,13 +270,36 @@ export default function CustomerAddressesPage() {
 
   const handleSetDefault = async (addressId: string, addressLabel: string) => {
     try {
-      const res = await fetch(`/api/customer/addresses/${addressId}/default`, {
-        method: "PATCH",
-        credentials: "include",
-      });
+      const token = getAuthToken();
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/users/addresses/${addressId}/default`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
+
       if (res.ok) {
-        const updated = await res.json();
-        setAddresses(updated);
+        const updatedResponse = await res.json();
+        const updatedList =
+          updatedResponse.data ||
+          updatedResponse.addresses ||
+          updatedResponse;
+
+        if (Array.isArray(updatedList)) {
+          setAddresses(updatedList);
+        } else {
+          setAddresses((prev) =>
+            prev.map((a) => ({
+              ...a,
+              isDefault: a.id === addressId,
+            }))
+          );
+        }
         showToast(`"${addressLabel}" set as your default delivery address.`);
       } else {
         showToast("Failed to update default address.", "error");
@@ -268,24 +322,38 @@ export default function CustomerAddressesPage() {
   const handleSaveAddress = async (address: CustomerAddress) => {
     const isNew = !editingAddress;
     try {
-      const endpoint = isNew ? `/api/customer/addresses` : `/api/customer/addresses/${address.id}`;
+      const token = getAuthToken();
+      const endpoint = isNew
+        ? `${API_BASE_URL}/api/v1/users/addresses`
+        : `${API_BASE_URL}/api/v1/users/addresses/${address.id}`;
       const method = isNew ? "POST" : "PUT";
 
       const res = await fetch(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(address),
         credentials: "include",
       });
 
       if (res.ok) {
-        const updated = await res.json();
-        setAddresses(updated);
+        const responseData = await res.json();
+        const updatedList =
+          responseData.data || responseData.addresses || responseData;
+
+        if (Array.isArray(updatedList)) {
+          setAddresses(updatedList);
+        } else {
+          syncDatabaseData();
+        }
+
         setIsAddressDrawerOpen(false);
         setEditingAddress(null);
         showToast(
           isNew
-            ? `Added "${address.label}" to your database.`
+            ? `Added "${address.label}" to your saved addresses.`
             : `Updated address "${address.label}".`
         );
       } else {
@@ -300,14 +368,31 @@ export default function CustomerAddressesPage() {
     if (!deletingAddress) return;
     const label = deletingAddress.label;
     try {
-      const res = await fetch(`/api/customer/addresses/${deletingAddress.id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const token = getAuthToken();
+      const res = await fetch(
+        `${API_BASE_URL}/api/v1/users/addresses/${deletingAddress.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
 
       if (res.ok) {
-        const updated = await res.json();
-        setAddresses(updated);
+        const responseData = await res.json();
+        const updatedList =
+          responseData.data || responseData.addresses || responseData;
+
+        if (Array.isArray(updatedList)) {
+          setAddresses(updatedList);
+        } else {
+          setAddresses((prev) =>
+            prev.filter((a) => a.id !== deletingAddress.id)
+          );
+        }
         setDeletingAddress(null);
         showToast(`Removed "${label}".`);
       } else {
@@ -318,36 +403,89 @@ export default function CustomerAddressesPage() {
     }
   };
 
-  const handleExportCSV = async () => {
+  const handleExportCSV = () => {
+    if (addresses.length === 0) {
+      showToast("No addresses available to export.", "info");
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/customer/addresses/export`, { credentials: "include" });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "dinedesk-addresses.csv";
-        a.click();
-        showToast("Downloaded addresses as CSV.", "info");
-      }
+      const headers = [
+        "Label",
+        "Recipient Name",
+        "Contact Number",
+        "Category",
+        "Building",
+        "Road",
+        "Apartment",
+        "City",
+        "Postal Code",
+        "Delivery Instructions",
+        "Default",
+      ];
+
+      const rows = addresses.map((addr) => [
+        `"${addr.label || ""}"`,
+        `"${addr.recipientName || ""}"`,
+        `"${addr.contactNumber || ""}"`,
+        `"${addr.category || ""}"`,
+        `"${addr.building || ""}"`,
+        `"${addr.road || ""}"`,
+        `"${addr.apartment || ""}"`,
+        `"${addr.city || ""}"`,
+        `"${addr.postalCode || ""}"`,
+        `"${(addr.deliveryInstructions || "").replace(/"/g, '""')}"`,
+        addr.isDefault ? "Yes" : "No",
+      ]);
+
+      const csvContent = [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `dinedesk-addresses-${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      showToast("Exported addresses successfully.", "success");
     } catch (err) {
-      showToast("Export failed.", "error");
+      showToast("Failed to export addresses.", "error");
     }
   };
 
   if (!isLoaded) {
     return (
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
-        <CustomerHeader userName={realUserName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <CustomerHeader
+          userName={realUserName}
+          userRole={profile.roleBadge}
+          avatarUrl={profile.avatarUrl}
+          onToggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={loyaltyPoints} upcomingReservationsCount={activeBookingsCount} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} />
-          <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
+          <CustomerSidebar
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
+            onToggle={toggleSidebar}
+            loyaltyPoints={loyaltyPoints}
+            upcomingReservationsCount={activeBookingsCount}
+            activeOrdersCount={totalOrdersCount}
+            activeOrderCount={activeOrdersCount}
+          />
+          <main
+            className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+              }`}
+          >
             <DashboardLoader />
           </main>
         </div>
       </div>
     );
   }
+
+  const cleanFirstName = profile.fullName.split(" ")[0] || "Diner";
 
   return (
     <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white relative">
@@ -361,7 +499,7 @@ export default function CustomerAddressesPage() {
 
       <div className="flex pt-20 flex-1">
         <CustomerSidebar
-          userName={`${profile.fullName.split(" ")[0]}'s Account`}
+          userName={cleanFirstName}
           memberSince={profile.memberSince}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
@@ -373,8 +511,10 @@ export default function CustomerAddressesPage() {
           loyaltyPoints={loyaltyPoints}
         />
 
-        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-
+        <main
+          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+            }`}
+        >
           {/* Top Quick Stats Banner */}
           <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <motion.div
@@ -385,10 +525,10 @@ export default function CustomerAddressesPage() {
             >
               <div>
                 <h1 className="font-heading font-extrabold text-xl text-[#1b3b2b]">
-                  Welcome back, {profile.fullName.split(" ")[0]}
+                  Welcome back, {cleanFirstName}
                 </h1>
                 <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
-                  {profile.email} {user?.phone && `• ${user.phone}`}
+                  {realUserEmail} {profile.phone && `• ${profile.phone}`}
                 </p>
               </div>
 
@@ -432,7 +572,6 @@ export default function CustomerAddressesPage() {
           {/* Main Content Area */}
           <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-8">
             <div className="flex flex-col w-full">
-
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
@@ -440,7 +579,8 @@ export default function CustomerAddressesPage() {
                     Saved Addresses
                   </h1>
                   <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1">
-                    Manage where your food gets delivered. We will use your default address at checkout.
+                    Manage where your food gets delivered. Your default address
+                    will be selected automatically at checkout.
                   </p>
                 </div>
 
@@ -451,7 +591,9 @@ export default function CustomerAddressesPage() {
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/80 hover:bg-white text-xs font-bold text-[#1b3b2b] rounded-xl border border-[#1b3b2b]/20 transition-all cursor-pointer shadow-xs"
                     title="Export addresses as CSV"
                   >
-                    <span className="material-symbols-outlined text-sm">download</span>
+                    <span className="material-symbols-outlined text-sm">
+                      download
+                    </span>
                     <span>Export CSV</span>
                   </button>
 
@@ -460,7 +602,9 @@ export default function CustomerAddressesPage() {
                     onClick={handleOpenAddAddress}
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-extrabold uppercase tracking-wider rounded-xl shadow-md transition-all cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-base">add</span>
+                    <span className="material-symbols-outlined text-base">
+                      add
+                    </span>
                     <span>Add New Address</span>
                   </button>
                 </div>
@@ -470,7 +614,9 @@ export default function CustomerAddressesPage() {
               <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#1b3b2b]/15 shadow-xl">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 rounded-2xl bg-[#1b3b2b]/10 text-[#1b3b2b] flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-2xl">local_shipping</span>
+                    <span className="material-symbols-outlined text-2xl">
+                      local_shipping
+                    </span>
                   </div>
                   <div>
                     <span className="text-[10px] text-[#1b3b2b]/60 font-extrabold uppercase tracking-wider block">
@@ -479,7 +625,8 @@ export default function CustomerAddressesPage() {
                     <p className="text-xs text-[#1b3b2b] font-bold mt-0.5">
                       {defaultAddress ? (
                         <>
-                          {defaultAddress.label} — {defaultAddress.road}, {defaultAddress.city}
+                          {defaultAddress.label} — {defaultAddress.road},{" "}
+                          {defaultAddress.city}
                         </>
                       ) : (
                         "No default address set"
@@ -502,7 +649,8 @@ export default function CustomerAddressesPage() {
                     </span>
                   </div>
                   <span className="text-xs font-extrabold text-[#1b3b2b]/70 px-2 shrink-0">
-                    {addresses.length} {addresses.length === 1 ? "address" : "addresses"}
+                    {addresses.length}{" "}
+                    {addresses.length === 1 ? "address" : "addresses"}
                   </span>
                 </div>
               </div>
@@ -541,13 +689,17 @@ export default function CustomerAddressesPage() {
 
                             {isDefault ? (
                               <span className="bg-[#1b3b2b] text-white px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                                <span className="material-symbols-outlined text-xs">check</span>
+                                <span className="material-symbols-outlined text-xs">
+                                  check
+                                </span>
                                 Default
                               </span>
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => handleSetDefault(addr.id, addr.label)}
+                                onClick={() =>
+                                  handleSetDefault(addr.id, addr.label)
+                                }
                                 className="text-xs font-bold text-[#C05621] hover:underline cursor-pointer"
                               >
                                 Set as default
@@ -561,7 +713,9 @@ export default function CustomerAddressesPage() {
                               {addr.label}
                             </h3>
                             <p className="text-xs text-[#1b3b2b]/70 font-medium mt-0.5">
-                              {addr.recipientName} {addr.contactNumber && `• ${addr.contactNumber}`}
+                              {addr.recipientName}{" "}
+                              {addr.contactNumber &&
+                                `• ${addr.contactNumber}`}
                             </p>
                           </div>
 
@@ -575,7 +729,8 @@ export default function CustomerAddressesPage() {
                               </p>
                             )}
                             <p className="text-[#1b3b2b]/70">
-                              {addr.city} {addr.postalCode ? `— ${addr.postalCode}` : ""}
+                              {addr.city}{" "}
+                              {addr.postalCode ? `— ${addr.postalCode}` : ""}
                             </p>
                           </div>
 
@@ -599,7 +754,9 @@ export default function CustomerAddressesPage() {
                             onClick={() => handleOpenEditAddress(addr)}
                             className="px-4 py-2 rounded-xl bg-[#f8f9f6] hover:bg-[#1b3b2b]/10 text-xs text-[#1b3b2b] transition-all flex items-center gap-1.5 font-bold cursor-pointer border border-[#1b3b2b]/20"
                           >
-                            <span className="material-symbols-outlined text-sm">edit</span>
+                            <span className="material-symbols-outlined text-sm">
+                              edit
+                            </span>
                             Edit
                           </button>
 
@@ -608,7 +765,9 @@ export default function CustomerAddressesPage() {
                             onClick={() => setDeletingAddress(addr)}
                             className="px-4 py-2 rounded-xl hover:bg-red-50 text-xs text-red-600 hover:text-red-800 transition-all flex items-center gap-1.5 font-bold cursor-pointer border border-transparent"
                           >
-                            <span className="material-symbols-outlined text-sm">delete</span>
+                            <span className="material-symbols-outlined text-sm">
+                              delete
+                            </span>
                             Delete
                           </button>
                         </div>
@@ -619,10 +778,14 @@ export default function CustomerAddressesPage() {
               ) : (
                 <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-16 text-center border border-[#1b3b2b]/15 my-6 shadow-xl flex flex-col items-center">
                   <div className="w-16 h-16 rounded-2xl bg-[#1b3b2b]/10 flex items-center justify-center text-[#1b3b2b] mb-4">
-                    <span className="material-symbols-outlined text-3xl">location_off</span>
+                    <span className="material-symbols-outlined text-3xl">
+                      location_off
+                    </span>
                   </div>
                   <h3 className="font-heading font-extrabold text-lg text-[#1b3b2b]">
-                    {searchQuery ? "No matching addresses" : "No saved addresses yet"}
+                    {searchQuery
+                      ? "No matching addresses"
+                      : "No saved addresses yet"}
                   </h3>
                   <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1.5 max-w-sm">
                     {searchQuery

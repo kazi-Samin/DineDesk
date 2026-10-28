@@ -1,4 +1,6 @@
 import RoleGuard from "@/components/auth/RoleGuard";
+import { AvatarProvider } from "@/context/AvatarContext";
+
 
 export const metadata = {
   title: "Customer Dashboard — DineDesk",
@@ -10,5 +12,9 @@ export default function CustomerDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleGuard allowedRoles={["USER"]}>{children}</RoleGuard>;
+  return (
+    <RoleGuard allowedRoles={["USER"]}>
+      <AvatarProvider>{children}</AvatarProvider>
+    </RoleGuard>
+  );
 }

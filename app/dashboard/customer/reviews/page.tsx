@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
@@ -9,25 +9,20 @@ import ReviewCard from "@/components/customer/reviews/ReviewCard";
 import ReviewFilters from "@/components/customer/reviews/ReviewFilters";
 import EditReviewModal from "@/components/customer/reviews/EditReviewModal";
 import DeleteReviewModal from "@/components/customer/reviews/DeleteReviewModal";
+import DashboardLoader from "@/components/ui/DashboardLoader";
 
 import {
   CustomerReview,
   ReviewFilterType,
   ReviewSortType,
 } from "@/types/customerReview";
-import {
-  getCustomerReviews,
-  updateCustomerReview,
-  deleteCustomerReview,
-  toggleHelpfulVote,
-} from "@/services/mockCustomerReviewService";
-import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders } from "@/services/customerDataService";
+import { CustomerProfileData } from "@/types/customerProfile";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
@@ -42,11 +37,34 @@ const getAuthToken = () => {
   );
 };
 
+const EMPTY_PROFILE: CustomerProfileData = {
+  fullName: "Diner",
+  email: "",
+  phone: "",
+  avatarUrl: "",
+  roleBadge: "Verified Foodie",
+  memberSince: "Member since 2026",
+  language: "en",
+  dietaryPreferences: [],
+  isEmailVerified: false,
+  isPhoneVerified: false,
+  passwordLastChangedDays: 0,
+  twoFactorPhone: "",
+  stats: {
+    totalOrders: 0,
+    activeBookings: 0,
+    savedSpots: 0,
+    loyaltyPoints: 0,
+  },
+};
+
 export default function CustomerReviewsPage() {
   const { user } = useAuth();
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle(
+    "dinedesk_customer_sidebar"
+  );
 
-  const [profile, setProfile] = useState(INITIAL_CUSTOMER_PROFILE);
+  const [profile, setProfile] = useState<CustomerProfileData>(EMPTY_PROFILE);
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
   const [loyaltyPoints, setLoyaltyPoints] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
@@ -56,13 +74,14 @@ export default function CustomerReviewsPage() {
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [activeFilter, setActiveFilter] = useState<ReviewFilterType>("all");
   const [sortBy, setSortBy] = useState<ReviewSortType>("recent");
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [editingReview, setEditingReview] = useState<CustomerReview | null>(null);
   const [deletingReview, setDeletingReview] = useState<CustomerReview | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const realUserName = user?.name || profile.fullName || "Valued Diner";
-  const realUserEmail = user?.email || profile.email || "diner@dinedesk.com";
+  const realUserName = user?.name || profile.fullName || "Diner";
+  const realUserEmail = user?.email || profile.email || "";
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -71,152 +90,210 @@ export default function CustomerReviewsPage() {
     }, 3200);
   };
 
-  const syncTelemetryData = async () => {
+  const syncDatabaseData = useCallback(async () => {
     try {
-      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
-
-      if (user) {
-        loadedProfile.fullName = user.name || loadedProfile.fullName;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-        if (user.avatarUrl) {
-          loadedProfile.avatarUrl = user.avatarUrl;
-        } else {
-          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
-        }
-      }
-
       const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
-      // Fetch user profile from backend
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
+      const [profileRes, ordersRes, resApi, favsRes, reviewsRes] =
+        await Promise.all([
+          fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/reservations`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/favorites`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+
+          fetch(`${API_BASE_URL}/api/v1/reviews/my`, {
+            method: "GET",
+            headers,
+            credentials: "include",
+          }).catch(() => null),
+        ]);
+
+      // 1. Process Profile & Loyalty Points
+      let currentFullName = user?.name || "Diner";
+      let currentEmail = user?.email || "";
+      let currentPhone = user?.phone || "";
+      let currentAvatar =
+        user?.avatarUrl || (user as any)?.image || (user as any)?.avatar || "";
+      let dbLoyaltyPoints = 0;
 
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
-        const userData = data.user || data;
-        if (userData && (!user || userData.email === user.email)) {
-          loadedProfile = {
-            ...loadedProfile,
-            ...userData,
-            fullName: userData.fullName || userData.name || loadedProfile.fullName,
-            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
-          };
+        const userData = data.user || data.data || data;
+        if (userData) {
+          currentFullName =
+            userData.fullName || userData.name || currentFullName;
+          currentEmail = userData.email || currentEmail;
+          currentPhone = userData.phone || currentPhone;
+          currentAvatar =
+            userData.avatarUrl || userData.image || currentAvatar;
+          if (typeof userData.loyaltyPoints === "number") {
+            dbLoyaltyPoints = userData.loyaltyPoints;
+          }
         }
       }
 
-      // 1. Fetch live reservations with Bearer token header
-      let liveReservations: any[] = [];
-      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
-
-      if (resApi && resApi.ok) {
-        const apiData = await resApi.json();
-        liveReservations = apiData.reservations || apiData.data || apiData || [];
-      }
-
-      // 2. Fetch live database orders directly from backend API
-      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
-
-      let liveOrders: any[] = [];
+      // 2. Process Live Database Orders
+      let rawOrders: any[] = [];
       if (ordersRes && ordersRes.ok) {
         const apiData = await ordersRes.json();
-        liveOrders = apiData.data || apiData.orders || [];
-      } else {
-        liveOrders = await fetchCustomerOrders(user?.id);
+        rawOrders = apiData.data || apiData.orders || [];
       }
 
-      const loadedReviews = getCustomerReviews();
-      setReviews(loadedReviews);
+      const validOrders = rawOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return !st.includes("cancel");
+      });
 
-      // User-scoped favorites
-      const userSpecificFavorites = user?.id
-        ? JSON.parse(
-          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
-          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
-          "[]"
-        )
-        : [];
-
-      const userSpecificPayments = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-        : [];
-
-      // Exclude cancelled orders from valid totals
-      const nonCancelledOrders = liveOrders.filter(
-        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
-      );
-      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalOrders * 20;
-
-      const activeOrders = liveOrders.filter((o: any) => {
-        const st = (o.status || "").toLowerCase();
-        return st !== "delivered" && st !== "completed" && st !== "cancelled";
+      const totalValidOrders = validOrders.length;
+      const activeOrders = validOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed";
       }).length;
 
-      // Active bookings filter
-      const activeBookings = liveReservations.filter((r: any) => {
-        const st = (r.status || "").toLowerCase();
+      // 3. Process Live Reservations
+      let rawReservations: any[] = [];
+      if (resApi && resApi.ok) {
+        const apiData = await resApi.json();
+        rawReservations =
+          apiData.reservations || apiData.data || apiData || [];
+      }
+
+      const activeBookings = rawReservations.filter((r: any) => {
+        const st = String(r.status || "").toLowerCase();
         return st === "confirmed" || st === "upcoming" || st === "pending";
       }).length;
 
-      loadedProfile.stats = {
-        ...loadedProfile.stats,
-        totalOrders,
-        activeBookings,
-        savedSpots: userSpecificFavorites.length,
-        loyaltyPoints: calculatedPoints,
-      };
+      // 4. Process Live Favorites (Robust key fallback matching backend)
+      let liveFavoritesCount = 0;
+      if (favsRes && favsRes.ok) {
+        const favsData = await favsRes.json();
+        const favList =
+          favsData.data || favsData.menus || favsData.favorites || [];
+        liveFavoritesCount = Array.isArray(favList) ? favList.length : 0;
+      }
 
-      setProfile(loadedProfile);
-      setTotalOrdersCount(totalOrders);
+      // 5. Process Live Reviews
+      if (reviewsRes && reviewsRes.ok) {
+        const revData = await reviewsRes.json();
+        const rawReviews = revData.data || revData.reviews || revData || [];
+        if (Array.isArray(rawReviews)) {
+          setReviews(
+            rawReviews.map(
+              (item: any) =>
+              ({
+                id: String(item.id || item._id),
+                restaurantId: String(
+                  item.restaurantId || item.restaurant?.id || ""
+                ),
+                restaurantName:
+                  item.restaurantName ||
+                  item.restaurant?.name ||
+                  "Restaurant",
+                restaurantImage:
+                  item.restaurantImage ||
+                  item.restaurant?.coverUrl ||
+                  item.restaurant?.image ||
+                  "",
+                neighborhood:
+                  item.neighborhood ||
+                  item.restaurant?.neighborhood ||
+                  item.restaurant?.address ||
+                  "",
+                rating: Number(item.rating || 5),
+                comment: item.comment || item.reviewText || "",
+                photos: item.photos || [],
+                date:
+                  item.date ||
+                  item.visitDate ||
+                  item.createdAt ||
+                  new Date().toLocaleDateString(),
+                visitDate:
+                  item.visitDate ||
+                  item.createdAt ||
+                  new Date().toISOString(),
+                timestamp:
+                  item.timestamp ||
+                  new Date(item.createdAt || Date.now()).getTime(),
+                helpfulVotes: Number(
+                  item.helpfulVotes || item.helpfulCount || 0
+                ),
+                hasUpvoted: Boolean(item.hasUpvoted),
+                orderItems: item.orderItems || [],
+                ...(item || {}),
+              } as CustomerReview)
+            )
+          );
+        }
+      }
+
+      const calculatedLoyalty =
+        dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalValidOrders * 20;
+
+      setProfile({
+        ...EMPTY_PROFILE,
+        fullName: currentFullName,
+        email: currentEmail,
+        phone: currentPhone,
+        avatarUrl: currentAvatar,
+        stats: {
+          totalOrders: totalValidOrders,
+          activeBookings,
+          savedSpots: liveFavoritesCount,
+          loyaltyPoints: calculatedLoyalty,
+        },
+      });
+
+      setTotalOrdersCount(totalValidOrders);
       setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
-      setLoyaltyPoints(calculatedPoints);
-      setSavedSpotsCount(userSpecificFavorites.length);
+      setSavedSpotsCount(liveFavoritesCount);
+      setLoyaltyPoints(calculatedLoyalty);
     } catch (err) {
-      console.error("Telemetry sync error:", err);
+      console.error("Failed to sync customer reviews & telemetry:", err);
+    } finally {
+      setIsLoaded(true);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    syncTelemetryData();
+    syncDatabaseData();
 
-    const handleSync = () => syncTelemetryData();
-
-    window.addEventListener("storage", handleSync);
+    const handleSync = () => syncDatabaseData();
     window.addEventListener("profile-updated", handleSync);
     window.addEventListener("booking-updated", handleSync);
     window.addEventListener("order-updated", handleSync);
     window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      window.removeEventListener("storage", handleSync);
       window.removeEventListener("profile-updated", handleSync);
       window.removeEventListener("booking-updated", handleSync);
       window.removeEventListener("order-updated", handleSync);
       window.removeEventListener("dinedesk-points-updated", handleSync);
     };
-  }, [user]);
+  }, [syncDatabaseData]);
 
   const counts = useMemo(() => {
     const all = reviews.length;
@@ -252,33 +329,129 @@ export default function CustomerReviewsPage() {
     return list;
   }, [reviews, activeFilter, sortBy]);
 
-  const handleSaveEdit = (updatedReview: CustomerReview) => {
-    const updated = updateCustomerReview(reviews, updatedReview);
-    setReviews(updated);
-    setEditingReview(null);
-    showToast(`Your review for ${updatedReview.restaurantName} was updated successfully.`);
+  const handleSaveEdit = async (updatedReview: CustomerReview) => {
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/reviews/${updatedReview.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(updatedReview),
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => (r.id === updatedReview.id ? { ...r, ...updatedReview } : r))
+        );
+        setEditingReview(null);
+        showToast(`Your review for ${updatedReview.restaurantName} was updated successfully.`);
+      } else {
+        showToast("Failed to update review in database.");
+      }
+    } catch (err) {
+      showToast("Network error while updating review.");
+    }
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deletingReview) return;
     const restName = deletingReview.restaurantName;
-    const updated = deleteCustomerReview(reviews, deletingReview.id);
-    setReviews(updated);
-    setDeletingReview(null);
-    setEditingReview(null);
-    showToast(`Review for ${restName} was removed.`);
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/reviews/${deletingReview.id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        setReviews((prev) => prev.filter((r) => r.id !== deletingReview.id));
+        setDeletingReview(null);
+        setEditingReview(null);
+        showToast(`Review for ${restName} was removed.`);
+      } else {
+        showToast("Failed to delete review from database.");
+      }
+    } catch (err) {
+      showToast("Network error while deleting review.");
+    }
   };
 
-  const handleToggleUpvote = (reviewId: string) => {
-    const updated = toggleHelpfulVote(reviews, reviewId);
-    setReviews(updated);
+  const handleToggleUpvote = async (reviewId: string) => {
+    try {
+      const token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/api/v1/reviews/${reviewId}/helpful`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        setReviews((prev) =>
+          prev.map((r) => {
+            if (r.id === reviewId) {
+              const hasUpvoted = !r.hasUpvoted;
+              const helpfulVotes = hasUpvoted
+                ? (r.helpfulVotes || 0) + 1
+                : Math.max(0, (r.helpfulVotes || 0) - 1);
+              return { ...r, hasUpvoted, helpfulVotes };
+            }
+            return r;
+          })
+        );
+      }
+    } catch (err) {
+      // Silently fail on network toggle
+    }
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
+        <CustomerHeader
+          userName={realUserName}
+          userRole={profile.roleBadge}
+          avatarUrl={profile.avatarUrl}
+          onToggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
+        <div className="flex pt-20 flex-1">
+          <CustomerSidebar
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
+            onToggle={toggleSidebar}
+            loyaltyPoints={loyaltyPoints}
+            upcomingReservationsCount={activeBookingsCount}
+            activeOrdersCount={totalOrdersCount}
+            activeOrderCount={activeOrdersCount}
+          />
+          <main
+            className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+              }`}
+          >
+            <DashboardLoader />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  const cleanFirstName = profile.fullName.split(" ")[0] || "Diner";
 
   return (
     <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white relative">
       <CustomerHeader
         userName={realUserName}
-        userRole="Verified Foodie"
+        userRole={profile.roleBadge}
         avatarUrl={profile.avatarUrl}
         onToggleSidebar={toggleSidebar}
         isSidebarOpen={isSidebarOpen}
@@ -286,7 +459,7 @@ export default function CustomerReviewsPage() {
 
       <div className="flex pt-20 flex-1">
         <CustomerSidebar
-          userName={`${realUserName.split(" ")[0]}'s Account`}
+          userName={cleanFirstName}
           memberSince={profile.memberSince || "Member since 2026"}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
@@ -298,8 +471,10 @@ export default function CustomerReviewsPage() {
           loyaltyPoints={loyaltyPoints}
         />
 
-        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-
+        <main
+          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+            }`}
+        >
           {/* Top Quick Stats Banner */}
           <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <motion.div
@@ -310,10 +485,10 @@ export default function CustomerReviewsPage() {
             >
               <div>
                 <h1 className="font-heading font-extrabold text-xl text-[#1b3b2b]">
-                  Welcome back, {realUserName.split(" ")[0]}
+                  Welcome back, {cleanFirstName}
                 </h1>
                 <p className="text-xs font-medium text-[#1b3b2b]/70 mt-0.5">
-                  {realUserEmail} {user?.phone && `• ${user.phone}`}
+                  {realUserEmail} {profile.phone && `• ${profile.phone}`}
                 </p>
               </div>
 
@@ -357,7 +532,6 @@ export default function CustomerReviewsPage() {
           {/* Main Content Area */}
           <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-8">
             <div className="flex flex-col w-full">
-
               {/* Header Title & Metrics */}
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
                 <div>
@@ -365,7 +539,7 @@ export default function CustomerReviewsPage() {
                     My Reviews
                   </h1>
                   <p className="text-xs font-medium text-[#1b3b2b]/70 mt-1 max-w-xl">
-                    Manage and view all your verified reviews for culinary destinations across Dhaka.
+                    Manage and view all your verified reviews for culinary destinations.
                   </p>
                 </div>
 

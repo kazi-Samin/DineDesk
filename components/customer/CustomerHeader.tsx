@@ -30,26 +30,52 @@ export default function CustomerHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
   const [currentName, setCurrentName] = useState(userName);
 
-  // Sync avatar and name dynamically from localStorage profile updates
+  // Sync state whenever props update from the parent page
   useEffect(() => {
-    const updateProfileFromStorage = () => {
+    if (userName && userName !== "Diner") {
+      setCurrentName(userName);
+    }
+  }, [userName]);
+
+  useEffect(() => {
+    if (avatarUrl) {
+      setCurrentAvatar(avatarUrl);
+    }
+  }, [avatarUrl]);
+
+  // Sync avatar and name dynamically from storage & custom dispatch events
+  useEffect(() => {
+    const updateProfileFromStorage = (event?: any) => {
       try {
-        const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
-        if (storedProfile.avatarUrl) {
-          setCurrentAvatar(storedProfile.avatarUrl);
-        } else {
-          const directAvatar = localStorage.getItem("dinedesk_user_avatar");
-          if (directAvatar) setCurrentAvatar(directAvatar);
+        if (event?.detail) {
+          const detail = event.detail;
+          if (detail.fullName || detail.name) {
+            setCurrentName(detail.fullName || detail.name);
+          }
+          if (detail.avatarUrl) {
+            setCurrentAvatar(detail.avatarUrl);
+          }
+          return;
         }
 
-        if (storedProfile.fullName) {
-          setCurrentName(storedProfile.fullName);
-        }
+        const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
+        const directName = localStorage.getItem("dinedesk_user_name");
+        const directAvatar = localStorage.getItem("dinedesk_user_avatar");
+        const authUser = JSON.parse(localStorage.getItem("dinedesk_auth_user") || "{}");
+
+        const resolvedName =
+          storedProfile.fullName || directName || authUser.name || userName;
+        const resolvedAvatar =
+          storedProfile.avatarUrl || directAvatar || authUser.avatarUrl || avatarUrl;
+
+        if (resolvedName) setCurrentName(resolvedName);
+        if (resolvedAvatar) setCurrentAvatar(resolvedAvatar);
       } catch (e) {
-        // fallback
+        // Fallback silently if storage read fails
       }
     };
 
@@ -57,10 +83,12 @@ export default function CustomerHeader({
 
     window.addEventListener("storage", updateProfileFromStorage);
     window.addEventListener("profile-updated", updateProfileFromStorage);
+    window.addEventListener("external-profile-updated", updateProfileFromStorage);
 
     return () => {
       window.removeEventListener("storage", updateProfileFromStorage);
       window.removeEventListener("profile-updated", updateProfileFromStorage);
+      window.removeEventListener("external-profile-updated", updateProfileFromStorage);
     };
   }, [avatarUrl, userName]);
 
@@ -71,12 +99,14 @@ export default function CustomerHeader({
     }
   };
 
-  // Ensure dropdownUser strictly takes currentAvatar so it never falls back to letter initial "A"
+  const resolvedDisplayName = currentName || user?.name || userName || "Diner";
+  const resolvedDisplayAvatar = currentAvatar || user?.avatarUrl || avatarUrl;
+
   const dropdownUser = {
-    name: currentName,
+    name: resolvedDisplayName,
     email: user?.email || "diner@dinedesk.com",
     role: userRole,
-    avatar: currentAvatar,
+    avatar: resolvedDisplayAvatar,
     ...(user || {}),
   };
 
@@ -84,7 +114,7 @@ export default function CustomerHeader({
     <header className="fixed top-0 left-0 right-0 h-20 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/80 shadow-xs">
       <div className="h-full w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
 
-        {/* Left: Larger Brand Logo with Bouncing/Floating Animation */}
+        {/* Left: Brand Logo */}
         <div className="flex items-center gap-4">
           <motion.div
             animate={{ y: [0, -3, 0] }}
@@ -169,7 +199,7 @@ export default function CustomerHeader({
           </div>
         </nav>
 
-        {/* Right: Search, Notifications, Unique User Profile Pill */}
+        {/* Right: Search, Notifications, User Profile Pill */}
         <div className="flex items-center gap-3">
 
           {/* Global Search Field */}
@@ -225,7 +255,7 @@ export default function CustomerHeader({
 
           <div className="h-6 w-px bg-outline-variant/60 hidden sm:block" />
 
-          {/* Unique Premium User Profile Dropdown Component */}
+          {/* Profile Dropdown */}
           <UserProfileDropdown user={dropdownUser} logout={logout} />
 
           {/* Mobile Menu Toggle Button */}
@@ -242,7 +272,7 @@ export default function CustomerHeader({
         </div>
       </div>
 
-      {/* Mobile Dropdown Navigation Drawer */}
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div

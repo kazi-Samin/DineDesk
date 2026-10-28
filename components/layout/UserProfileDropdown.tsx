@@ -10,6 +10,12 @@ interface UserProfileDropdownProps {
     logout: () => void;
 }
 
+const formatCleanDisplayName = (name?: string) => {
+    if (!name) return "VALUED GUEST";
+    const cleaned = name.replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s+/i, "").trim();
+    return cleaned || "VALUED GUEST";
+};
+
 export default function UserProfileDropdown({ user, logout }: UserProfileDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -21,17 +27,27 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
     };
 
     const getRoleBadgeStyle = () => {
-        if (!user) return "bg-primary/10 text-primary";
-        if (user.role === "ADMIN" || user.role === "SUPERADMIN") return "bg-amber-500/15 text-amber-800 border-amber-500/30";
+        if (!user) return "bg-primary/10 text-primary border-primary/20";
+        if (user.role === "ADMIN" || user.role === "SUPERADMIN")
+            return "bg-amber-500/15 text-amber-800 border-amber-500/30";
         if (user.role === "VENDOR") return "bg-secondary/15 text-secondary border-secondary/30";
         return "bg-primary/10 text-primary border-primary/20";
     };
 
-    const userNameUpper = user?.name ? user.name.toUpperCase() : "VALUED GUEST";
+    const cleanName = formatCleanDisplayName(user?.name);
+    const userNameUpper = cleanName.toUpperCase();
+    const firstLetter = cleanName.charAt(0).toUpperCase() || "D";
+
+    // Prioritize uploaded avatar, session image, or avatarUrl
+    const avatarImage =
+        user?.avatarUrl ||
+        user?.avatar ||
+        user?.image ||
+        null;
 
     return (
         <div className="relative">
-            {/* Trigger Button with Bouncing Animated Ring Avatar */}
+            {/* Trigger Button with Animated Ring Avatar */}
             <motion.button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -46,10 +62,18 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                     className="relative w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-primary via-secondary to-primary shadow-sm flex items-center justify-center shrink-0"
                 >
                     <div className="w-full h-full rounded-full bg-surface-container-lowest text-primary flex items-center justify-center font-heading font-extrabold text-xs uppercase overflow-hidden">
-                        {user?.avatar ? (
-                            <img src={user.avatar} alt={userNameUpper} className="w-full h-full object-cover" />
+                        {avatarImage ? (
+                            <img
+                                src={avatarImage}
+                                alt={userNameUpper}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                    e.currentTarget.parentElement!.innerHTML = `<span>${firstLetter}</span>`;
+                                }}
+                            />
                         ) : (
-                            <span>{userNameUpper[0]}</span>
+                            <span>{firstLetter}</span>
                         )}
                     </div>
                 </motion.div>
@@ -59,7 +83,9 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                     <span className="font-heading font-extrabold text-xs tracking-tight text-on-surface max-w-[130px] truncate">
                         {userNameUpper}
                     </span>
-                    <span className={`text-[9px] uppercase font-extrabold px-1.5 py-0.2 rounded-full w-fit tracking-wider border ${getRoleBadgeStyle()}`}>
+                    <span
+                        className={`text-[9px] uppercase font-extrabold px-1.5 py-0.2 rounded-full w-fit tracking-wider border ${getRoleBadgeStyle()}`}
+                    >
                         {user?.role || "Gourmand"}
                     </span>
                 </div>
@@ -88,8 +114,20 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                         >
                             {/* User Header Info Card */}
                             <div className="px-5 py-4 border-b border-outline-variant/60 flex items-center gap-3.5 bg-surface-container/60">
-                                <div className="w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-heading font-extrabold text-base shadow-md shrink-0">
-                                    {userNameUpper[0]}
+                                <div className="w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-heading font-extrabold text-base shadow-md shrink-0 overflow-hidden">
+                                    {avatarImage ? (
+                                        <img
+                                            src={avatarImage}
+                                            alt={userNameUpper}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = "none";
+                                                e.currentTarget.parentElement!.innerHTML = `<span>${firstLetter}</span>`;
+                                            }}
+                                        />
+                                    ) : (
+                                        <span>{firstLetter}</span>
+                                    )}
                                 </div>
                                 <div className="flex flex-col overflow-hidden">
                                     <span className="font-heading font-black text-xs sm:text-sm text-on-surface tracking-tight truncate">
@@ -98,7 +136,9 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                                     <span className="text-[11px] text-on-surface-variant truncate font-medium">
                                         {user?.email || "diner@dinedesk.com"}
                                     </span>
-                                    <span className={`mt-1.5 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md w-fit tracking-wider border ${getRoleBadgeStyle()}`}>
+                                    <span
+                                        className={`mt-1.5 text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md w-fit tracking-wider border ${getRoleBadgeStyle()}`}
+                                    >
                                         Tier: {user?.role || "Member"}
                                     </span>
                                 </div>
@@ -121,7 +161,7 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                                 </Link>
 
                                 <Link
-                                    href="/reservations"
+                                    href="/dashboard/customer/reservations"
                                     onClick={() => setIsOpen(false)}
                                     className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold text-on-surface hover:bg-primary/10 hover:text-primary transition-all group"
                                 >
