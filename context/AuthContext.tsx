@@ -12,6 +12,7 @@ import {
   setStoredToken,
   setStoredUser,
   clearStoredAuth,
+  socialLoginApi,
 } from "@/services/authService";
 import { authClient } from "@/lib/auth-client";
 import { getCustomerProfile, saveCustomerProfile } from "@/services/mockCustomerProfileService";
@@ -66,6 +67,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /**
+   * After Google OAuth, attempt to exchange the OAuth user info for a backend JWT.
+   * This fixes "Invalid or expired token" errors on favorites/reservations/profile.
+   */
+  const syncBackendJwtForOAuthUser = async (
+    bUser: { id: string; email: string; name?: string | null; image?: string | null },
+    fallbackUser: AuthUser
+  ): Promise<{ finalToken: string; finalUser: AuthUser }> => {
+    try {
+      const socialResult = await socialLoginApi({
+        email: bUser.email,
+        name: bUser.name || bUser.email.split("@")[0] || "Diner",
+        googleId: bUser.id,
+        avatarUrl: bUser.image ?? fallbackUser.avatarUrl ?? undefined,
+      });
+
+      if (socialResult.success && socialResult.token) {
+        // Got a real backend JWT — use it instead of better_auth_ prefix token
+        const backendUser: AuthUser = enrichUserWithAvatar(
+          socialResult.data
+            ? {
+                ...socialResult.data,
+                avatarUrl: socialResult.data.avatarUrl || bUser.image || fallbackUser.avatarUrl || "",
+              }
+            : fallbackUser
+        );
+        return { finalToken: socialResult.token, finalUser: backendUser };
+      }
+    } catch (err) {
+      console.warn("socialLoginApi failed, using better_auth_ token as fallback:", err);
+    }
+
+    // Backend sync failed - keep the better_auth_ token as fallback
+    return { finalToken: `better_auth_${bUser.id}`, finalUser: fallbackUser };
+  };
+
   // Initialize auth state on client mount
   useEffect(() => {
     let isMounted = true;
@@ -82,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           if (storedToken.startsWith("better_auth_")) {
-            // Better-Auth OAuth Session - verify with better-auth client
+            // Had a better_auth_ token from a previous OAuth login — try to upgrade to backend JWT
             try {
               const sessionRes = await authClient.getSession();
               if (isMounted) {
@@ -91,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   const customStoredName =
                     typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_name") : null;
 
-                  const enriched = enrichUserWithAvatar({
+                  const tempUser: AuthUser = enrichUserWithAvatar({
                     id: bUser.id,
                     name: customStoredName || bUser.name || bUser.email?.split("@")[0] || "Diner",
                     email: bUser.email,
@@ -99,8 +136,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     avatarUrl: bUser.image || storedUser?.avatarUrl || "",
                     createdAt: storedUser?.createdAt || new Date().toISOString(),
                   });
-                  setUser(enriched);
-                  setStoredUser(enriched);
+
+                  // Try to get a real backend JWT for this OAuth user
+                  const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+                  setStoredToken(finalToken);
+                  setStoredUser(finalUser);
+                  setToken(finalToken);
+                  setUser(finalUser);
                 } else if (!storedUser) {
                   clearStoredAuth();
                   setToken(null);
@@ -111,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.error("Better-Auth session verification failed:", sessionErr);
             }
           } else {
-            // Verify and refresh with live backend /api/v1/auth/me
+            // Normal backend JWT — verify with live backend /api/v1/auth/me
             const meResult = await getMeApi();
             if (isMounted) {
               if (meResult.success && meResult.data) {
@@ -127,14 +169,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
-          // Check if arriving via Better-Auth OAuth
+          // No token stored — check if arriving fresh via Better-Auth OAuth (Google redirect)
           try {
             const sessionRes = await authClient.getSession();
             if (isMounted && sessionRes?.data?.user) {
               const bUser = sessionRes.data.user;
-              const bSession = sessionRes.data.session;
-              const gToken = `better_auth_${bSession?.token || bSession?.id || bUser.id}`;
-              const gUser: AuthUser = enrichUserWithAvatar({
+              const tempUser: AuthUser = enrichUserWithAvatar({
                 id: bUser.id,
                 name: bUser.name || bUser.email?.split("@")[0] || "Diner",
                 email: bUser.email,
@@ -143,17 +183,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 createdAt: new Date().toISOString(),
               });
 
-              setStoredToken(gToken);
-              setStoredUser(gUser);
-              setToken(gToken);
-              setUser(gUser);
+              // Immediately show user in UI
+              setUser(tempUser);
+
+              // Try to get a real backend JWT for this OAuth user
+              const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+              setStoredToken(finalToken);
+              setStoredUser(finalUser);
+              setToken(finalToken);
+              setUser(finalUser);
 
               try {
                 const existingProfile = getCustomerProfile();
                 saveCustomerProfile({
                   ...existingProfile,
-                  fullName: gUser.name,
-                  email: gUser.email,
+                  fullName: finalUser.name,
+                  email: finalUser.email,
                   phone: existingProfile.phone || "(313) 555-0142",
                   roleBadge: "Diner",
                 });
@@ -297,12 +342,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token]);
 
   const refreshUser = useCallback(async () => {
-    if (token?.startsWith("better_auth_")) {
+    if (!token) return;
+
+    if (token.startsWith("better_auth_")) {
+      // Try to upgrade to backend JWT on refresh too
       try {
         const sessionRes = await authClient.getSession();
         if (sessionRes?.data?.user) {
           const bUser = sessionRes.data.user;
-          const updatedUser: AuthUser = enrichUserWithAvatar({
+          const tempUser: AuthUser = enrichUserWithAvatar({
             id: bUser.id,
             name: bUser.name || bUser.email?.split("@")[0] || "Diner",
             email: bUser.email,
@@ -310,8 +358,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             avatarUrl: bUser.image || user?.avatarUrl || "",
             createdAt: user?.createdAt || new Date().toISOString(),
           });
-          setUser(updatedUser);
-          setStoredUser(updatedUser);
+
+          const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+          setStoredToken(finalToken);
+          setStoredUser(finalUser);
+          setToken(finalToken);
+          setUser(finalUser);
         }
       } catch (err) {
         console.error("Failed to refresh Better-Auth session:", err);
