@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState, useCallback } from "react";
 import CustomerHeader from "@/components/customer/CustomerHeader";
 import CustomerSidebar from "@/components/customer/CustomerSidebar";
 import CustomerFooter from "@/components/customer/CustomerFooter";
@@ -10,8 +9,6 @@ import DashboardLoader from "@/components/ui/DashboardLoader";
 import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { useAuth } from "@/context/AuthContext";
 import { CustomerProfileData } from "@/types/customerProfile";
-import { INITIAL_CUSTOMER_PROFILE } from "@/data/mockCustomerProfile";
-import { fetchCustomerOrders } from "@/services/customerDataService";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface RewardPerk {
@@ -31,7 +28,8 @@ const AVAILABLE_PERKS: RewardPerk[] = [
     title: "$25 DineDesk Dining Credit",
     restaurant: "Applicable on any partner restaurant",
     pointsCost: 800,
-    description: "Instant discount voucher applied straight to your order checkout or table bill.",
+    description:
+      "Instant discount voucher applied straight to your order checkout or table bill.",
     category: "credit",
     icon: "account_balance_wallet",
     code: "GOLD25CREDIT",
@@ -41,7 +39,8 @@ const AVAILABLE_PERKS: RewardPerk[] = [
     title: "Complimentary Artisanal Dessert",
     restaurant: "The Maple & Vine",
     pointsCost: 500,
-    description: "One artisanal seasonal dessert pairing with your next dine-in seating.",
+    description:
+      "One artisanal seasonal dessert pairing with your next dine-in seating.",
     category: "dining",
     icon: "icecream",
     code: "MAPLE-SWEET-DINE",
@@ -51,7 +50,8 @@ const AVAILABLE_PERKS: RewardPerk[] = [
     title: "VIP Priority Weekend Seating Pass",
     restaurant: "Corktown & Downtown Premier Venues",
     pointsCost: 400,
-    description: "Skip the waiting queue and secure immediate table hold during peak weekend dinner slots.",
+    description:
+      "Skip the waiting queue and secure immediate table hold during peak weekend dinner slots.",
     category: "priority",
     icon: "stars",
     code: "VIP-PASS-ACCESS",
@@ -61,7 +61,8 @@ const AVAILABLE_PERKS: RewardPerk[] = [
     title: "$15 Off Next Delivery Order",
     restaurant: "Valid across all delivery kitchens",
     pointsCost: 450,
-    description: "Applies automatically at cart checkout for any order over $40.",
+    description:
+      "Applies automatically at cart checkout for any order over $40.",
     category: "delivery",
     icon: "two_wheeler",
     code: "DELIVER15SAVER",
@@ -77,7 +78,8 @@ interface PointLedgerItem {
   stripeSessionId?: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
@@ -92,11 +94,34 @@ const getAuthToken = () => {
   );
 };
 
+const EMPTY_PROFILE: CustomerProfileData = {
+  fullName: "Diner",
+  email: "",
+  phone: "",
+  avatarUrl: "",
+  roleBadge: "Verified Foodie",
+  memberSince: "Member since 2026",
+  language: "en",
+  dietaryPreferences: [],
+  isEmailVerified: false,
+  isPhoneVerified: false,
+  passwordLastChangedDays: 0,
+  twoFactorPhone: "",
+  stats: {
+    totalOrders: 0,
+    activeBookings: 0,
+    savedSpots: 0,
+    loyaltyPoints: 0,
+  },
+};
+
 export default function CustomerLoyaltyPage() {
   const { user } = useAuth();
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_customer_sidebar");
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle(
+    "dinedesk_customer_sidebar"
+  );
 
-  const [profile, setProfile] = useState<CustomerProfileData>(INITIAL_CUSTOMER_PROFILE);
+  const [profile, setProfile] = useState<CustomerProfileData>(EMPTY_PROFILE);
   const [points, setPoints] = useState(0);
   const [activeBookingsCount, setActiveBookingsCount] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
@@ -113,142 +138,157 @@ export default function CustomerLoyaltyPage() {
     type: "success" | "error" | "info";
   }>({ message: null, type: "success" });
 
-  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "info" = "success"
+  ) => {
     setToast({ message, type });
     setTimeout(() => {
-      setToast((prev) => (prev.message === message ? { ...prev, message: null } : prev));
+      setToast((prev) =>
+        prev.message === message ? { ...prev, message: null } : prev
+      );
     }, 3200);
   };
 
-  const syncLoyaltyTelemetry = async () => {
+  const syncLoyaltyTelemetry = useCallback(async () => {
     try {
-      let loadedProfile = { ...INITIAL_CUSTOMER_PROFILE };
-
-      if (user) {
-        loadedProfile.fullName = user.name || loadedProfile.fullName;
-        loadedProfile.email = user.email || loadedProfile.email;
-        if (user.phone) loadedProfile.phone = user.phone;
-        if (user.avatarUrl) {
-          loadedProfile.avatarUrl = user.avatarUrl;
-        } else {
-          loadedProfile.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || user.email || "Diner")}`;
-        }
-      }
-
       const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
-      // Fetch user profile from backend
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/users/profile`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
+      const [profileRes, resApi, ordersRes, favoritesRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/v1/users/profile`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+
+        fetch(`${API_BASE_URL}/api/v1/reservations`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+
+        fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+
+        fetch(`${API_BASE_URL}/api/v1/favorites`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+      ]);
+
+      // 1. Process Profile & Loyalty Points
+      let currentFullName = user?.name || "Diner";
+      let currentEmail = user?.email || "";
+      let currentPhone = user?.phone || "";
+      let currentAvatar =
+        user?.avatarUrl || (user as any)?.image || (user as any)?.avatar || "";
+      let dbLoyaltyPoints = 0;
 
       if (profileRes && profileRes.ok) {
         const data = await profileRes.json();
-        const userData = data.user || data;
-        if (userData && (!user || userData.email === user.email)) {
-          loadedProfile = {
-            ...loadedProfile,
-            ...userData,
-            fullName: userData.fullName || userData.name || loadedProfile.fullName,
-            avatarUrl: userData.avatarUrl || loadedProfile.avatarUrl,
-          };
+        const userData = data.user || data.data || data;
+        if (userData) {
+          currentFullName =
+            userData.fullName || userData.name || currentFullName;
+          currentEmail = userData.email || currentEmail;
+          currentPhone = userData.phone || currentPhone;
+          currentAvatar =
+            userData.avatarUrl || userData.image || currentAvatar;
+          if (typeof userData.loyaltyPoints === "number") {
+            dbLoyaltyPoints = userData.loyaltyPoints;
+          }
         }
       }
 
-      // 1. Fetch live reservations securely with Authorization token header
+      // 2. Process Live Reservations
       let liveReservations: any[] = [];
-      const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
-
       if (resApi && resApi.ok) {
         const apiData = await resApi.json();
-        liveReservations = apiData.reservations || apiData.data || apiData || [];
+        liveReservations =
+          apiData.reservations || apiData.data || apiData || [];
       }
 
-      // 2. Fetch live database orders directly from backend API
-      const ordersRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        credentials: "include",
-      }).catch(() => null);
+      const activeBookings = liveReservations.filter((r: any) => {
+        const st = String(r.status || "").toLowerCase();
+        return st === "confirmed" || st === "upcoming" || st === "pending";
+      }).length;
 
+      // 3. Process Live Database Orders
       let liveOrders: any[] = [];
       if (ordersRes && ordersRes.ok) {
         const apiData = await ordersRes.json();
         liveOrders = apiData.data || apiData.orders || [];
-      } else {
-        liveOrders = await fetchCustomerOrders(user?.id);
       }
 
-      const userSpecificFavorites = user?.id
-        ? JSON.parse(
-          localStorage.getItem(`dinedesk_saved_restaurants_${user.id}`) ||
-          localStorage.getItem(`dinedesk_saved_spots_${user.id}`) ||
-          "[]"
-        )
-        : [];
-      const userSpecificPayments = user?.id
-        ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-        : [];
+      const nonCancelledOrders = liveOrders.filter((o: any) => {
+        const st = String(o.status || "").toLowerCase();
+        return !st.includes("cancel");
+      });
 
-      // Exclude cancelled orders from valid totals
-      const nonCancelledOrders = liveOrders.filter(
-        (o: any) => (o.status || "").toLowerCase() !== "cancelled"
+      const totalValidOrders = nonCancelledOrders.length;
+      const activeOrders = nonCancelledOrders.filter((o: any) => {
+        const st = String(o.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed";
+      }).length;
+
+      // 4. Process Saved Spots from live /api/v1/favorites
+      let liveSavedSpots = 0;
+      if (favoritesRes && favoritesRes.ok) {
+        const favsData = await favoritesRes.json();
+        const favList =
+          favsData.data || favsData.menus || favsData.favorites || [];
+        liveSavedSpots = favList.length;
+      }
+
+      const finalPoints =
+        dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalValidOrders * 20;
+
+      const generatedLedger: PointLedgerItem[] = nonCancelledOrders.map(
+        (ord: any, index: number) => ({
+          id: `ledger-${index}-${ord.id || ord.orderId}`,
+          activity: `Order Completed (#${String(ord.id || ord.orderId).slice(
+            -8
+          )})`,
+          date: ord.createdAt
+            ? new Date(ord.createdAt).toLocaleDateString()
+            : new Date().toLocaleDateString(),
+          points: 20,
+          type: "earned",
+          stripeSessionId: ord.stripeSessionId || ord.id,
+        })
       );
-      const totalOrders = nonCancelledOrders.length + userSpecificPayments.length;
-      const calculatedPoints = totalOrders * 20;
 
-      const activeOrders = liveOrders.filter((o: any) => {
-        const st = (o.status || "").toLowerCase();
-        return st !== "delivered" && st !== "completed" && st !== "cancelled";
-      }).length;
+      setProfile({
+        ...EMPTY_PROFILE,
+        fullName: currentFullName,
+        email: currentEmail,
+        phone: currentPhone,
+        avatarUrl: currentAvatar,
+        stats: {
+          totalOrders: totalValidOrders,
+          activeBookings,
+          savedSpots: liveSavedSpots,
+          loyaltyPoints: finalPoints,
+        },
+      });
 
-      const activeBookings = liveReservations.filter((r: any) => {
-        const st = (r.status || "").toLowerCase();
-        return st === "confirmed" || st === "upcoming" || st === "pending";
-      }).length;
-
-      const generatedLedger: PointLedgerItem[] = nonCancelledOrders.map((ord: any, index: number) => ({
-        id: `ledger-${index}-${ord.id || ord.orderId}`,
-        activity: `Payment Verified (#${String(ord.id || ord.orderId).slice(-10)})`,
-        date: new Date(ord.createdAt || Date.now()).toLocaleDateString(),
-        points: 20,
-        type: "earned",
-        stripeSessionId: ord.stripeSessionId || ord.id,
-      }));
-
-      loadedProfile.stats = {
-        ...loadedProfile.stats,
-        totalOrders,
-        activeBookings,
-        savedSpots: userSpecificFavorites.length,
-        loyaltyPoints: calculatedPoints,
-      };
-
-      setProfile(loadedProfile);
-      setPoints(calculatedPoints);
-      setTotalOrdersCount(totalOrders);
+      setPoints(finalPoints);
+      setTotalOrdersCount(totalValidOrders);
       setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
-      setSavedSpotsCount(userSpecificFavorites.length);
+      setSavedSpotsCount(liveSavedSpots);
       setLedger(generatedLedger);
 
       // Gold Tier Milestone Check (>= 2000 pts)
-      if (calculatedPoints >= 2000) {
+      if (finalPoints >= 2000) {
         const hasSeenModal = sessionStorage.getItem("gold_tier_congrats_shown");
         if (!hasSeenModal) {
           setShowGoldModal(true);
@@ -261,37 +301,41 @@ export default function CustomerLoyaltyPage() {
     } finally {
       setIsLoaded(true);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     syncLoyaltyTelemetry();
 
     const handleSync = () => syncLoyaltyTelemetry();
 
-    window.addEventListener("storage", handleSync);
     window.addEventListener("profile-updated", handleSync);
     window.addEventListener("booking-updated", handleSync);
     window.addEventListener("order-updated", handleSync);
     window.addEventListener("dinedesk-points-updated", handleSync);
 
     return () => {
-      window.removeEventListener("storage", handleSync);
       window.removeEventListener("profile-updated", handleSync);
       window.removeEventListener("booking-updated", handleSync);
       window.removeEventListener("order-updated", handleSync);
       window.removeEventListener("dinedesk-points-updated", handleSync);
     };
-  }, [user]);
+  }, [syncLoyaltyTelemetry]);
 
   const isGoldTierOrHigher = points >= 2000;
 
   const handleClaimPerk = (perk: RewardPerk) => {
     if (claimedPerks.includes(perk.id)) {
-      showToast(`Voucher ${perk.code} already claimed! Check your wallet.`, "info");
+      showToast(
+        `Voucher ${perk.code} already claimed! Check your wallet.`,
+        "info"
+      );
       return;
     }
     if (points < perk.pointsCost) {
-      showToast(`You need ${perk.pointsCost - points} more points for this perk.`, "error");
+      showToast(
+        `You need ${perk.pointsCost - points} more points for this perk.`,
+        "error"
+      );
       return;
     }
 
@@ -313,7 +357,8 @@ export default function CustomerLoyaltyPage() {
     showToast(`Claimed "${perk.title}"! Voucher code: ${perk.code}`);
   };
 
-  const referralCode = `${(profile.fullName || "DINE").split(" ")[0].toUpperCase()}-DINE`;
+  const cleanFirstName = profile.fullName.split(" ")[0] || "Diner";
+  const referralCode = `${cleanFirstName.toUpperCase()}-DINE`;
 
   const handleCopyReferral = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -327,10 +372,27 @@ export default function CustomerLoyaltyPage() {
   if (!isLoaded) {
     return (
       <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col antialiased">
-        <CustomerHeader userName={profile.fullName} userRole={profile.roleBadge} avatarUrl={profile.avatarUrl} onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <CustomerHeader
+          userName={profile.fullName}
+          userRole={profile.roleBadge}
+          avatarUrl={profile.avatarUrl}
+          onToggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
         <div className="flex pt-20 flex-1">
-          <CustomerSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} loyaltyPoints={points} upcomingReservationsCount={activeBookingsCount} activeOrdersCount={totalOrdersCount} activeOrderCount={activeOrdersCount} />
-          <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
+          <CustomerSidebar
+            isOpen={isSidebarOpen}
+            onClose={closeSidebar}
+            onToggle={toggleSidebar}
+            activeOrderCount={activeOrdersCount}
+            activeOrdersCount={totalOrdersCount}
+            upcomingReservationsCount={activeBookingsCount}
+            loyaltyPoints={points}
+          />
+          <main
+            className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+              }`}
+          >
             <DashboardLoader />
           </main>
         </div>
@@ -340,7 +402,6 @@ export default function CustomerLoyaltyPage() {
 
   return (
     <div className="bg-[#f8f9f6] min-h-screen text-[#1b3b2b] flex flex-col font-body-md antialiased selection:bg-[#1b3b2b] selection:text-white relative">
-
       {/* Gold Tier Congratulations Modal */}
       <AnimatePresence>
         {showGoldModal && (
@@ -362,11 +423,15 @@ export default function CustomerLoyaltyPage() {
               </span>
 
               <h2 className="font-heading font-black text-2xl text-[#1b3b2b] mt-3">
-                Congratulations, {profile.fullName.split(" ")[0]}!
+                Congratulations, {cleanFirstName}!
               </h2>
 
               <p className="text-xs font-medium text-[#1b3b2b]/80 mt-2 leading-relaxed">
-                You have officially crossed the <strong className="text-amber-600">2,000 Points</strong> threshold and unlocked <strong className="text-[#1b3b2b]">Gold Tier VIP Status</strong>! Enjoy 10% bonus points and zero surge fees.
+                You have officially crossed the{" "}
+                <strong className="text-amber-600">2,000 Points</strong>{" "}
+                threshold and unlocked{" "}
+                <strong className="text-[#1b3b2b]">Gold Tier VIP Status</strong>
+                ! Enjoy 10% bonus points and zero surge fees.
               </p>
 
               <button
@@ -390,7 +455,7 @@ export default function CustomerLoyaltyPage() {
 
       <div className="flex pt-20 flex-1">
         <CustomerSidebar
-          userName={`${profile.fullName.split(" ")[0]}'s Account`}
+          userName={`${cleanFirstName}'s Account`}
           memberSince={profile.memberSince}
           avatarUrl={profile.avatarUrl}
           isOpen={isSidebarOpen}
@@ -402,8 +467,10 @@ export default function CustomerLoyaltyPage() {
           loyaltyPoints={points}
         />
 
-        <main className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-
+        <main
+          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+            }`}
+        >
           {/* Section 1: Patron Welcome Banner & Stats */}
           <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -414,33 +481,51 @@ export default function CustomerLoyaltyPage() {
                   </h1>
                   {isGoldTierOrHigher && (
                     <span className="text-xs px-3 py-1 rounded-full bg-amber-500 text-white font-extrabold flex items-center gap-1 shadow-md animate-pulse">
-                      <span className="material-symbols-outlined text-sm">workspace_premium</span>
+                      <span className="material-symbols-outlined text-sm">
+                        workspace_premium
+                      </span>
                       Gold Tier VIP
                     </span>
                   )}
                 </div>
                 <p className="text-xs font-medium text-[#1b3b2b]/70">
-                  Earn 20 points automatically for every successful Stripe payment.
+                  Earn 20 points automatically with every placed meal order.
                 </p>
               </div>
 
               {/* 4 Summary Stats Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Total Orders</span>
-                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{totalOrdersCount}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
+                    Total Orders
+                  </span>
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
+                    {totalOrdersCount}
+                  </span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Bookings</span>
-                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">{activeBookingsCount}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
+                    Bookings
+                  </span>
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
+                    {activeBookingsCount}
+                  </span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Saved Spots</span>
-                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">{savedSpotsCount}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
+                    Saved Spots
+                  </span>
+                  <span className="font-heading font-black text-xl text-[#1b3b2b] mt-0.5 block">
+                    {savedSpotsCount}
+                  </span>
                 </div>
                 <div className="bg-white/95 backdrop-blur-md px-4 py-3 rounded-2xl border border-[#1b3b2b]/15 shadow-sm">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">Points Balance</span>
-                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">{points.toLocaleString()} pts</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#1b3b2b]/60 block">
+                    Points Balance
+                  </span>
+                  <span className="font-heading font-black text-xl text-[#C05621] mt-0.5 block">
+                    {points.toLocaleString()} pts
+                  </span>
                 </div>
               </div>
             </div>
@@ -448,7 +533,6 @@ export default function CustomerLoyaltyPage() {
 
           {/* Section 2: Core Loyalty Content */}
           <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-10">
-
             {/* Conditional Gold Tier Status Bar */}
             {isGoldTierOrHigher && (
               <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-amber-500/40 shadow-xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
@@ -463,15 +547,21 @@ export default function CustomerLoyaltyPage() {
                     </h2>
                   </div>
                   <p className="text-xs text-[#1b3b2b]/80 leading-relaxed font-medium">
-                    You have crossed the 2,000 points limit! Enjoy 10% bonus points on all reservations, zero delivery surge fees, and 48-hour priority weekend seating window.
+                    You have crossed the 2,000 points limit! Enjoy 10% bonus
+                    points on all reservations, zero delivery surge fees, and
+                    48-hour priority weekend seating window.
                   </p>
                   <div className="flex items-center gap-4 text-xs font-bold text-[#1b3b2b] mt-1">
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm text-[#C05621]">check_circle</span>
+                      <span className="material-symbols-outlined text-sm text-[#C05621]">
+                        check_circle
+                      </span>
                       10% Bonus Points
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm text-[#C05621]">check_circle</span>
+                      <span className="material-symbols-outlined text-sm text-[#C05621]">
+                        check_circle
+                      </span>
                       Zero Surge Fees
                     </span>
                   </div>
@@ -479,13 +569,19 @@ export default function CustomerLoyaltyPage() {
 
                 <div className="bg-[#f8f9f6] p-5 rounded-2xl border border-[#1b3b2b]/10 flex flex-col gap-2.5 w-full md:w-72 shrink-0 z-10 shadow-inner">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#1b3b2b]/70 font-bold">Tier Threshold</span>
-                    <span className="font-black text-[#1b3b2b]">{points} / 2,000 pts</span>
+                    <span className="text-[#1b3b2b]/70 font-bold">
+                      Tier Threshold
+                    </span>
+                    <span className="font-black text-[#1b3b2b]">
+                      {points} / 2,000 pts
+                    </span>
                   </div>
                   <div className="w-full h-3 bg-white rounded-full overflow-hidden border border-[#1b3b2b]/10">
                     <div
                       className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min(100, (points / 2000) * 100)}%` }}
+                      style={{
+                        width: `${Math.min(100, (points / 2000) * 100)}%`,
+                      }}
                     />
                   </div>
                   <span className="text-[11px] text-amber-700 font-bold text-right">
@@ -503,11 +599,13 @@ export default function CustomerLoyaltyPage() {
                     Redeem Dining Perks &amp; Vouchers
                   </h2>
                   <p className="text-xs font-medium text-[#1b3b2b]/70">
-                    Exchange your points for immediate vouchers and complimentary dining experiences.
+                    Exchange your points for immediate vouchers and complimentary
+                    dining experiences.
                   </p>
                 </div>
                 <span className="text-xs font-bold text-[#1b3b2b]">
-                  Current balance: <strong className="text-[#C05621]">{points} pts</strong>
+                  Current balance:{" "}
+                  <strong className="text-[#C05621]">{points} pts</strong>
                 </span>
               </div>
 
@@ -548,8 +646,15 @@ export default function CustomerLoyaltyPage() {
                       <div className="flex items-center justify-between pt-4 border-t border-[#1b3b2b]/10">
                         {isClaimed ? (
                           <div className="flex items-center gap-1.5 text-xs text-[#1b3b2b] font-bold">
-                            <span className="material-symbols-outlined text-sm text-emerald-600">verified</span>
-                            <span>Claimed: <code className="bg-[#f8f9f6] px-2 py-0.5 rounded-lg text-[11px] font-bold border border-[#1b3b2b]/20">{perk.code}</code></span>
+                            <span className="material-symbols-outlined text-sm text-emerald-600">
+                              verified
+                            </span>
+                            <span>
+                              Claimed:{" "}
+                              <code className="bg-[#f8f9f6] px-2 py-0.5 rounded-lg text-[11px] font-bold border border-[#1b3b2b]/20">
+                                {perk.code}
+                              </code>
+                            </span>
                           </div>
                         ) : (
                           <span className="text-[11px] text-[#1b3b2b]/60 font-medium">
@@ -568,7 +673,11 @@ export default function CustomerLoyaltyPage() {
                                 : "bg-[#f8f9f6] text-[#1b3b2b]/40 border border-[#1b3b2b]/10 cursor-not-allowed"
                             }`}
                         >
-                          {isClaimed ? "Redeemed" : canAfford ? "Redeem Perk" : "Need More Pts"}
+                          {isClaimed
+                            ? "Redeemed"
+                            : canAfford
+                              ? "Redeem Perk"
+                              : "Need More Pts"}
                         </button>
                       </div>
                     </div>
@@ -579,11 +688,10 @@ export default function CustomerLoyaltyPage() {
 
             {/* Two Column Layout: Points History Ledger + Referral Invite */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
               {/* Left Column: Points Ledger (7 cols) */}
               <div className="lg:col-span-7 flex flex-col gap-4">
                 <h2 className="font-heading font-extrabold text-base text-[#1b3b2b]">
-                  Points Activity Ledger (Verified Payments)
+                  Points Activity Ledger
                 </h2>
 
                 <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-[#1b3b2b]/15 shadow-xl divide-y divide-[#1b3b2b]/10 overflow-hidden">
@@ -594,9 +702,14 @@ export default function CustomerLoyaltyPage() {
                         className="p-4 flex items-center justify-between gap-3 text-xs hover:bg-[#f8f9f6] transition-colors"
                       >
                         <div className="flex items-center gap-3.5">
-                          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center shrink-0">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${item.type === "redeemed"
+                                ? "bg-amber-500/10 text-amber-700"
+                                : "bg-emerald-500/10 text-emerald-700"
+                              }`}
+                          >
                             <span className="material-symbols-outlined text-base">
-                              bolt
+                              {item.type === "redeemed" ? "redeem" : "bolt"}
                             </span>
                           </div>
                           <div>
@@ -604,13 +717,23 @@ export default function CustomerLoyaltyPage() {
                               {item.activity}
                             </span>
                             <span className="text-[11px] text-[#1b3b2b]/60 font-medium">
-                              {item.date} {item.stripeSessionId && `• ID: ${item.stripeSessionId.slice(-10)}`}
+                              {item.date}{" "}
+                              {item.stripeSessionId &&
+                                `• ID: ${item.stripeSessionId.slice(-8)}`}
                             </span>
                           </div>
                         </div>
 
-                        <span className="font-heading font-black text-[#1b3b2b] text-sm shrink-0 bg-[#1b3b2b]/5 px-3 py-1 rounded-full border border-[#1b3b2b]/10">
-                          +{item.points} pts
+                        <span
+                          className={`font-heading font-black text-sm shrink-0 px-3 py-1 rounded-full border ${item.type === "redeemed"
+                              ? "text-amber-800 bg-amber-50 border-amber-200"
+                              : "text-[#1b3b2b] bg-[#1b3b2b]/5 border-[#1b3b2b]/10"
+                            }`}
+                        >
+                          {item.type === "redeemed"
+                            ? `-${item.points}`
+                            : `+${item.points}`}{" "}
+                          pts
                         </span>
                       </div>
                     ))
@@ -619,9 +742,12 @@ export default function CustomerLoyaltyPage() {
                       <span className="material-symbols-outlined text-4xl text-[#1b3b2b]/30">
                         history
                       </span>
-                      <p className="font-heading font-extrabold text-sm text-[#1b3b2b]">No Points Earned Yet (0 pts)</p>
+                      <p className="font-heading font-extrabold text-sm text-[#1b3b2b]">
+                        No Points Earned Yet (0 pts)
+                      </p>
                       <p className="text-xs font-medium text-[#1b3b2b]/70 max-w-sm">
-                        Complete a successful payment through Stripe to automatically earn your first 20 loyalty points!
+                        Place a food order or table booking to automatically
+                        earn your permanent loyalty points!
                       </p>
                     </div>
                   )}
@@ -645,7 +771,9 @@ export default function CustomerLoyaltyPage() {
                       Give $15, Get 500 Pts
                     </h3>
                     <p className="text-xs font-medium text-[#1b3b2b]/70 leading-relaxed">
-                      Share your unique referral code with friends. When they make their first booking or meal order, both of you earn dining rewards!
+                      Share your unique referral code with friends. When they
+                      make their first booking or meal order, both of you earn
+                      dining rewards!
                     </p>
                   </div>
 
@@ -671,7 +799,6 @@ export default function CustomerLoyaltyPage() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
 

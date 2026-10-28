@@ -26,10 +26,11 @@ export interface BackendOrder {
   };
   items?: Array<{
     id: string;
-    menuItemId: string;
+    menuItemId?: string;
     name: string;
     price: number | string;
     quantity: number;
+    image?: string;
   }>;
 }
 
@@ -89,11 +90,11 @@ export function mapBackendPaymentStatus(status: string): PaymentStatus {
 
 export function mapBackendOrderToConfirmation(bo: BackendOrder): OrderConfirmation {
   const items = (bo.items || []).map((it) => ({
-    id: it.id || it.menuItemId,
-    name: it.name,
+    id: it.id || it.menuItemId || "",
+    name: it.name || "Item",
     price: Number(it.price) || 0,
     quantity: it.quantity || 1,
-    image: "/images/kacchi-biryani.png",
+    image: it.image || bo.restaurant?.coverUrl || "/images/restaurant-cover-placeholder.svg",
   }));
 
   const subtotal = Number(bo.subtotal) || 0;
@@ -103,7 +104,7 @@ export function mapBackendOrderToConfirmation(bo: BackendOrder): OrderConfirmati
 
   const dateObj = new Date(bo.createdAt);
   const timeStr = isNaN(dateObj.getTime())
-    ? "Recently"
+    ? ""
     : dateObj.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   const status = mapBackendStatusToOrderStatus(bo.status);
@@ -113,12 +114,12 @@ export function mapBackendOrderToConfirmation(bo: BackendOrder): OrderConfirmati
     orderId: bo.id.length > 10 ? `DD-${bo.id.slice(-5).toUpperCase()}` : bo.id,
     fulfillmentMode: bo.orderType === "PICKUP" ? "takeaway" : "delivery",
     restaurantId: bo.restaurantId,
-    restaurantName: bo.restaurant?.name || "Curated Dine Partner",
-    restaurantAddress: bo.restaurant?.address,
+    restaurantName: bo.restaurant?.name || "Restaurant",
+    restaurantAddress: bo.restaurant?.address || "",
     restaurantImage: bo.restaurant?.coverUrl || "/images/restaurant-cover-placeholder.svg",
     items,
     contact: {
-      fullName: "DineDesk Patron",
+      fullName: "",
       phone: "",
       email: "",
     },
@@ -144,19 +145,19 @@ export function mapBackendReservationToCustomer(br: BackendReservation): Custome
   const resDate = new Date(br.reservedFor);
   const isValidDate = !isNaN(resDate.getTime());
 
-  const dateStr = isValidDate ? resDate.toISOString().split("T")[0] : "2026-10-25";
+  const dateStr = isValidDate ? resDate.toISOString().split("T")[0] : "";
   const displayDate = isValidDate
     ? resDate.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "Upcoming Seating";
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+    : "";
 
   const timeStr = isValidDate
     ? resDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-    : "7:30 PM";
+    : "";
 
   let status: CustomerReservationStatus = "pending";
   let statusDisplay: "Confirmed" | "Pending Venue" | "Completed" | "Fully Booked" | "Cancelled" =
@@ -183,16 +184,16 @@ export function mapBackendReservationToCustomer(br: BackendReservation): Custome
   return {
     id: br.id.length > 10 ? `RES-${br.id.slice(-4).toUpperCase()}` : br.id,
     restaurantId: br.restaurantId,
-    restaurantName: br.restaurant?.name || "The Maple & Vine",
+    restaurantName: br.restaurant?.name || "Restaurant",
     restaurantImage: br.restaurant?.coverUrl || "/images/restaurant-cover-placeholder.svg",
-    neighborhood: br.restaurant?.address || "Corktown, Detroit",
-    fullAddress: br.restaurant?.address || "1420 Michigan Avenue, Detroit, MI 48216",
-    cuisine: "Fine Dining",
+    neighborhood: br.restaurant?.address || "",
+    fullAddress: br.restaurant?.address || "",
+    cuisine: "Dining",
     date: dateStr,
     displayDate,
     time: timeStr,
     mealPeriod,
-    partySize: br.partySize || 2,
+    partySize: br.partySize || 1,
     seatingArea: "Main Dining",
     tableNumber: status === "confirmed" ? "Table Reserved" : undefined,
     specialNotes: br.note || undefined,
@@ -204,98 +205,75 @@ export function mapBackendReservationToCustomer(br: BackendReservation): Custome
 }
 
 /**
- * Fetches real authenticated customer orders from the backend API.
- * If user has no orders, returns an empty array [].
+ * Helper to get active session token with cookie fallback
  */
-export async function fetchCustomerOrders(userId?: string): Promise<OrderConfirmation[]> {
+function resolveSessionToken(): string {
   const token = getStoredToken();
+  if (token && token.trim() !== "") return token.trim();
+
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(
+      /(?:^|;\s*)(?:dinedesk_auth_token|better-auth\.session_token|token|auth_token|accessToken)=([^;]+)/
+    );
+    if (match && match[1]) return match[1].trim();
+  }
+  return "";
+}
+
+/**
+ * Fetches real authenticated customer orders directly from the backend API.
+ * Returns empty array [] if unauthenticated or on error.
+ */
+export async function fetchCustomerOrders(_userId?: string): Promise<OrderConfirmation[]> {
+  const token = resolveSessionToken();
   if (!token) {
     return [];
   }
 
   try {
-    const res = await apiClient<{ success: boolean; data: BackendOrder[] }>("/orders/my");
+    const res = await apiClient<{ success: boolean; data: BackendOrder[] }>("/orders/my", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-session-token": token,
+        "better-auth-session-token": token,
+      },
+    });
+
     if (res && res.success && Array.isArray(res.data)) {
-      const mappedOrders = res.data.map(mapBackendOrderToConfirmation);
-      
-      // Also check user-scoped local orders placed during current session
-      if (typeof window !== "undefined" && userId) {
-        const localRaw = localStorage.getItem(`dinedesk_orders_${userId}`);
-        if (localRaw) {
-          try {
-            const localOrders: OrderConfirmation[] = JSON.parse(localRaw);
-            const combined = [...localOrders, ...mappedOrders.filter(
-              (mo) => !localOrders.some((lo) => lo.orderId === mo.orderId)
-            )];
-            return combined;
-          } catch {
-            // ignore
-          }
-        }
-      }
-      return mappedOrders;
+      return res.data.map(mapBackendOrderToConfirmation);
     }
     return [];
   } catch (err) {
-    // If backend endpoint failed or token expired, check user-scoped storage only
-    if (typeof window !== "undefined" && userId) {
-      const localRaw = localStorage.getItem(`dinedesk_orders_${userId}`);
-      if (localRaw) {
-        try {
-          return JSON.parse(localRaw);
-        } catch {
-          return [];
-        }
-      }
-    }
+    console.error("fetchCustomerOrders failed:", err);
     return [];
   }
 }
 
 /**
- * Fetches real authenticated customer reservations from the backend API.
- * If user has no reservations, returns an empty array [].
+ * Fetches real authenticated customer reservations directly from the backend API.
+ * Returns empty array [] if unauthenticated or on error.
  */
-export async function fetchCustomerReservations(userId?: string): Promise<CustomerReservation[]> {
-  const token = getStoredToken();
+export async function fetchCustomerReservations(_userId?: string): Promise<CustomerReservation[]> {
+  const token = resolveSessionToken();
   if (!token) {
     return [];
   }
 
   try {
-    const res = await apiClient<{ success: boolean; data: BackendReservation[] }>("/reservations/my");
-    if (res && res.success && Array.isArray(res.data)) {
-      const mappedReservations = res.data.map(mapBackendReservationToCustomer);
+    const res = await apiClient<{ success: boolean; data: BackendReservation[] }>("/reservations/my", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-session-token": token,
+        "better-auth-session-token": token,
+      },
+    });
 
-      // Check user-scoped local reservations
-      if (typeof window !== "undefined" && userId) {
-        const localRaw = localStorage.getItem(`dinedesk_reservations_${userId}`);
-        if (localRaw) {
-          try {
-            const localRes: CustomerReservation[] = JSON.parse(localRaw);
-            const combined = [...localRes, ...mappedReservations.filter(
-              (mr) => !localRes.some((lr) => lr.id === mr.id)
-            )];
-            return combined;
-          } catch {
-            // ignore
-          }
-        }
-      }
-      return mappedReservations;
+    if (res && res.success && Array.isArray(res.data)) {
+      return res.data.map(mapBackendReservationToCustomer);
     }
     return [];
   } catch (err) {
-    if (typeof window !== "undefined" && userId) {
-      const localRaw = localStorage.getItem(`dinedesk_reservations_${userId}`);
-      if (localRaw) {
-        try {
-          return JSON.parse(localRaw);
-        } catch {
-          return [];
-        }
-      }
-    }
+    console.error("fetchCustomerReservations failed:", err);
     return [];
   }
 }
@@ -309,8 +287,14 @@ export async function createReservationApi(data: {
   partySize: number;
   note?: string;
 }): Promise<BackendReservation> {
+  const token = resolveSessionToken();
   const res = await apiClient<{ success: boolean; data: BackendReservation }>("/reservations", {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "x-session-token": token,
+      "better-auth-session-token": token,
+    },
     body: JSON.stringify(data),
   });
   return res.data;

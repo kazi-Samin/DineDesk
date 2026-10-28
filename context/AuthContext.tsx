@@ -26,6 +26,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updateUserAvatar: (newAvatarUrl: string) => void;
+  updateAuthUser: (updatedFields: Partial<AuthUser>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +44,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     return userData;
   };
+
+  // Direct updater to synchronously update user across app
+  const updateAuthUser = useCallback((updatedFields: Partial<AuthUser>) => {
+    setUser((prevUser) => {
+      if (!prevUser) return null;
+      const updated: AuthUser = enrichUserWithAvatar({
+        ...prevUser,
+        ...updatedFields,
+      });
+
+      setStoredUser(updated);
+
+      if (typeof window !== "undefined") {
+        if (updated.name) localStorage.setItem("dinedesk_user_name", updated.name);
+        if (updated.email) localStorage.setItem("dinedesk_user_email", updated.email);
+        if (updated.avatarUrl) localStorage.setItem("dinedesk_user_avatar", updated.avatarUrl);
+      }
+
+      return updated;
+    });
+  }, []);
 
   // Initialize auth state on client mount
   useEffect(() => {
@@ -66,9 +88,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (isMounted) {
                 if (sessionRes?.data?.user) {
                   const bUser = sessionRes.data.user;
+                  const customStoredName =
+                    typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_name") : null;
+
                   const enriched = enrichUserWithAvatar({
                     id: bUser.id,
-                    name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+                    name: customStoredName || bUser.name || bUser.email?.split("@")[0] || "Diner",
                     email: bUser.email,
                     role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
                     avatarUrl: bUser.image || storedUser?.avatarUrl || "",
@@ -94,7 +119,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUser(meUser);
                 setStoredUser(meUser);
               } else if (!storedUser) {
-                // Token invalid or expired
                 clearStoredAuth();
                 localStorage.removeItem("dinedesk_customer_profile");
                 setToken(null);
@@ -103,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
-          // No stored token in localStorage - check if arriving via Better-Auth OAuth (e.g. Google)
+          // Check if arriving via Better-Auth OAuth
           try {
             const sessionRes = await authClient.getSession();
             if (isMounted && sessionRes?.data?.user) {
@@ -157,10 +181,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Listen for real-time profile and storage updates
+  useEffect(() => {
+    const handleAuthSync = (event?: any) => {
+      try {
+        if (event?.detail) {
+          const detail = event.detail;
+          setUser((prev) => {
+            if (!prev) return null;
+            return enrichUserWithAvatar({
+              ...prev,
+              name: detail.fullName || detail.name || prev.name,
+              email: detail.email || prev.email,
+              avatarUrl: detail.avatarUrl || prev.avatarUrl,
+            });
+          });
+          return;
+        }
+
+        const stored = getStoredUser();
+        const storedName = typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_name") : null;
+        const storedEmail = typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_email") : null;
+        const storedAvatar = typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_avatar") : null;
+
+        if (stored) {
+          const updated: AuthUser = enrichUserWithAvatar({
+            ...stored,
+            name: storedName || stored.name,
+            email: storedEmail || stored.email,
+            avatarUrl: storedAvatar || stored.avatarUrl,
+          });
+          setUser(updated);
+        } else if (storedName) {
+          setUser((prev) => (prev ? { ...prev, name: storedName } : null));
+        }
+      } catch (err) {
+        console.error("Failed to sync auth state from event:", err);
+      }
+    };
+
+    window.addEventListener("storage", handleAuthSync);
+    window.addEventListener("profile-updated", handleAuthSync);
+    window.addEventListener("external-profile-updated", handleAuthSync);
+
+    return () => {
+      window.removeEventListener("storage", handleAuthSync);
+      window.removeEventListener("profile-updated", handleAuthSync);
+      window.removeEventListener("external-profile-updated", handleAuthSync);
+    };
+  }, []);
+
   const login = useCallback(async (credentials: LoginCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
     try {
-      // Clear any previous user's cached profile storage before logging in new user
       if (typeof window !== "undefined") {
         localStorage.removeItem("dinedesk_customer_profile");
       }
@@ -183,7 +256,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(async (credentials: RegisterCredentials): Promise<AuthResponse> => {
     setIsLoading(true);
     try {
-      // Clear any previous user's cached profile storage before registering new user
       if (typeof window !== "undefined") {
         localStorage.removeItem("dinedesk_customer_profile");
       }
@@ -205,16 +277,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       if (token?.startsWith("better_auth_")) {
-        await authClient.signOut().catch(() => {});
+        await authClient.signOut().catch(() => { });
       } else {
-        await logoutApi().catch(() => {});
+        await logoutApi().catch(() => { });
       }
     } finally {
-      // Completely clear auth and local profile caches on logout
       clearStoredAuth();
       if (typeof window !== "undefined") {
         localStorage.removeItem("dinedesk_customer_profile");
         localStorage.removeItem("dinedesk_user_avatar");
+        localStorage.removeItem("dinedesk_user_name");
+        localStorage.removeItem("dinedesk_user_email");
+        localStorage.removeItem("dinedesk_user_phone");
       }
       setToken(null);
       setUser(null);
@@ -282,6 +356,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout,
         refreshUser,
         updateUserAvatar,
+        updateAuthUser,
       }}
     >
       {children}
