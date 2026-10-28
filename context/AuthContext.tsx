@@ -112,6 +112,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedToken = getStoredToken();
         const storedUser = getStoredUser();
 
+        // 1. Check if there is an active Google OAuth session via Better-Auth
+        let bUser: any = null;
+        try {
+          const sessionRes = await authClient.getSession();
+          if (sessionRes?.data?.user) {
+            bUser = sessionRes.data.user;
+          }
+        } catch (sessionErr) {
+          console.warn("Better-Auth session check:", sessionErr);
+        }
+
+        // 2. If Google OAuth session is active AND token is missing or starts with "better_auth_"
+        if (bUser && (!storedToken || storedToken.startsWith("better_auth_"))) {
+          const customStoredName =
+            typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_name") : null;
+
+          const tempUser: AuthUser = enrichUserWithAvatar({
+            id: bUser.id,
+            name: customStoredName || bUser.name || bUser.email?.split("@")[0] || "Diner",
+            email: bUser.email,
+            role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+            avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+            createdAt: storedUser?.createdAt || new Date().toISOString(),
+          });
+
+          const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+          if (isMounted) {
+            setStoredToken(finalToken);
+            setStoredUser(finalUser);
+            setToken(finalToken);
+            setUser(finalUser);
+
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("profile-updated"));
+              window.dispatchEvent(new CustomEvent("booking-updated"));
+              window.dispatchEvent(new CustomEvent("order-updated"));
+            }
+          }
+          return;
+        }
+
+        // 3. Normal existing token handling
         if (storedToken) {
           setToken(storedToken);
           if (storedUser) {
@@ -119,38 +161,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
 
           if (storedToken.startsWith("better_auth_")) {
-            // Had a better_auth_ token from a previous OAuth login — try to upgrade to backend JWT
-            try {
-              const sessionRes = await authClient.getSession();
+            if (bUser) {
+              const tempUser: AuthUser = enrichUserWithAvatar({
+                id: bUser.id,
+                name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+                email: bUser.email,
+                role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+                avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+                createdAt: storedUser?.createdAt || new Date().toISOString(),
+              });
+              const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
               if (isMounted) {
-                if (sessionRes?.data?.user) {
-                  const bUser = sessionRes.data.user;
-                  const customStoredName =
-                    typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_name") : null;
-
-                  const tempUser: AuthUser = enrichUserWithAvatar({
-                    id: bUser.id,
-                    name: customStoredName || bUser.name || bUser.email?.split("@")[0] || "Diner",
-                    email: bUser.email,
-                    role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-                    avatarUrl: bUser.image || storedUser?.avatarUrl || "",
-                    createdAt: storedUser?.createdAt || new Date().toISOString(),
-                  });
-
-                  // Try to get a real backend JWT for this OAuth user
-                  const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
-                  setStoredToken(finalToken);
-                  setStoredUser(finalUser);
-                  setToken(finalToken);
-                  setUser(finalUser);
-                } else if (!storedUser) {
-                  clearStoredAuth();
-                  setToken(null);
-                  setUser(null);
+                setStoredToken(finalToken);
+                setStoredUser(finalUser);
+                setToken(finalToken);
+                setUser(finalUser);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("profile-updated"));
                 }
               }
-            } catch (sessionErr) {
-              console.error("Better-Auth session verification failed:", sessionErr);
+            } else if (!storedUser) {
+              clearStoredAuth();
+              setToken(null);
+              setUser(null);
             }
           } else {
             // Normal backend JWT — verify with live backend /api/v1/auth/me
@@ -160,6 +193,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const meUser = enrichUserWithAvatar(meResult.data);
                 setUser(meUser);
                 setStoredUser(meUser);
+              } else if (bUser) {
+                // Token invalid or expired, but Google session is active - re-issue JWT
+                const tempUser: AuthUser = enrichUserWithAvatar({
+                  id: bUser.id,
+                  name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+                  email: bUser.email,
+                  role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+                  avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+                  createdAt: storedUser?.createdAt || new Date().toISOString(),
+                });
+                const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+                setStoredToken(finalToken);
+                setStoredUser(finalUser);
+                setToken(finalToken);
+                setUser(finalUser);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("profile-updated"));
+                }
               } else if (!storedUser) {
                 clearStoredAuth();
                 localStorage.removeItem("dinedesk_customer_profile");
@@ -168,46 +219,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               }
             }
           }
-        } else {
-          // No token stored — check if arriving fresh via Better-Auth OAuth (Google redirect)
-          try {
-            const sessionRes = await authClient.getSession();
-            if (isMounted && sessionRes?.data?.user) {
-              const bUser = sessionRes.data.user;
-              const tempUser: AuthUser = enrichUserWithAvatar({
-                id: bUser.id,
-                name: bUser.name || bUser.email?.split("@")[0] || "Diner",
-                email: bUser.email,
-                role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-                avatarUrl: bUser.image || "",
-                createdAt: new Date().toISOString(),
-              });
+        } else if (bUser) {
+          // Arriving fresh via Google OAuth redirect
+          const tempUser: AuthUser = enrichUserWithAvatar({
+            id: bUser.id,
+            name: bUser.name || bUser.email?.split("@")[0] || "Diner",
+            email: bUser.email,
+            role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
+            avatarUrl: bUser.image || "",
+            createdAt: new Date().toISOString(),
+          });
+          setUser(tempUser);
 
-              // Immediately show user in UI
-              setUser(tempUser);
-
-              // Try to get a real backend JWT for this OAuth user
-              const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
-              setStoredToken(finalToken);
-              setStoredUser(finalUser);
-              setToken(finalToken);
-              setUser(finalUser);
-
-              try {
-                const existingProfile = getCustomerProfile();
-                saveCustomerProfile({
-                  ...existingProfile,
-                  fullName: finalUser.name,
-                  email: finalUser.email,
-                  phone: existingProfile.phone || "(313) 555-0142",
-                  roleBadge: "Diner",
-                });
-              } catch (profileErr) {
-                console.error("Failed to sync customer profile:", profileErr);
-              }
+          const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
+          if (isMounted) {
+            setStoredToken(finalToken);
+            setStoredUser(finalUser);
+            setToken(finalToken);
+            setUser(finalUser);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("profile-updated"));
+              window.dispatchEvent(new CustomEvent("booking-updated"));
+              window.dispatchEvent(new CustomEvent("order-updated"));
             }
-          } catch (sessionErr) {
-            console.error("Better-Auth session check failed:", sessionErr);
           }
         }
       } catch (err) {

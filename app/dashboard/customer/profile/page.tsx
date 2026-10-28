@@ -21,7 +21,7 @@ import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";

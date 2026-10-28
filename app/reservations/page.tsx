@@ -71,6 +71,7 @@ export default function ReservationsPage() {
                     localStorage.getItem("token") ||
                     localStorage.getItem("accessToken") ||
                     localStorage.getItem("authToken") ||
+                    localStorage.getItem("dinedesk_auth_token") ||
                     localStorage.getItem("dinedesk_token") ||
                     localStorage.getItem("auth_token") ||
                     JSON.parse(localStorage.getItem("user") || "{}")?.token ||

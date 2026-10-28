@@ -167,7 +167,36 @@ export async function socialLoginApi(userData: {
   avatarUrl?: string;
 }): Promise<AuthResponse> {
   try {
-    // Try /auth/social-login endpoint first
+    // 1. Direct Next.js internal API route: /api/auth/google-sync
+    // This runs server-side in Next.js (both local and deployed), queries Neon Postgres directly,
+    // ensures the User row exists, and signs a genuine HS256 JWT using JWT_SECRET.
+    try {
+      const syncRes = await fetch("/api/auth/google-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userData.email,
+          name: userData.name,
+          googleId: userData.googleId,
+          avatarUrl: userData.avatarUrl,
+        }),
+      });
+
+      if (syncRes.ok) {
+        const syncData = await parseJsonResponse<AuthResponse>(syncRes);
+        if (syncData.success && syncData.token) {
+          setStoredToken(syncData.token);
+          if (syncData.data) {
+            setStoredUser(syncData.data);
+          }
+          return syncData;
+        }
+      }
+    } catch (syncErr) {
+      console.warn("/api/auth/google-sync failed, falling back to backend endpoints:", syncErr);
+    }
+
+    // 2. Try /auth/social-login endpoint first
     const response = await fetch(`${API_BASE_URL}/auth/social-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -190,7 +219,7 @@ export async function socialLoginApi(userData: {
       }
     }
 
-    // Fallback: try /auth/google endpoint
+    // 3. Fallback: try /auth/google endpoint
     const res2 = await fetch(`${API_BASE_URL}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -212,7 +241,7 @@ export async function socialLoginApi(userData: {
       }
     }
 
-    // Fallback: try /auth/oauth-callback
+    // 4. Fallback: try /auth/oauth-callback
     const res3 = await fetch(`${API_BASE_URL}/auth/oauth-callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

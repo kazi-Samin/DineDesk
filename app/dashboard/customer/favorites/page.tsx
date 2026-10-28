@@ -69,7 +69,7 @@ const EMPTY_PROFILE: CustomerProfileData = {
 export default function CustomerFavoritesPage() {
   const router = useRouter();
   const { addItem, openDrawer } = useCart();
-  const { user } = useAuth();
+  const { user, token: authContextToken } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle(
     "dinedesk_customer_sidebar"
   );
@@ -95,7 +95,7 @@ export default function CustomerFavoritesPage() {
 
   const syncDatabaseData = useCallback(async () => {
     try {
-      const token = getAuthToken();
+      const token = authContextToken || getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -291,7 +291,7 @@ export default function CustomerFavoritesPage() {
     } finally {
       setIsLoaded(true);
     }
-  }, [user]);
+  }, [user, authContextToken]);
 
   useEffect(() => {
     syncDatabaseData();

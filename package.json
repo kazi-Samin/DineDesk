@@ -11,6 +11,7 @@
     "deploy:main": "git checkout main && git merge developer --no-edit && git push origin main"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.2.0",
     "@stripe/stripe-js": "^10.1.0",
     "@types/canvas-confetti": "^1.9.0",
     "better-auth": "^1.7.12",

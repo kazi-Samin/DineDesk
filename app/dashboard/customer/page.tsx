@@ -54,7 +54,7 @@ const EMPTY_PROFILE: CustomerProfileData = {
 
 export default function CustomerDashboardOverviewPage() {
   const { openReservationModal } = useReservation();
-  const { user } = useAuth();
+  const { user, token: authContextToken } = useAuth();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle(
     "dinedesk_customer_sidebar"
   );
@@ -68,7 +68,7 @@ export default function CustomerDashboardOverviewPage() {
 
   const loadLiveOverviewData = useCallback(async () => {
     try {
-      const token = getAuthToken();
+      const token = authContextToken || getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -241,7 +241,7 @@ export default function CustomerDashboardOverviewPage() {
     } finally {
       setIsLoaded(true);
     }
-  }, [user]);
+  }, [user, authContextToken]);
 
   useEffect(() => {
     loadLiveOverviewData();
