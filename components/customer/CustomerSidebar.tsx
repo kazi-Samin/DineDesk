@@ -19,28 +19,13 @@ interface CustomerSidebarProps {
   loyaltyPoints?: number;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
-
-const getAuthToken = () => {
-  if (typeof window === "undefined") return "";
-  return (
-    localStorage.getItem("dinedesk_auth_token") ||
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("dinedesk_token") ||
-    localStorage.getItem("auth_token") ||
-    ""
-  );
-};
-
 export default function CustomerSidebar({
   isOpen = true,
   onClose,
   onToggle,
   userName = "Diner",
   memberSince = "Patron since 2026",
-  avatarUrl = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80",
+  avatarUrl = "",
   activeOrderCount,
   activeOrdersCount = 0,
   upcomingReservationsCount,
@@ -50,15 +35,85 @@ export default function CustomerSidebar({
   const router = useRouter();
   const { user, logout } = useAuth();
 
-  // Dynamic states initialized from props or 0
   const [realPoints, setRealPoints] = useState<number>(loyaltyPoints ?? 0);
-  const [currentAvatar, setCurrentAvatar] = useState<string>(
-    avatarUrl && avatarUrl.trim() !== "" ? avatarUrl : "/avatars/tahmid-avatar.svg"
-  );
+  const [currentAvatar, setCurrentAvatar] = useState<string>("");
   const [currentName, setCurrentName] = useState<string>(userName);
-  const [dynamicBookingsCount, setDynamicBookingsCount] = useState<number>(upcomingReservationsCount ?? 0);
+  const [dynamicBookingsCount, setDynamicBookingsCount] = useState<number>(
+    upcomingReservationsCount ?? 0
+  );
+  const [dynamicActiveOrders, setDynamicActiveOrders] = useState<number>(
+    activeOrderCount ?? activeOrdersCount ?? 0
+  );
 
-  // Sync state whenever props change from parent dashboard pages
+  // Sync avatar and name using the EXACT same logic as CustomerHeader
+  useEffect(() => {
+    const updateProfileFromStorage = (event?: any) => {
+      try {
+        if (event?.detail) {
+          const detail = event.detail;
+          if (detail.fullName || detail.name) {
+            setCurrentName(detail.fullName || detail.name);
+          }
+          if (detail.avatarUrl || detail.image) {
+            setCurrentAvatar(detail.avatarUrl || detail.image);
+          }
+          return;
+        }
+
+        const storedProfile = JSON.parse(
+          localStorage.getItem("dinedesk_customer_profile") || "{}"
+        );
+        const directName = localStorage.getItem("dinedesk_user_name");
+        const directAvatar = localStorage.getItem("dinedesk_user_avatar");
+        const authUser = JSON.parse(
+          localStorage.getItem("dinedesk_auth_user") || "{}"
+        );
+
+        const resolvedName =
+          storedProfile.fullName ||
+          directName ||
+          authUser.name ||
+          user?.name ||
+          userName;
+
+        const resolvedAvatar =
+          storedProfile.avatarUrl ||
+          storedProfile.image ||
+          directAvatar ||
+          authUser.avatarUrl ||
+          authUser.image ||
+          authUser.avatar ||
+          user?.avatarUrl ||
+          (user as any)?.image ||
+          (user as any)?.avatar ||
+          "";
+
+        if (resolvedName) setCurrentName(resolvedName);
+        if (resolvedAvatar) setCurrentAvatar(resolvedAvatar);
+      } catch (e) {
+        // Fallback silently if storage read fails
+      }
+    };
+
+    updateProfileFromStorage();
+
+    window.addEventListener("storage", updateProfileFromStorage);
+    window.addEventListener("profile-updated", updateProfileFromStorage);
+    window.addEventListener(
+      "external-profile-updated",
+      updateProfileFromStorage
+    );
+
+    return () => {
+      window.removeEventListener("storage", updateProfileFromStorage);
+      window.removeEventListener("profile-updated", updateProfileFromStorage);
+      window.removeEventListener(
+        "external-profile-updated",
+        updateProfileFromStorage
+      );
+    };
+  }, [user, userName]);
+
   useEffect(() => {
     if (loyaltyPoints !== undefined) {
       setRealPoints(loyaltyPoints);
@@ -71,85 +126,36 @@ export default function CustomerSidebar({
     }
   }, [upcomingReservationsCount]);
 
-  // Real-time synchronization for profile and fallback telemetry scoped to active user
   useEffect(() => {
-    const syncProfileFromStorage = async () => {
-      try {
-        const storedProfile = JSON.parse(localStorage.getItem("dinedesk_customer_profile") || "{}");
-        if (storedProfile.avatarUrl && storedProfile.avatarUrl.trim() !== "") {
-          setCurrentAvatar(storedProfile.avatarUrl);
-        } else if (user?.avatarUrl) {
-          setCurrentAvatar(user.avatarUrl);
-        } else {
-          setCurrentAvatar(`https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user?.name || userName || "Diner")}`);
-        }
+    const effectiveActive = activeOrderCount ?? activeOrdersCount ?? 0;
+    setDynamicActiveOrders(effectiveActive);
+  }, [activeOrderCount, activeOrdersCount]);
 
-        if (storedProfile.fullName) {
-          setCurrentName(storedProfile.fullName);
-        } else if (user?.name) {
-          setCurrentName(user.name);
-        }
+  const rawTargetName =
+    currentName && currentName !== "Diner"
+      ? currentName
+      : user?.name || userName || "Diner";
 
-        if (loyaltyPoints === undefined) {
-          const userSpecificPayments = user?.id
-            ? JSON.parse(localStorage.getItem(`dinedesk_stripe_payments_${user.id}`) || "[]")
-            : [];
-          const userSpecificOrders = user?.id
-            ? JSON.parse(localStorage.getItem(`dinedesk_orders_${user.id}`) || "[]")
-            : [];
-          const totalOrders = userSpecificOrders.length + userSpecificPayments.length;
-          setRealPoints(totalOrders * 20);
-        }
+  const cleanedName = rawTargetName
+    .replace(/^(mr\.|mrs\.|ms\.|dr\.|prof\.)\s+/i, "")
+    .replace(/[()]/g, "")
+    .trim();
 
-        // Fetch dynamic reservations count from backend API securely if needed
-        const token = getAuthToken();
-        if (token && upcomingReservationsCount === undefined) {
-          const resApi = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
-            },
-            credentials: "include",
-          }).catch(() => null);
+  // Extract first name (strip existing "'s Account" if previously appended)
+  const baseFirstName = cleanedName.replace(/'s\s+Account$/i, "").split(/\s+/)[0] || "Diner";
+  const formattedAccountTitle = `${baseFirstName}'s Account`;
+  const firstLetter = baseFirstName.charAt(0).toUpperCase() || "D";
 
-          if (resApi && resApi.ok) {
-            const apiData = await resApi.json();
-            const list = apiData.reservations || apiData.data || apiData || [];
-            const activeCount = list.filter((item: any) => {
-              const status = (item.status || "confirmed").toLowerCase();
-              return status === "confirmed" || status === "upcoming" || status === "pending";
-            }).length;
-            setDynamicBookingsCount(activeCount);
-          }
-        }
-      } catch (e) {
-        // fallback
-      }
-    };
-
-    syncProfileFromStorage();
-
-    window.addEventListener("storage", syncProfileFromStorage);
-    window.addEventListener("profile-updated", syncProfileFromStorage);
-    window.addEventListener("booking-updated", syncProfileFromStorage);
-    window.addEventListener("order-updated", syncProfileFromStorage);
-    window.addEventListener("dinedesk-points-updated", syncProfileFromStorage);
-
-    return () => {
-      window.removeEventListener("storage", syncProfileFromStorage);
-      window.removeEventListener("profile-updated", syncProfileFromStorage);
-      window.removeEventListener("booking-updated", syncProfileFromStorage);
-      window.removeEventListener("order-updated", syncProfileFromStorage);
-      window.removeEventListener("dinedesk-points-updated", syncProfileFromStorage);
-    };
-  }, [user, avatarUrl, userName, loyaltyPoints, upcomingReservationsCount]);
-
-  const resolvedName = user?.name
-    ? `${user.name.split(" ")[0]}`
-    : currentName && currentName !== "Diner"
-      ? currentName.split(" ")[0]
-      : "Diner";
+  // Identical avatar check to UserProfileDropdown
+  const resolvedAvatarImage =
+    currentAvatar ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("dinedesk_user_avatar")
+      : null) ||
+    user?.avatarUrl ||
+    (user as any)?.avatar ||
+    (user as any)?.image ||
+    null;
 
   const isOverviewActive = pathname === "/dashboard/customer";
   const isOrdersActive = pathname === "/dashboard/customer/orders";
@@ -160,7 +166,7 @@ export default function CustomerSidebar({
   const isFavoritesActive = pathname === "/dashboard/customer/favorites";
   const isLoyaltyActive = pathname === "/dashboard/customer/loyalty";
 
-  const totalActiveOrders = activeOrderCount ?? activeOrdersCount;
+  const totalActiveOrders = dynamicActiveOrders;
   const totalUpcomingBookings = dynamicBookingsCount;
   const isPremiumUser = realPoints >= 2000;
 
@@ -176,22 +182,24 @@ export default function CustomerSidebar({
       label: "My Orders",
       href: "/dashboard/customer/orders",
       icon: "receipt_long",
-      badge: totalActiveOrders > 0 ? (
-        <span className="bg-[#C05621]/15 text-[#C05621] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-          {totalActiveOrders} active
-        </span>
-      ) : null,
+      badge:
+        totalActiveOrders > 0 ? (
+          <span className="bg-[#C05621]/15 text-[#C05621] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+            {totalActiveOrders} active
+          </span>
+        ) : null,
       isActive: isOrdersActive,
     },
     {
       label: "Table Reservations",
       href: "/dashboard/customer/reservations",
       icon: "table_restaurant",
-      badge: totalUpcomingBookings > 0 ? (
-        <span className="bg-[#1b3b2b]/10 text-[#1b3b2b] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-          {totalUpcomingBookings}
-        </span>
-      ) : null,
+      badge:
+        totalUpcomingBookings > 0 ? (
+          <span className="bg-[#1b3b2b]/10 text-[#1b3b2b] text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+            {totalUpcomingBookings}
+          </span>
+        ) : null,
       isActive: isReservationsActive,
     },
     {
@@ -249,10 +257,6 @@ export default function CustomerSidebar({
     }
   };
 
-  const safeAvatar = currentAvatar && currentAvatar.trim() !== ""
-    ? currentAvatar
-    : `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
-
   return (
     <>
       {isOpen && (
@@ -275,7 +279,10 @@ export default function CustomerSidebar({
           title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
-          <span className={`material-symbols-outlined text-sm font-black transition-transform duration-300 ${isOpen ? "rotate-0" : "rotate-180"}`}>
+          <span
+            className={`material-symbols-outlined text-sm font-black transition-transform duration-300 ${isOpen ? "rotate-0" : "rotate-180"
+              }`}
+          >
             keyboard_double_arrow_left
           </span>
         </motion.button>
@@ -284,27 +291,42 @@ export default function CustomerSidebar({
           {isOpen ? (
             <div className="p-5 flex flex-col gap-3 bg-gradient-to-b from-[#1b3b2b]/5 to-transparent border-b border-[#1b3b2b]/10">
               <div className="flex items-center gap-3.5">
-                <div className={`relative w-11 h-11 rounded-2xl p-0.5 ${isPremiumUser
-                    ? "bg-gradient-to-tr from-amber-400 via-amber-500 to-yellow-300 animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]"
-                    : "bg-gradient-to-tr from-[#1b3b2b] to-[#C05621]"
-                  } shadow-sm shrink-0`}>
-                  <img
-                    alt={resolvedName}
-                    className="w-full h-full rounded-[14px] object-cover bg-white"
-                    src={safeAvatar}
-                    onError={(e) => {
-                      e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
-                    }}
-                  />
+                <div
+                  className={`relative w-11 h-11 rounded-2xl p-0.5 ${isPremiumUser
+                      ? "bg-gradient-to-tr from-amber-400 via-amber-500 to-yellow-300 animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]"
+                      : "bg-gradient-to-tr from-[#1b3b2b] to-[#C05621]"
+                    } shadow-sm shrink-0`}
+                >
+                  <div className="w-full h-full rounded-[14px] overflow-hidden bg-[#1b3b2b] text-white flex items-center justify-center font-heading font-extrabold text-sm relative">
+                    {resolvedAvatarImage ? (
+                      <img
+                        key={resolvedAvatarImage}
+                        alt={baseFirstName}
+                        className="w-full h-full object-cover"
+                        src={resolvedAvatarImage}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = `<span>${firstLetter}</span>`;
+                          }
+                        }}
+                      />
+                    ) : (
+                      <span>{firstLetter}</span>
+                    )}
+                  </div>
                   {isPremiumUser && (
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] shadow-md border border-white" title="Gold Tier VIP">
+                    <span
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] shadow-md border border-white"
+                      title="Gold Tier VIP"
+                    >
                       👑
                     </span>
                   )}
                 </div>
                 <div className="flex flex-col overflow-hidden">
                   <span className="font-heading font-extrabold text-sm text-[#1b3b2b] tracking-tight truncate flex items-center gap-1.5">
-                    {resolvedName}&apos;s Account
+                    {formattedAccountTitle}
                     {isPremiumUser && <span className="text-[10px]">👑</span>}
                   </span>
                   <span className="text-[10px] text-[#1b3b2b]/60 font-semibold uppercase tracking-wider">
@@ -315,36 +337,64 @@ export default function CustomerSidebar({
 
               <div className="grid grid-cols-3 gap-1.5 pt-1 text-center">
                 <div className="bg-white/80 border border-[#1b3b2b]/10 py-1.5 px-1 rounded-xl shadow-2xs">
-                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">Orders</span>
-                  <span className="font-heading font-black text-xs text-[#1b3b2b]">{totalActiveOrders}</span>
+                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">
+                    Orders
+                  </span>
+                  <span className="font-heading font-black text-xs text-[#1b3b2b]">
+                    {totalActiveOrders}
+                  </span>
                 </div>
                 <div className="bg-white/80 border border-[#1b3b2b]/10 py-1.5 px-1 rounded-xl shadow-2xs">
-                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">Bookings</span>
-                  <span className="font-heading font-black text-xs text-[#C05621]">{totalUpcomingBookings}</span>
+                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">
+                    Bookings
+                  </span>
+                  <span className="font-heading font-black text-xs text-[#C05621]">
+                    {totalUpcomingBookings}
+                  </span>
                 </div>
                 <div className="bg-white/80 border border-[#1b3b2b]/10 py-1.5 px-1 rounded-xl shadow-2xs">
-                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">Points</span>
-                  <span className="font-heading font-black text-xs text-[#1b3b2b]">{realPoints}</span>
+                  <span className="block text-[9px] uppercase font-bold text-[#1b3b2b]/50">
+                    Points
+                  </span>
+                  <span className="font-heading font-black text-xs text-[#1b3b2b]">
+                    {realPoints}
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
             <div className="p-4 flex items-center justify-center border-b border-[#1b3b2b]/10">
-              <div className={`relative w-10 h-10 rounded-2xl p-0.5 ${isPremiumUser
-                  ? "bg-gradient-to-tr from-amber-400 via-amber-500 to-yellow-300 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-                  : "bg-gradient-to-tr from-[#1b3b2b] to-[#C05621]"
-                } shadow-sm`}>
-                <img
-                  alt={resolvedName}
-                  className="w-full h-full rounded-[14px] object-cover bg-white"
-                  src={safeAvatar}
-                  title={`${resolvedName} (${memberSince})${isPremiumUser ? " - Gold Tier VIP" : ""}`}
-                  onError={(e) => {
-                    e.currentTarget.src = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(resolvedName)}`;
-                  }}
-                />
+              <div
+                className={`relative w-10 h-10 rounded-2xl p-0.5 ${isPremiumUser
+                    ? "bg-gradient-to-tr from-amber-400 via-amber-500 to-yellow-300 animate-pulse shadow-[0_0_12px_rgba(245,158,11,0.5)]"
+                    : "bg-gradient-to-tr from-[#1b3b2b] to-[#C05621]"
+                  } shadow-sm`}
+              >
+                <div className="w-full h-full rounded-[14px] overflow-hidden bg-[#1b3b2b] text-white flex items-center justify-center font-heading font-extrabold text-xs relative">
+                  {resolvedAvatarImage ? (
+                    <img
+                      key={resolvedAvatarImage}
+                      alt={baseFirstName}
+                      className="w-full h-full object-cover"
+                      src={resolvedAvatarImage}
+                      title={`${formattedAccountTitle} (${memberSince})${isPremiumUser ? " - Gold Tier VIP" : ""
+                        }`}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.parentElement.innerHTML = `<span>${firstLetter}</span>`;
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span>{firstLetter}</span>
+                  )}
+                </div>
                 {isPremiumUser && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px] shadow-sm border border-white" title="Gold Tier VIP">
+                  <span
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[9px] shadow-sm border border-white"
+                    title="Gold Tier VIP"
+                  >
                     👑
                   </span>
                 )}
@@ -368,8 +418,12 @@ export default function CustomerSidebar({
                   title={!isOpen ? item.label : undefined}
                 >
                   <div className="flex items-center gap-3.5">
-                    <span className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${item.isActive ? "text-[#C05621]" : "text-[#1b3b2b]/70 group-hover:text-[#1b3b2b]"
-                      }`}>
+                    <span
+                      className={`material-symbols-outlined text-xl transition-transform group-hover:scale-110 ${item.isActive
+                          ? "text-[#C05621]"
+                          : "text-[#1b3b2b]/70 group-hover:text-[#1b3b2b]"
+                        }`}
+                    >
                       {item.icon}
                     </span>
                     {isOpen && <span className="truncate">{item.label}</span>}
@@ -381,7 +435,10 @@ export default function CustomerSidebar({
           </nav>
         </div>
 
-        <div className={`border-t border-[#1b3b2b]/10 flex flex-col gap-2 bg-[#f8f9f6]/50 ${isOpen ? "p-4" : "p-2"}`}>
+        <div
+          className={`border-t border-[#1b3b2b]/10 flex flex-col gap-2 bg-[#f8f9f6]/50 ${isOpen ? "p-4" : "p-2"
+            }`}
+        >
           <Link
             href="/"
             className={`w-full flex items-center ${isOpen ? "gap-3.5 px-4 py-3" : "justify-center px-2 py-3"
