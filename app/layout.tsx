@@ -10,6 +10,7 @@ import GlobalLoader from "@/components/ui/GlobalLoader";
 import { CartProvider } from "@/context/CartContext";
 import { ReservationProvider } from "@/context/ReservationContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { AvatarProvider } from "@/context/AvatarContext";
 import { Toaster } from "react-hot-toast";
 import JsonLd from "@/components/seo/JsonLd";
 
@@ -150,17 +151,21 @@ export default function RootLayout({
         <JsonLd />
         <GlobalLoader />
         <AuthProvider>
-          <CartProvider>
-            <ReservationProvider>
-              <Navbar />
-              {children}
-              <CartDrawer />
-              <CookieConsent />
-              {/* TableMateAIBadge temporarily hidden from UI - file kept in components/ui/TableMateAIBadge.tsx */}
-              <TableMateAIBadge />
-              <Footer />
-            </ReservationProvider>
-          </CartProvider>
+          <AvatarProvider>
+            <CartProvider>
+              <ReservationProvider>
+                <Navbar />
+                {children}
+                <CartDrawer />
+                <CookieConsent />
+
+                {/* TableMateAIBadge temporarily hidden from UI - file kept in components/ui/TableMateAIBadge.tsx */}
+                
+                <TableMateAIBadge />
+                <Footer />
+              </ReservationProvider>
+            </CartProvider>
+          </AvatarProvider>
         </AuthProvider>
         <Toaster position="top-right" />
       </body>
