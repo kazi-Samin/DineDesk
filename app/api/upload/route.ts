@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const folder = (formData.get("folder") as string) || "dinedesk";
+    const folder = (formData.get("folder") as string) || "dinedesk/avatars";
 
     if (!file) {
       return NextResponse.json(
@@ -16,62 +16,70 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const cloudName =
+      process.env.CLOUDINARY_CLOUD_NAME ||
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const apiKey = process.env.CLOUDINARY_API_KEY;
     const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-    const fileBytes = await file.arrayBuffer();
-    const buffer = Buffer.from(fileBytes);
-    const base64Data = `data:${file.type || "image/jpeg"};base64,${buffer.toString("base64")}`;
-
-    // If Cloudinary credentials are fully configured, attempt official signed Cloudinary upload
-    if (cloudName && apiKey && apiSecret) {
-      try {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const strToSign = `folder=${folder}&timestamp=${timestamp}${apiSecret}`;
-        const signature = crypto.createHash("sha1").update(strToSign).digest("hex");
-
-        const cloudinaryBody = new FormData();
-        cloudinaryBody.append("file", base64Data);
-        cloudinaryBody.append("api_key", apiKey);
-        cloudinaryBody.append("timestamp", timestamp.toString());
-        cloudinaryBody.append("folder", folder);
-        cloudinaryBody.append("signature", signature);
-
-        const cloudinaryRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: cloudinaryBody,
-          }
-        );
-
-        const cloudinaryData = await cloudinaryRes.json();
-
-        if (cloudinaryRes.ok && cloudinaryData?.secure_url) {
-          return NextResponse.json({
-            success: true,
-            url: cloudinaryData.secure_url,
-            publicId: cloudinaryData.public_id,
-            provider: "cloudinary",
-            bytes: cloudinaryData.bytes || buffer.length,
-            format: cloudinaryData.format,
-          });
-        }
-
-        console.warn("Cloudinary API response warning:", cloudinaryData?.error?.message || "Upload did not return secure_url");
-      } catch (cloudErr) {
-        console.warn("Cloudinary network exception:", cloudErr);
-      }
+    if (!cloudName || !apiKey || !apiSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Cloudinary credentials missing in environment variables.",
+        },
+        { status: 500 }
+      );
     }
 
-    // High-resilience fallback: Return base64 data URI when Cloudinary is pending cloud-name alignment
+    // 1. Generate UNIX timestamp
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // 2. Strict alphabetical signature parameters: folder -> timestamp
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
+    const signature = crypto
+      .createHash("sha1")
+      .update(paramsToSign + apiSecret)
+      .digest("hex");
+
+    // 3. Prepare direct multipart upload form
+    const cloudinaryBody = new FormData();
+    cloudinaryBody.append("file", file);
+    cloudinaryBody.append("api_key", apiKey);
+    cloudinaryBody.append("timestamp", timestamp.toString());
+    cloudinaryBody.append("folder", folder);
+    cloudinaryBody.append("signature", signature);
+
+    const cloudinaryRes = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: cloudinaryBody,
+      }
+    );
+
+    const cloudinaryData = await cloudinaryRes.json();
+
+    if (!cloudinaryRes.ok || !cloudinaryData?.secure_url) {
+      console.error("Cloudinary API rejected upload:", cloudinaryData);
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            cloudinaryData?.error?.message ||
+            "Cloudinary rejected image upload.",
+        },
+        { status: cloudinaryRes.status || 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      url: base64Data,
-      provider: "local_optimized",
-      bytes: buffer.length,
-      note: "Stored as optimized web data",
+      url: cloudinaryData.secure_url,
+      publicId: cloudinaryData.public_id,
+      provider: "cloudinary",
+      bytes: cloudinaryData.bytes,
+      format: cloudinaryData.format,
     });
   } catch (error: any) {
     console.error("Upload route error:", error);

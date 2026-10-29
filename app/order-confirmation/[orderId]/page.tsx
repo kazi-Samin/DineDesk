@@ -24,6 +24,27 @@ interface OrderConfirmationPageProps {
   params: Promise<{ orderId: string }>;
 }
 
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app"
+).replace(/\/+$/, "");
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+
+  const match = document.cookie.match(
+    /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
+  );
+  if (match && match[1]) return match[1].trim();
+
+  const storedToken =
+    localStorage.getItem("token") ||
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("accessToken") ||
+    "";
+
+  return storedToken.trim();
+};
+
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
   const resolvedParams = use(params);
   const orderId = resolvedParams.orderId;
@@ -35,49 +56,225 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   useEffect(() => {
-    // Load order by orderId
-    const found = getMockOrder(orderId);
-    if (found) {
-      setOrder(found);
+    let isMounted = true;
 
-      // AUTOMATIC LOYALTY POINTS TRACKER:
-      // When a valid order is confirmed/paid, record it to add 20 loyalty points automatically
+    async function resolveOrder() {
       try {
-        const existingPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-        const paymentKey = `order_pay_${orderId}`;
-
-        if (!existingPayments.includes(paymentKey)) {
-          existingPayments.push(paymentKey);
-          localStorage.setItem("dinedesk_stripe_payments", JSON.stringify(existingPayments));
-          // Dispatch storage event so sidebars and loyalty pages update instantly
-          window.dispatchEvent(new Event("storage"));
+        // 1. Try local mock order first (for demo / dev mode)
+        const mockFound = getMockOrder(orderId);
+        if (mockFound) {
+          if (isMounted) {
+            setOrder(mockFound);
+            setLoading(false);
+          }
+          return;
         }
-      } catch (e) {
-        // ignore localStorage errors in restricted environments
+
+        // 2. Fetch live order from PostgreSQL backend
+        const token = getAuthToken();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        };
+
+        let dbOrder: any = null;
+
+        const singleRes = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
+          headers,
+          credentials: "include",
+        }).catch(() => null);
+
+        if (singleRes && singleRes.ok) {
+          const resData = await singleRes.json();
+          dbOrder = resData.data || resData.order || resData;
+        }
+
+        if (!dbOrder) {
+          const listRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
+            headers,
+            credentials: "include",
+          }).catch(() => null);
+
+          if (listRes && listRes.ok) {
+            const listData = await listRes.json();
+            const rawList = listData.data || listData.orders || [];
+            dbOrder = rawList.find(
+              (o: any) => o.id === orderId || o.orderId === orderId
+            );
+          }
+        }
+
+        if (dbOrder && isMounted) {
+          // Normalize status
+          const rawStatus = String(dbOrder.status || "PENDING").toLowerCase();
+          let normalizedStatus: OrderStatus = "confirmed" as OrderStatus;
+
+          if (rawStatus === "delivered") {
+            normalizedStatus = "delivered" as OrderStatus;
+          } else if (rawStatus === "out_for_delivery") {
+            normalizedStatus = "out_for_delivery" as OrderStatus;
+          } else if (rawStatus === "preparing") {
+            normalizedStatus = "preparing" as OrderStatus;
+          } else if (rawStatus === "cancelled" || rawStatus === "rejected") {
+            normalizedStatus = "cancelled" as OrderStatus;
+          } else if (rawStatus === "pending" || rawStatus === "placed") {
+            normalizedStatus = "confirmed" as OrderStatus;
+          }
+
+          const rawPaymentStatus = String(dbOrder.paymentStatus || "UNPAID").toLowerCase();
+          const normalizedPayment: PaymentStatus =
+            rawPaymentStatus === "paid" ? "paid" : "pending";
+
+          const subtotalNum = Number(dbOrder.subtotal || dbOrder.total || 0);
+          const deliveryFeeNum = Number(dbOrder.deliveryFee || 0);
+          const discountNum = Number(dbOrder.discount || 0);
+          const totalNum = Number(dbOrder.total || subtotalNum + deliveryFeeNum - discountNum);
+
+          const mappedItems =
+            Array.isArray(dbOrder.items) && dbOrder.items.length > 0
+              ? dbOrder.items.map((item: any, idx: number) => ({
+                id: item.id || `item-${idx}`,
+                name: item.name || item.menuItem?.name || item.menuName || "Culinary Item",
+                quantity: Number(item.quantity || 1),
+                price: Number(item.price || 0),
+                customizations: item.customizations || [],
+              }))
+              : [
+                {
+                  id: "item-default",
+                  name: "DineDesk Specialty Selection",
+                  quantity: 1,
+                  price: subtotalNum > 0 ? subtotalNum : totalNum,
+                },
+              ];
+
+          const formattedConfirmation = {
+            orderId: dbOrder.id || orderId,
+            restaurantName:
+              dbOrder.restaurant?.name ||
+              dbOrder.restaurantName ||
+              "DineDesk Central Kitchen",
+            restaurantAddress:
+              dbOrder.restaurant?.address ||
+              dbOrder.restaurantAddress ||
+              "Central Kitchen, DineDesk Hub",
+            restaurantPhone:
+              dbOrder.restaurant?.phone ||
+              dbOrder.restaurantPhone ||
+              "+880 1712-490211",
+            createdAt: dbOrder.createdAt || new Date().toISOString(),
+            status: normalizedStatus,
+            paymentStatus: normalizedPayment,
+            paymentMethod: dbOrder.paymentMethod || "STRIPE",
+            fulfillmentMode: (dbOrder.orderType?.toLowerCase() === "pickup"
+              ? "pickup"
+              : "delivery") as any,
+
+            // Direct root pricing fields expected by OrderReceipt.tsx
+            subtotal: subtotalNum,
+            discount: discountNum,
+            deliveryFee: deliveryFeeNum,
+            serviceFee: 2.0,
+            tax: 0,
+            total: totalNum,
+            pointsEarned: dbOrder.pointsEarned || 20,
+
+            // Nested pricing object for components expecting pricing.*
+            pricing: {
+              subtotal: subtotalNum,
+              deliveryFee: deliveryFeeNum,
+              serviceFee: 2.0,
+              tax: 0,
+              discount: discountNum,
+              total: totalNum,
+              pointsEarned: dbOrder.pointsEarned || 20,
+            },
+
+            // Contact properties required by OrderConfirmationHero.tsx
+            contact: {
+              fullName: dbOrder.user?.name || "FOURKAN",
+              email: dbOrder.user?.email || "pinonfurkan1@gmail.com",
+              phone: dbOrder.user?.phone || "+880 1680224284",
+            },
+
+            // Delivery & address properties required by DeliveryTrackingCard & maps
+            deliveryAddress:
+              dbOrder.deliveryAddress || "FOURKAN's Default Address",
+            delivery: {
+              address: dbOrder.deliveryAddress || "FOURKAN's Default Address",
+              lat: dbOrder.deliveryLat || 22.3384,
+              lng: dbOrder.deliveryLng || 91.8317,
+              instructions: "Deliver to front entrance",
+            },
+            customer: {
+              name: dbOrder.user?.name || "FOURKAN",
+              email: dbOrder.user?.email || "pinonfurkan1@gmail.com",
+              phone: dbOrder.user?.phone || "+880 1680224284",
+            },
+
+            estimatedDeliveryTime:
+              dbOrder.estimatedDeliveryAt || "25-35 mins",
+            items: mappedItems,
+            courier: {
+              ...MOCK_COURIER,
+              name: "DineDesk Priority Fleet",
+            },
+          };
+
+          setOrder(formattedConfirmation as unknown as OrderConfirmation);
+        }
+      } catch (err) {
+        console.error("Failed to load order tracker data:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
-    setLoading(false);
+
+    resolveOrder();
+
+    return () => {
+      isMounted = false;
+    };
   }, [orderId]);
 
-  // Dev state switcher
+  // Dev status switcher
   const handleDevStatusChange = (newStatus: OrderStatus, paymentStatus?: PaymentStatus) => {
     if (!order) return;
     const updated = updateMockOrderStatus(order.orderId, newStatus, paymentStatus);
     if (updated) {
       setOrder(updated);
+    } else {
+      setOrder((prev) =>
+        prev
+          ? {
+            ...prev,
+            status: newStatus,
+            paymentStatus: paymentStatus || prev.paymentStatus,
+          }
+          : null
+      );
     }
   };
 
   // Order cancellation
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (!order) return;
-    const updated = cancelMockOrder(order.orderId);
-    if (updated) {
-      setOrder(updated);
-    }
+    try {
+      const token = getAuthToken();
+      await fetch(`${API_BASE_URL}/api/v1/orders/${order.orderId}/cancel`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      }).catch(() => null);
+    } catch (_) { }
+
+    cancelMockOrder(order.orderId);
+    setOrder((prev) => (prev ? { ...prev, status: "cancelled" } : null));
   };
 
-  // Check if order can be cancelled (pending or confirmed)
   const canCancel =
     order &&
     order.status !== "cancelled" &&
@@ -122,10 +319,10 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 Browse Restaurants
               </Link>
               <Link
-                href="/dashboard/orders"
+                href="/dashboard/customer"
                 className="px-space-lg py-space-sm bg-surface-container-high text-on-surface rounded font-label-md font-semibold hover:bg-surface-container-highest transition-colors"
               >
-                Order History
+                Back to Dashboard
               </Link>
             </div>
           </div>
@@ -139,7 +336,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
   return (
     <main className="w-full pt-20 bg-surface min-h-screen">
-      {/* Print Specific Stylings */}
       <style jsx global>{`
         @media print {
           header,
@@ -168,7 +364,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
       <div className="flex flex-col w-full">
         <div className="w-full max-w-[1280px] mx-auto px-margin py-space-lg flex flex-col gap-space-lg">
-          {/* Dev Mock Tracking Controls (Development & Prototype Simulation) */}
+          {/* Dev Mock Tracking Controls */}
           <div id="dev-mock-bar">
             <DevMockTrackingBar order={order} onStatusChange={handleDevStatusChange} />
           </div>
@@ -202,22 +398,20 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             </div>
           </div>
 
-          {/* Celebration & Status Hero with Integrated Stepper */}
+          {/* Celebration & Status Hero */}
           <div className="flex flex-col">
             <OrderConfirmationHero order={order} />
             <OrderStatusTracker order={order} />
           </div>
 
-          {/* Main Content 2-Column Grid */}
+          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
-            {/* LEFT COLUMN: Map & Logistics (7 cols) */}
+            {/* LEFT COLUMN: Map & Logistics */}
             <div className="lg:col-span-7 flex flex-col gap-space-lg">
-              {/* Delivery Tracking / Pickup Location */}
               <div id="live-transit-map-wrapper">
                 <DeliveryTrackingCard order={order} />
               </div>
 
-              {/* Courier Card (Shows for delivery when dispatched / out for delivery or preparing) */}
               {isDelivery && order.status !== "cancelled" && (
                 <CourierCard
                   courier={courierData}
@@ -225,13 +419,12 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 />
               )}
 
-              {/* Kitchen Visual Chronicle / Preparation Spotlight */}
               <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col sm:flex-row gap-space-lg items-center border border-outline-variant/40">
                 <div className="w-full sm:w-44 h-32 rounded-lg overflow-hidden shrink-0 shadow-inner">
                   <img
                     className="w-full h-full object-cover"
-                    alt="Traditional Bengali Dum Kacchi Biryani cooked in brass handi"
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJq_BIGeRh7asvUEwulDsgwYADl4ReFd7wVPOHCkC6WfPynWNgRKObHdkcFhYKERWIIGoYTaVeKeZ2muyJS8Z-d9FTj8iGJ6752xAa5Y7gczu6VrnDbMUjtxJYNA6cuoozomIMSdrWOE1HD7gsqFiPimXyPa_h4NZykLThvxvWamPfRyUKpoh017W8JLPgfodsAlhPUphXBQ7cDUtA-9K-1W4LO_A1zbdiuAtshihfNDe4VzuIjHlQow"
+                    alt="Kitchen preparation"
+                    src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -248,11 +441,9 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Order Items & Receipt Breakdown (5 cols) */}
+            {/* RIGHT COLUMN: Order Items & Receipt Breakdown */}
             <div className="lg:col-span-5 flex flex-col gap-space-lg">
-              {/* Detailed Order Summary Card */}
               <div className="bg-surface-container-lowest rounded-xl shadow-sm p-space-lg flex flex-col gap-space-lg border border-outline-variant/40">
-                {/* Restaurant Details Header */}
                 <div className="flex items-start justify-between gap-space-sm pb-space-sm border-b border-outline-variant/30">
                   <div>
                     <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
@@ -264,8 +455,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                       </Link>
                     </h2>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">
-                      {order.restaurantAddress || "Banani Road 11, Dhaka"} •{" "}
-                      {order.restaurantPhone || "+880 1712-490211"}
+                      {order.restaurantAddress} • {order.restaurantPhone}
                     </span>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container">
@@ -273,19 +463,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                   </div>
                 </div>
 
-                {/* Items List */}
                 <OrderItemsSummary order={order} />
-
-                {/* Billing Breakdown */}
                 <OrderReceipt order={order} />
 
-                {/* Post-Order Action Row */}
                 <div id="post-order-actions" className="flex flex-col gap-space-sm pt-space-xs">
                   <Link
-                    href="/dashboard/orders"
+                    href="/dashboard/customer"
                     className="w-full py-3 px-space-md bg-primary text-on-primary hover:bg-primary-container rounded-lg font-label-md text-label-md font-semibold text-center transition-all shadow-sm"
                   >
-                    View Order History
+                    Back to Dashboard
                   </Link>
 
                   <button
@@ -296,16 +482,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                     <span className="material-symbols-outlined text-base">print</span>
                     Print / Download PDF Receipt
                   </button>
-
-                  <Link
-                    href="/explore"
-                    className="w-full py-2.5 px-space-md bg-surface-container-low text-on-surface hover:bg-surface-container-high rounded-lg font-label-md text-label-md font-medium text-center transition-all"
-                  >
-                    Continue Browsing Restaurants
-                  </Link>
                 </div>
 
-                {/* Support & Concierge Link */}
                 <div className="text-center pt-space-xs">
                   <button
                     onClick={() => setSupportModalOpen(true)}
@@ -317,27 +495,11 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                   </button>
                 </div>
               </div>
-
-              {/* Safe Handling Guarantee Card */}
-              <div className="bg-surface-container-low rounded-xl p-space-md flex items-center gap-space-md border border-outline-variant/30">
-                <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-2xl">verified_user</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-label-md text-label-md font-bold text-on-surface">
-                    100% Quality &amp; Temperature Guarantee
-                  </span>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    Every package is sealed with a tamper-evident DineDesk security band. If the seal is compromised, report immediately.
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Support Modal */}
       <OrderSupportModal
         orderId={order.orderId}
         restaurantName={order.restaurantName}
@@ -345,7 +507,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
         onClose={() => setSupportModalOpen(false)}
       />
 
-      {/* Cancel Order Modal */}
       <CancelOrderModal
         orderId={order.orderId}
         isOpen={cancelModalOpen}

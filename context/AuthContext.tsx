@@ -38,10 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper to enrich user with dynamic avatar fallback if missing
-  const enrichUserWithAvatar = (userData: AuthUser): AuthUser => {
-    if (!userData.avatarUrl || userData.avatarUrl.trim() === "") {
+  const enrichUserWithAvatar = (userData: AuthUser, fallbackImage?: string | null): AuthUser => {
+    const existingAvatar = userData.avatarUrl || fallbackImage;
+    if (!existingAvatar || existingAvatar.trim() === "") {
       const nameSeed = userData.name || userData.email || "User";
       userData.avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(nameSeed)}`;
+    } else {
+      userData.avatarUrl = existingAvatar;
     }
     return userData;
   };
@@ -76,23 +79,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fallbackUser: AuthUser
   ): Promise<{ finalToken: string; finalUser: AuthUser }> => {
     try {
+      const preferredAvatar = bUser.image || fallbackUser.avatarUrl || undefined;
+
       const socialResult = await socialLoginApi({
         email: bUser.email,
         name: bUser.name || bUser.email.split("@")[0] || "Diner",
         googleId: bUser.id,
-        avatarUrl: bUser.image ?? fallbackUser.avatarUrl ?? undefined,
+        avatarUrl: preferredAvatar,
       });
 
       if (socialResult.success && socialResult.token) {
-        // Got a real backend JWT — use it instead of better_auth_ prefix token
         const backendUser: AuthUser = enrichUserWithAvatar(
           socialResult.data
             ? {
-                ...socialResult.data,
-                avatarUrl: socialResult.data.avatarUrl || bUser.image || fallbackUser.avatarUrl || "",
-              }
-            : fallbackUser
+              ...socialResult.data,
+              avatarUrl: socialResult.data.avatarUrl || preferredAvatar || "",
+            }
+            : fallbackUser,
+          preferredAvatar
         );
+
+        if (typeof window !== "undefined" && backendUser.avatarUrl) {
+          localStorage.setItem("dinedesk_user_avatar", backendUser.avatarUrl);
+        }
+
         return { finalToken: socialResult.token, finalUser: backendUser };
       }
     } catch (err) {
@@ -123,6 +133,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn("Better-Auth session check:", sessionErr);
         }
 
+        const cachedAvatar =
+          typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_avatar") : null;
+        const googlePhoto = bUser?.image || cachedAvatar || storedUser?.avatarUrl || null;
+
         // 2. If Google OAuth session is active AND token is missing or starts with "better_auth_"
         if (bUser && (!storedToken || storedToken.startsWith("better_auth_"))) {
           const customStoredName =
@@ -133,9 +147,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: customStoredName || bUser.name || bUser.email?.split("@")[0] || "Diner",
             email: bUser.email,
             role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-            avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+            avatarUrl: bUser.image || storedUser?.avatarUrl || cachedAvatar || "",
             createdAt: storedUser?.createdAt || new Date().toISOString(),
-          });
+          }, googlePhoto);
 
           const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
           if (isMounted) {
@@ -145,6 +159,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(finalUser);
 
             if (typeof window !== "undefined") {
+              if (finalUser.avatarUrl) {
+                localStorage.setItem("dinedesk_user_avatar", finalUser.avatarUrl);
+              }
               window.dispatchEvent(new CustomEvent("profile-updated"));
               window.dispatchEvent(new CustomEvent("booking-updated"));
               window.dispatchEvent(new CustomEvent("order-updated"));
@@ -157,7 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedToken) {
           setToken(storedToken);
           if (storedUser) {
-            setUser(enrichUserWithAvatar(storedUser));
+            setUser(enrichUserWithAvatar(storedUser, googlePhoto));
           }
 
           if (storedToken.startsWith("better_auth_")) {
@@ -167,9 +184,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 name: bUser.name || bUser.email?.split("@")[0] || "Diner",
                 email: bUser.email,
                 role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-                avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+                avatarUrl: bUser.image || storedUser?.avatarUrl || cachedAvatar || "",
                 createdAt: storedUser?.createdAt || new Date().toISOString(),
-              });
+              }, googlePhoto);
               const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
               if (isMounted) {
                 setStoredToken(finalToken);
@@ -177,6 +194,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setToken(finalToken);
                 setUser(finalUser);
                 if (typeof window !== "undefined") {
+                  if (finalUser.avatarUrl) {
+                    localStorage.setItem("dinedesk_user_avatar", finalUser.avatarUrl);
+                  }
                   window.dispatchEvent(new CustomEvent("profile-updated"));
                 }
               }
@@ -190,9 +210,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const meResult = await getMeApi();
             if (isMounted) {
               if (meResult.success && meResult.data) {
-                const meUser = enrichUserWithAvatar(meResult.data);
+                // Ensure Google session avatar is preserved if backend has no avatarUrl
+                const finalAvatar = meResult.data.avatarUrl || googlePhoto || "";
+                const meUser = enrichUserWithAvatar({
+                  ...meResult.data,
+                  avatarUrl: finalAvatar,
+                }, finalAvatar);
+
                 setUser(meUser);
                 setStoredUser(meUser);
+                if (typeof window !== "undefined" && finalAvatar) {
+                  localStorage.setItem("dinedesk_user_avatar", finalAvatar);
+                }
               } else if (bUser) {
                 // Token invalid or expired, but Google session is active - re-issue JWT
                 const tempUser: AuthUser = enrichUserWithAvatar({
@@ -200,15 +229,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   name: bUser.name || bUser.email?.split("@")[0] || "Diner",
                   email: bUser.email,
                   role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-                  avatarUrl: bUser.image || storedUser?.avatarUrl || "",
+                  avatarUrl: bUser.image || storedUser?.avatarUrl || cachedAvatar || "",
                   createdAt: storedUser?.createdAt || new Date().toISOString(),
-                });
+                }, googlePhoto);
                 const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
                 setStoredToken(finalToken);
                 setStoredUser(finalUser);
                 setToken(finalToken);
                 setUser(finalUser);
                 if (typeof window !== "undefined") {
+                  if (finalUser.avatarUrl) {
+                    localStorage.setItem("dinedesk_user_avatar", finalUser.avatarUrl);
+                  }
                   window.dispatchEvent(new CustomEvent("profile-updated"));
                 }
               } else if (!storedUser) {
@@ -226,9 +258,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: bUser.name || bUser.email?.split("@")[0] || "Diner",
             email: bUser.email,
             role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
-            avatarUrl: bUser.image || "",
+            avatarUrl: bUser.image || cachedAvatar || "",
             createdAt: new Date().toISOString(),
-          });
+          }, googlePhoto);
           setUser(tempUser);
 
           const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
@@ -238,6 +270,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setToken(finalToken);
             setUser(finalUser);
             if (typeof window !== "undefined") {
+              if (finalUser.avatarUrl) {
+                localStorage.setItem("dinedesk_user_avatar", finalUser.avatarUrl);
+              }
               window.dispatchEvent(new CustomEvent("profile-updated"));
               window.dispatchEvent(new CustomEvent("booking-updated"));
               window.dispatchEvent(new CustomEvent("order-updated"));
@@ -379,7 +414,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
 
     if (token.startsWith("better_auth_")) {
-      // Try to upgrade to backend JWT on refresh too
       try {
         const sessionRes = await authClient.getSession();
         if (sessionRes?.data?.user) {
@@ -391,7 +425,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: ((bUser as unknown as { role?: UserRole }).role) || "USER",
             avatarUrl: bUser.image || user?.avatarUrl || "",
             createdAt: user?.createdAt || new Date().toISOString(),
-          });
+          }, bUser.image);
 
           const { finalToken, finalUser } = await syncBackendJwtForOAuthUser(bUser, tempUser);
           setStoredToken(finalToken);
@@ -407,7 +441,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const result = await getMeApi();
     if (result.success && result.data) {
-      const enrichedUser = enrichUserWithAvatar(result.data);
+      const enrichedUser = enrichUserWithAvatar(result.data, user?.avatarUrl);
       setUser(enrichedUser);
       setStoredUser(enrichedUser);
     }

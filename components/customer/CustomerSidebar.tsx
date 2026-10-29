@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useAvatar } from "@/context/AvatarContext";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 
 interface CustomerSidebarProps {
   isOpen?: boolean;
@@ -34,9 +36,10 @@ export default function CustomerSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { avatarUrl: liveContextAvatar } = useAvatar();
 
   const [realPoints, setRealPoints] = useState<number>(loyaltyPoints ?? 0);
-  const [currentAvatar, setCurrentAvatar] = useState<string>("");
+  const [currentAvatar, setCurrentAvatar] = useState<string>(avatarUrl || "");
   const [currentName, setCurrentName] = useState<string>(userName);
   const [dynamicBookingsCount, setDynamicBookingsCount] = useState<number>(
     upcomingReservationsCount ?? 0
@@ -45,53 +48,81 @@ export default function CustomerSidebar({
     activeOrderCount ?? activeOrdersCount ?? 0
   );
 
-  // Sync avatar and name using the EXACT same logic as CustomerHeader
+  const isHttp = (v: any): boolean =>
+    typeof v === "string" &&
+    v.trim() !== "" &&
+    (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/"));
+
+  // 1. Immediately react to parent avatarUrl prop changes
   useEffect(() => {
-    const updateProfileFromStorage = (event?: any) => {
+    if (isHttp(avatarUrl)) {
+      setCurrentAvatar(avatarUrl.trim());
+    }
+  }, [avatarUrl]);
+
+  // 2. Immediately react to shared AvatarContext changes
+  useEffect(() => {
+    if (isHttp(liveContextAvatar)) {
+      setCurrentAvatar(liveContextAvatar.trim());
+    }
+  }, [liveContextAvatar]);
+
+  // 3. Immediately react to User Auth changes
+  useEffect(() => {
+    if (isHttp(user?.avatarUrl)) {
+      setCurrentAvatar(user!.avatarUrl!.trim());
+    }
+    if (user?.name) {
+      setCurrentName(user.name);
+    }
+  }, [user]);
+
+  // 4. Synchronize via dynamic CustomEvents and window storage
+  useEffect(() => {
+    let isMounted = true;
+
+    const updateProfileFromStorage = async (event?: any) => {
       try {
         if (event?.detail) {
           const detail = event.detail;
           if (detail.fullName || detail.name) {
             setCurrentName(detail.fullName || detail.name);
           }
-          if (detail.avatarUrl || detail.image) {
-            setCurrentAvatar(detail.avatarUrl || detail.image);
+
+          const eventImg = detail.avatarUrl || detail.image;
+          if (isHttp(eventImg)) {
+            setCurrentAvatar(eventImg.trim());
           }
           return;
         }
 
-        const storedProfile = JSON.parse(
-          localStorage.getItem("dinedesk_customer_profile") || "{}"
-        );
-        const directName = localStorage.getItem("dinedesk_user_name");
-        const directAvatar = localStorage.getItem("dinedesk_user_avatar");
-        const authUser = JSON.parse(
-          localStorage.getItem("dinedesk_auth_user") || "{}"
-        );
+        let liveGoogleImage: string | null = null;
+        try {
+          const session = await authClient.getSession();
+          if (session?.data?.user?.image && isHttp(session.data.user.image)) {
+            liveGoogleImage = session.data.user.image;
+          }
+        } catch (_) { }
 
-        const resolvedName =
-          storedProfile.fullName ||
-          directName ||
-          authUser.name ||
-          user?.name ||
-          userName;
-
+        // Priority: Custom Cloudinary Upload / Database Avatar > Google OAuth Session
         const resolvedAvatar =
-          storedProfile.avatarUrl ||
-          storedProfile.image ||
-          directAvatar ||
-          authUser.avatarUrl ||
-          authUser.image ||
-          authUser.avatar ||
-          user?.avatarUrl ||
-          (user as any)?.image ||
-          (user as any)?.avatar ||
+          (isHttp(avatarUrl) ? avatarUrl.trim() : null) ||
+          (isHttp(liveContextAvatar) ? liveContextAvatar.trim() : null) ||
+          (isHttp(user?.avatarUrl) ? user!.avatarUrl!.trim() : null) ||
+          (isHttp((user as any)?.image) ? (user as any).image.trim() : null) ||
+          liveGoogleImage ||
           "";
 
-        if (resolvedName) setCurrentName(resolvedName);
-        if (resolvedAvatar) setCurrentAvatar(resolvedAvatar);
+        const resolvedName = user?.name || userName;
+
+        if (isMounted) {
+          if (resolvedName) setCurrentName(resolvedName);
+          if (resolvedAvatar && !resolvedAvatar.includes("tahmid-avatar.svg")) {
+            setCurrentAvatar(resolvedAvatar);
+          }
+        }
       } catch (e) {
-        // Fallback silently if storage read fails
+        // Fallback silently if resolution fails
       }
     };
 
@@ -105,6 +136,7 @@ export default function CustomerSidebar({
     );
 
     return () => {
+      isMounted = false;
       window.removeEventListener("storage", updateProfileFromStorage);
       window.removeEventListener("profile-updated", updateProfileFromStorage);
       window.removeEventListener(
@@ -112,7 +144,7 @@ export default function CustomerSidebar({
         updateProfileFromStorage
       );
     };
-  }, [user, userName]);
+  }, [user, userName, avatarUrl, liveContextAvatar]);
 
   useEffect(() => {
     if (loyaltyPoints !== undefined) {
@@ -141,21 +173,23 @@ export default function CustomerSidebar({
     .replace(/[()]/g, "")
     .trim();
 
-  // Extract first name (strip existing "'s Account" if previously appended)
   const baseFirstName = cleanedName.replace(/'s\s+Account$/i, "").split(/\s+/)[0] || "Diner";
   const formattedAccountTitle = `${baseFirstName}'s Account`;
   const firstLetter = baseFirstName.charAt(0).toUpperCase() || "D";
 
-  // Identical avatar check to UserProfileDropdown
-  const resolvedAvatarImage =
-    currentAvatar ||
-    (typeof window !== "undefined"
-      ? localStorage.getItem("dinedesk_user_avatar")
-      : null) ||
-    user?.avatarUrl ||
-    (user as any)?.avatar ||
-    (user as any)?.image ||
+  // Strict check ensuring uploaded Cloudinary/database images always take top priority
+  const rawAvatarCandidate =
+    (isHttp(currentAvatar) ? currentAvatar.trim() : null) ||
+    (isHttp(avatarUrl) ? avatarUrl.trim() : null) ||
+    (isHttp(liveContextAvatar) ? liveContextAvatar.trim() : null) ||
+    (isHttp(user?.avatarUrl) ? user!.avatarUrl!.trim() : null) ||
+    (isHttp((user as any)?.image) ? (user as any).image.trim() : null) ||
     null;
+
+  const resolvedAvatarImage =
+    rawAvatarCandidate && !rawAvatarCandidate.includes("tahmid-avatar.svg")
+      ? rawAvatarCandidate
+      : null;
 
   const isOverviewActive = pathname === "/dashboard/customer";
   const isOrdersActive = pathname === "/dashboard/customer/orders";
@@ -304,6 +338,8 @@ export default function CustomerSidebar({
                         alt={baseFirstName}
                         className="w-full h-full object-cover"
                         src={resolvedAvatarImage}
+                        referrerPolicy="no-referrer"
+                        crossOrigin="anonymous"
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
                           if (e.currentTarget.parentElement) {
@@ -377,6 +413,8 @@ export default function CustomerSidebar({
                       alt={baseFirstName}
                       className="w-full h-full object-cover"
                       src={resolvedAvatarImage}
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
                       title={`${formattedAccountTitle} (${memberSince})${isPremiumUser ? " - Gold Tier VIP" : ""
                         }`}
                       onError={(e) => {
