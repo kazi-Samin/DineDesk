@@ -556,7 +556,7 @@ export function detectIntent(prompt: string): DetectedIntent {
       intentType: "ai_status",
       response:
         "Yes! **DineDesk AI is active and streaming real-time responses.**\n\n" +
-        "• **Google Gemini 1.5 Integration:** Our architecture routes through Google's **Gemini 1.5 Flash** streaming API (`gemini-1.5-flash:streamGenerateContent`) with zero buffering.\n" +
+        "• **Google Gemini Flash Integration:** Our architecture routes through Google's high-speed **Gemini Flash** streaming API (`streamGenerateContent`) with zero buffering.\n" +
         "• **Live Platform Intelligence:** Every restaurant, dish name, prep time, and USD ($) price comes directly from verified DineDesk kitchens.\n" +
         "• **Lossless Streaming:** SSE data packets are fully buffered and decoded on completion, preventing cut-offs.\n\n" +
         "What would you like to explore today? Tell me your favorite dish or budget in USD ($)!",
