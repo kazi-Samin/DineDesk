@@ -658,7 +658,8 @@ export default function CustomerDashboardOverviewPage() {
                     Reserve a curated dining table for lunch or dinner tonight with
                     priority seating.
                   </p>
-                  <button
+                  <Link
+                    href="/reservations"
                     type="button"
                     onClick={() =>
                       openReservationModal({
@@ -670,7 +671,7 @@ export default function CustomerDashboardOverviewPage() {
                     className="mt-2 px-5 py-2.5 bg-[#1b3b2b] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#1b3b2b]/90 transition-all shadow-md cursor-pointer"
                   >
                     Book a Table
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>
