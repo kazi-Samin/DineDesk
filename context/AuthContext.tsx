@@ -390,12 +390,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (token?.startsWith("better_auth_")) {
-        await authClient.signOut().catch(() => { });
-      } else {
-        await logoutApi().catch(() => { });
-      }
+      // 1. Always execute Better-Auth sign-out to invalidate session cookies
+      await authClient.signOut().catch((err) => {
+        console.warn("authClient.signOut failed:", err);
+      });
+
+      // 2. Also call the backend logout endpoint
+      await logoutApi().catch((err) => {
+        console.warn("logoutApi failed:", err);
+      });
+    } catch (err) {
+      console.error("Logout execution error:", err);
     } finally {
+      // 3. Clear local storage records
       clearStoredAuth();
       if (typeof window !== "undefined") {
         localStorage.removeItem("dinedesk_customer_profile");
@@ -403,12 +410,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("dinedesk_user_name");
         localStorage.removeItem("dinedesk_user_email");
         localStorage.removeItem("dinedesk_user_phone");
+        localStorage.removeItem("token");
+        localStorage.removeItem("dinedesk_auth_token");
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("user");
+        sessionStorage.clear();
+
+        // 4. Clear all accessible cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c
+            .replace(/^ +/, "")
+            .replace(/=.*/, "=;expires=" + new Date(0).toUTCString() + ";path=/");
+        });
+
+        // 5. Disable Google Identity Services auto-select prompt
+        if ((window as any).google?.accounts?.id?.disableAutoSelect) {
+          (window as any).google.accounts.id.disableAutoSelect();
+        }
       }
+
       setToken(null);
       setUser(null);
       setIsLoading(false);
     }
-  }, [token]);
+  }, []);
 
   const refreshUser = useCallback(async () => {
     if (!token) return;
