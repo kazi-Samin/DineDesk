@@ -19,7 +19,7 @@ interface CustomerHeaderProps {
 export default function CustomerHeader({
   userName = "Diner",
   userRole = "Verified Diner",
-  avatarUrl = "/avatars/tahmid-avatar.svg",
+  avatarUrl = "",
   onToggleSidebar,
   isSidebarOpen,
 }: CustomerHeaderProps) {
@@ -31,7 +31,7 @@ export default function CustomerHeader({
   const [exploreDropdownOpen, setExploreDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [currentAvatar, setCurrentAvatar] = useState(avatarUrl);
+  const [currentAvatar, setCurrentAvatar] = useState(avatarUrl || "");
   const [currentName, setCurrentName] = useState(userName);
 
   // Sync state whenever props update from the parent page
@@ -56,8 +56,8 @@ export default function CustomerHeader({
           if (detail.fullName || detail.name) {
             setCurrentName(detail.fullName || detail.name);
           }
-          if (detail.avatarUrl) {
-            setCurrentAvatar(detail.avatarUrl);
+          if (detail.avatarUrl || detail.image) {
+            setCurrentAvatar(detail.avatarUrl || detail.image);
           }
           return;
         }
@@ -68,12 +68,20 @@ export default function CustomerHeader({
         const authUser = JSON.parse(localStorage.getItem("dinedesk_auth_user") || "{}");
 
         const resolvedName =
-          storedProfile.fullName || directName || authUser.name || userName;
+          storedProfile.fullName || directName || authUser.name || (userName !== "Diner" ? userName : "");
+
+        // Prioritize actual user photos over generic svg fallbacks
         const resolvedAvatar =
-          storedProfile.avatarUrl || directAvatar || authUser.avatarUrl || avatarUrl;
+          directAvatar ||
+          storedProfile.avatarUrl ||
+          authUser.avatarUrl ||
+          authUser.image ||
+          avatarUrl;
 
         if (resolvedName) setCurrentName(resolvedName);
-        if (resolvedAvatar) setCurrentAvatar(resolvedAvatar);
+        if (resolvedAvatar && !resolvedAvatar.includes("tahmid-avatar.svg")) {
+          setCurrentAvatar(resolvedAvatar);
+        }
       } catch (e) {
         // Fallback silently if storage read fails
       }
@@ -99,14 +107,24 @@ export default function CustomerHeader({
     }
   };
 
+  // Google OAuth returns .image; database returns .avatarUrl
+  const googleAvatar =
+    (user as any)?.image ||
+    user?.avatarUrl ||
+    currentAvatar ||
+    (typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_avatar") : "") ||
+    avatarUrl;
+
   const resolvedDisplayName = currentName || user?.name || userName || "Diner";
-  const resolvedDisplayAvatar = currentAvatar || user?.avatarUrl || avatarUrl;
+  const resolvedDisplayAvatar = googleAvatar;
 
   const dropdownUser = {
     name: resolvedDisplayName,
     email: user?.email || "diner@dinedesk.com",
     role: userRole,
     avatar: resolvedDisplayAvatar,
+    avatarUrl: resolvedDisplayAvatar,
+    image: resolvedDisplayAvatar,
     ...(user || {}),
   };
 

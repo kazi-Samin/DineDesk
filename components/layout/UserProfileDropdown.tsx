@@ -18,6 +18,7 @@ const formatCleanDisplayName = (name?: string) => {
 
 export default function UserProfileDropdown({ user, logout }: UserProfileDropdownProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const getDashboardHref = () => {
         if (!user) return "/dashboard";
@@ -38,12 +39,18 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
     const userNameUpper = cleanName.toUpperCase();
     const firstLetter = cleanName.charAt(0).toUpperCase() || "D";
 
-    // Prioritize uploaded avatar, session image, or avatarUrl
-    const avatarImage =
+    // Prioritize OAuth session image, avatarUrl, avatar, or cached avatar
+    const candidateAvatar =
+        user?.image ||
         user?.avatarUrl ||
         user?.avatar ||
-        user?.image ||
+        (typeof window !== "undefined" ? localStorage.getItem("dinedesk_user_avatar") : null) ||
         null;
+
+    const avatarImage =
+        candidateAvatar && !candidateAvatar.includes("tahmid-avatar.svg") && !imageError
+            ? candidateAvatar
+            : null;
 
     return (
         <div className="relative">
@@ -64,13 +71,13 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                     <div className="w-full h-full rounded-full bg-surface-container-lowest text-primary flex items-center justify-center font-heading font-extrabold text-xs uppercase overflow-hidden">
                         {avatarImage ? (
                             <img
+                                key={avatarImage}
                                 src={avatarImage}
                                 alt={userNameUpper}
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    e.currentTarget.style.display = "none";
-                                    e.currentTarget.parentElement!.innerHTML = `<span>${firstLetter}</span>`;
-                                }}
+                                onError={() => setImageError(true)}
                             />
                         ) : (
                             <span>{firstLetter}</span>
@@ -117,13 +124,13 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                                 <div className="w-12 h-12 rounded-2xl bg-primary text-on-primary flex items-center justify-center font-heading font-extrabold text-base shadow-md shrink-0 overflow-hidden">
                                     {avatarImage ? (
                                         <img
+                                            key={avatarImage}
                                             src={avatarImage}
                                             alt={userNameUpper}
+                                            referrerPolicy="no-referrer"
+                                            crossOrigin="anonymous"
                                             className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                e.currentTarget.style.display = "none";
-                                                e.currentTarget.parentElement!.innerHTML = `<span>${firstLetter}</span>`;
-                                            }}
+                                            onError={() => setImageError(true)}
                                         />
                                     ) : (
                                         <span>{firstLetter}</span>

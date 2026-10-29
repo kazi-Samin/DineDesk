@@ -20,40 +20,25 @@ import { useAvatar } from "@/context/AvatarContext";
 import { uploadImageToCloudinary } from "@/services/cloudinaryService";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app"
+).replace(/\/+$/, "");
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
 
-  const betterAuthToken = localStorage.getItem("dinedesk_auth_token");
-  if (betterAuthToken && betterAuthToken.trim() !== "")
-    return betterAuthToken.trim();
-
-  const fallbackToken =
-    localStorage.getItem("token") ||
-    localStorage.getItem("accessToken") ||
-    localStorage.getItem("authToken") ||
-    localStorage.getItem("dinedesk_token") ||
-    localStorage.getItem("auth_token") ||
-    "";
-  if (fallbackToken && fallbackToken.trim() !== "") return fallbackToken.trim();
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i) || "";
-    if (
-      key.toLowerCase().includes("token") ||
-      key.toLowerCase().includes("auth")
-    ) {
-      const val = localStorage.getItem(key);
-      if (val && val.length > 15) return val.trim();
-    }
-  }
-
   const match = document.cookie.match(
-    /(?:^|;\s*)(?:dinedesk_auth_token|better-auth\.session_token|token|auth_token|accessToken)=([^;]+)/
+    /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
   );
-  return match ? match[1] : "";
+  if (match && match[1]) return match[1].trim();
+
+  const storedToken =
+    localStorage.getItem("token") ||
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("accessToken") ||
+    "";
+
+  return storedToken.trim();
 };
 
 const getRequestHeaders = (token: string) => {
@@ -77,7 +62,7 @@ const formatCleanFirstName = (name?: string) => {
 };
 
 const EMPTY_PROFILE: CustomerProfileData = {
-  fullName: "Diner",
+  fullName: "",
   email: "",
   phone: "",
   avatarUrl: "",
@@ -144,8 +129,7 @@ export default function CustomerProfilePage() {
   const { avatarUrl: liveAvatar, setAvatarUrl: setLiveAvatar } = useAvatar();
 
   const [profile, setProfile] = useState<CustomerProfileData>(EMPTY_PROFILE);
-  const [savedSnapshot, setSavedSnapshot] =
-    useState<CustomerProfileData>(EMPTY_PROFILE);
+  const [savedSnapshot, setSavedSnapshot] = useState<CustomerProfileData>(EMPTY_PROFILE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [addressCount, setAddressCount] = useState(0);
   const [savedSpotsCount, setSavedSpotsCount] = useState(0);
@@ -165,6 +149,7 @@ export default function CustomerProfilePage() {
   const [dietaryPrefs, setDietaryPrefs] = useState<DietaryPreference[]>([]);
 
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const [profileErrors, setProfileErrors] = useState<{
     fullName?: string;
@@ -197,16 +182,17 @@ export default function CustomerProfilePage() {
     }, 3200);
   };
 
-  const isHttp = (v: any) =>
+  const isHttp = (v: any): boolean =>
     typeof v === "string" &&
+    v.trim() !== "" &&
     (v.startsWith("http://") || v.startsWith("https://") || v.startsWith("/"));
 
+  // Unified avatar resolution prioritizing the newest in-memory / profile state
   const resolveAvatar = useCallback((): string => {
     if (isHttp(liveAvatar)) return liveAvatar.trim();
     if (isHttp(profile.avatarUrl)) return profile.avatarUrl.trim();
     if (isHttp(user?.avatarUrl)) return user!.avatarUrl!.trim();
     if (isHttp((user as any)?.image)) return (user as any).image.trim();
-    if (isHttp((user as any)?.avatar)) return (user as any).avatar.trim();
     return "";
   }, [liveAvatar, profile.avatarUrl, user]);
 
@@ -219,10 +205,7 @@ export default function CustomerProfilePage() {
         await Promise.all([
           fetch(`${API_BASE_URL}/api/v1/users/profile`, {
             method: "GET",
-            headers: {
-              ...headers,
-              "Cache-Control": "no-cache",
-            },
+            headers: { ...headers, "Cache-Control": "no-cache" },
             credentials: "include",
           }).catch(() => null),
 
@@ -255,8 +238,7 @@ export default function CustomerProfilePage() {
       let currentFullName = user?.name || "Diner";
       let currentEmail = user?.email || "";
       let currentPhone = user?.phone || "";
-      let currentAvatar =
-        user?.avatarUrl || (user as any)?.image || (user as any)?.avatar || "";
+      let currentAvatar = user?.avatarUrl || (user as any)?.image || "";
       let currentLanguage: PreferredLanguage = "en";
       let currentDietary: DietaryPreference[] = [];
       let dbLoyaltyPoints = 0;
@@ -265,18 +247,18 @@ export default function CustomerProfilePage() {
         const data = await profileRes.json();
         const userData = data.user || data.data || data;
         if (userData) {
-          currentFullName =
-            userData.name || userData.fullName || user?.name || "Diner";
+          currentFullName = userData.name || userData.fullName || user?.name || "Diner";
           currentEmail = userData.email || user?.email || "";
           currentPhone = userData.phone ?? user?.phone ?? "";
-          currentAvatar =
-            (userData.avatarUrl && isHttp(userData.avatarUrl)
-              ? userData.avatarUrl.trim()
-              : null) ||
-            (userData.image && isHttp(userData.image)
-              ? userData.image.trim()
-              : null) ||
-            currentAvatar;
+
+          const dbAvatar =
+            (userData.avatarUrl && isHttp(userData.avatarUrl) ? userData.avatarUrl.trim() : null) ||
+            (userData.image && isHttp(userData.image) ? userData.image.trim() : null);
+
+          if (dbAvatar) {
+            currentAvatar = dbAvatar;
+          }
+
           currentLanguage = (userData.language as PreferredLanguage) || "en";
           currentDietary = userData.dietaryPreferences || [];
 
@@ -298,16 +280,14 @@ export default function CustomerProfilePage() {
       );
       const totalOrders = nonCancelledOrders.length;
       const activeOrders = nonCancelledOrders.filter(
-        (o: any) =>
-          o.status !== "delivered" && o.status !== "completed"
+        (o: any) => o.status !== "delivered" && o.status !== "completed"
       ).length;
 
       // 3. Bookings Metrics
       let liveReservations: any[] = [];
       if (resApi && resApi.ok) {
         const apiData = await resApi.json();
-        liveReservations =
-          apiData.reservations || apiData.data || apiData || [];
+        liveReservations = apiData.reservations || apiData.data || apiData || [];
       }
 
       const activeBookings = liveReservations.filter((r: any) => {
@@ -323,7 +303,7 @@ export default function CustomerProfilePage() {
         liveAddressesCount = addrList.length;
       }
 
-      // 5. Saved Spots Count (from /api/v1/favorites)
+      // 5. Saved Spots Count
       let liveFavoritesCount = 0;
       if (favoritesRes && favoritesRes.ok) {
         const favData = await favoritesRes.json();
@@ -331,10 +311,29 @@ export default function CustomerProfilePage() {
         liveFavoritesCount = favList.length;
       }
 
-      const calculatedLoyalty =
-        dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalOrders * 20;
+      const calculatedLoyalty = dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalOrders * 20;
 
-      const loadedData: CustomerProfileData = {
+      setProfile((prev) => {
+        // Protect newly updated in-memory avatar from being reverted while editing
+        const chosenAvatar = isEditingRef.current && prev.avatarUrl ? prev.avatarUrl : currentAvatar;
+        return {
+          ...EMPTY_PROFILE,
+          fullName: currentFullName,
+          email: currentEmail,
+          phone: currentPhone,
+          avatarUrl: chosenAvatar,
+          language: currentLanguage,
+          dietaryPreferences: currentDietary,
+          stats: {
+            totalOrders,
+            activeBookings,
+            savedSpots: liveFavoritesCount,
+            loyaltyPoints: calculatedLoyalty,
+          },
+        };
+      });
+
+      setSavedSnapshot({
         ...EMPTY_PROFILE,
         fullName: currentFullName,
         email: currentEmail,
@@ -348,16 +347,15 @@ export default function CustomerProfilePage() {
           savedSpots: liveFavoritesCount,
           loyaltyPoints: calculatedLoyalty,
         },
-      };
+      });
 
-      setProfile(loadedData);
-      setSavedSnapshot(loadedData);
       setAddressCount(liveAddressesCount);
       setSavedSpotsCount(liveFavoritesCount);
       setTotalOrdersCount(totalOrders);
       setActiveOrdersCount(activeOrders);
       setActiveBookingsCount(activeBookings);
       setLoyaltyPoints(calculatedLoyalty);
+      setImageError(false);
 
       if (!isEditingRef.current) {
         setFullName(currentFullName);
@@ -376,10 +374,15 @@ export default function CustomerProfilePage() {
     }
   }, [user, setLiveAvatar]);
 
+  // Initial load
   useEffect(() => {
     loadDatabaseProfile();
 
-    const handleExternalSync = () => loadDatabaseProfile();
+    const handleExternalSync = (e: any) => {
+      // Ignore profile-updated events that are already handled locally to avoid race conditions
+      if (e?.detail?.source === "local_photo_upload") return;
+      loadDatabaseProfile();
+    };
 
     window.addEventListener("profile-updated", handleExternalSync);
     window.addEventListener("booking-updated", handleExternalSync);
@@ -394,18 +397,20 @@ export default function CustomerProfilePage() {
     };
   }, [loadDatabaseProfile]);
 
+  // Sync basic user info when user logs in, but never override during edit mode
   useEffect(() => {
-    const activePhoto =
-      (user as any)?.image || (user as any)?.avatar || user?.avatarUrl;
+    if (isEditingRef.current) return;
+
+    const activePhoto = user?.avatarUrl || (user as any)?.image;
     if (activePhoto && isHttp(activePhoto)) {
       setLiveAvatar(activePhoto.trim());
       setProfile((prev) => ({ ...prev, avatarUrl: activePhoto.trim() }));
     }
-    if (user?.name && !isEditingRef.current) {
+    if (user?.name) {
       setFullName(user.name);
       setProfile((prev) => ({ ...prev, fullName: user.name! }));
     }
-    if (user?.email && !isEditingRef.current) {
+    if (user?.email) {
       setEmail(user.email);
       setProfile((prev) => ({ ...prev, email: user.email! }));
     }
@@ -433,6 +438,7 @@ export default function CustomerProfilePage() {
     savedSnapshot,
   ]);
 
+  // Cloudinary Upload & Instant DB Persistence
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -458,28 +464,20 @@ export default function CustomerProfilePage() {
       if (result.success && result.url) {
         const newUrl = result.url.trim();
 
+        // 1. Immediately update local UI states
         setLiveAvatar(newUrl);
         setProfile((prev) => ({ ...prev, avatarUrl: newUrl }));
         setSavedSnapshot((prev) => ({ ...prev, avatarUrl: newUrl }));
+        setImageError(false);
 
+        // 2. Update context state
         if (updateAuthUser) updateAuthUser({ avatarUrl: newUrl });
         if (updateUserAvatar) updateUserAvatar(newUrl);
 
+        // 3. Persist to Neon DB backend
         const token = getAuthToken();
-        const currentEmail = (
-          email ||
-          profile.email ||
-          user?.email ||
-          ""
-        )
-          .trim()
-          .toLowerCase();
-        const currentName = (
-          fullName ||
-          profile.fullName ||
-          user?.name ||
-          "Diner"
-        ).trim();
+        const currentEmail = (email || profile.email || user?.email || "").trim().toLowerCase();
+        const currentName = (fullName || profile.fullName || user?.name || "Diner").trim();
 
         const payload = {
           fullName: currentName,
@@ -499,14 +497,16 @@ export default function CustomerProfilePage() {
         });
 
         if (res.ok) {
-          showToast("Profile photo updated and saved!", "success");
+          // 4. Broadcast to Sidebar & Header with source tag to avoid race-condition reload
           window.dispatchEvent(
             new CustomEvent("profile-updated", {
-              detail: { avatarUrl: newUrl },
+              detail: { avatarUrl: newUrl, image: newUrl, source: "local_photo_upload" },
             })
           );
+
+          showToast("Profile photo uploaded and permanently saved!", "success");
         } else {
-          showToast("Photo uploaded, but database sync failed.", "error");
+          showToast("Photo uploaded, but database save returned an error.", "error");
         }
       } else {
         showToast("Failed to upload image to Cloudinary.", "error");
@@ -527,20 +527,8 @@ export default function CustomerProfilePage() {
     if (updateAuthUser) updateAuthUser({ avatarUrl: "" });
 
     const token = getAuthToken();
-    const currentEmail = (
-      email ||
-      profile.email ||
-      user?.email ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-    const currentName = (
-      fullName ||
-      profile.fullName ||
-      user?.name ||
-      "Diner"
-    ).trim();
+    const currentEmail = (email || profile.email || user?.email || "").trim().toLowerCase();
+    const currentName = (fullName || profile.fullName || user?.name || "Diner").trim();
 
     const payload = {
       fullName: currentName,
@@ -562,7 +550,7 @@ export default function CustomerProfilePage() {
 
     window.dispatchEvent(
       new CustomEvent("profile-updated", {
-        detail: { avatarUrl: "" },
+        detail: { avatarUrl: "", image: "", source: "local_photo_upload" },
       })
     );
 
@@ -646,8 +634,7 @@ export default function CustomerProfilePage() {
             : null);
 
         const resolvedAvatar = backendAvatar || currentAvatar || "";
-        const resolvedName =
-          returnedUser?.name || returnedUser?.fullName || trimmedName;
+        const resolvedName = returnedUser?.name || returnedUser?.fullName || trimmedName;
         const resolvedEmail = returnedUser?.email || trimmedEmail;
 
         const freshData: CustomerProfileData = {
@@ -688,6 +675,8 @@ export default function CustomerProfilePage() {
               name: resolvedName,
               email: resolvedEmail,
               avatarUrl: resolvedAvatar,
+              image: resolvedAvatar,
+              source: "local_profile_save",
             },
           })
         );
@@ -929,12 +918,15 @@ export default function CustomerProfilePage() {
                   <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl shadow-xl border border-[#1b3b2b]/15 flex flex-col gap-6">
                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                       <div className="w-20 h-20 rounded-full overflow-hidden shadow-md ring-2 ring-[#1b3b2b]/20 shrink-0 bg-[#1b3b2b] text-white flex items-center justify-center font-heading font-black text-2xl relative">
-                        {displayAvatarSrc ? (
+                        {displayAvatarSrc && !imageError ? (
                           <img
                             key={displayAvatarSrc}
                             src={displayAvatarSrc}
                             alt={profile.fullName}
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
                             className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
                           />
                         ) : (
                           <span>{firstLetter}</span>
@@ -1095,12 +1087,15 @@ export default function CustomerProfilePage() {
                   {/* Photo Edit */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-5 bg-[#f8f9f6] rounded-2xl border border-[#1b3b2b]/10">
                     <div className="relative shrink-0 w-16 h-16 rounded-full overflow-hidden ring-2 ring-[#1b3b2b]/20 bg-[#1b3b2b] text-white flex items-center justify-center font-heading font-black text-xl shadow-md">
-                      {displayAvatarSrc ? (
+                      {displayAvatarSrc && !imageError ? (
                         <img
                           key={displayAvatarSrc}
                           alt={fullName}
                           className="w-full h-full object-cover"
                           src={displayAvatarSrc}
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onError={() => setImageError(true)}
                         />
                       ) : (
                         <span>{firstLetter}</span>

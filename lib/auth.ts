@@ -8,9 +8,19 @@ if (!process.env.BETTER_AUTH_SECRET) {
 const getBaseURL = () => {
   const url =
     process.env.NEXT_PUBLIC_APP_URL ||
-    (process.env.NODE_ENV === "production" ? "https://dine-desk-one.vercel.app" : "http://localhost:3000");
+    (process.env.NODE_ENV === "production"
+      ? "https://dine-desk-one.vercel.app"
+      : "http://localhost:3000");
   return url.trim().replace(/\/+$/, "");
 };
+
+const BACKEND_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.BACKEND_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://dine-desk-backend.vercel.app"
+    : "http://localhost:5000")
+).replace(/\/+$/, "");
 
 const googleClientId =
   process.env.GOOGLE_CLIENT_ID ||
@@ -40,5 +50,58 @@ export const auth = betterAuth({
   },
   account: {
     storeAccountCookie: true,
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user: any) => {
+          // Triggers exclusively for new registrations (manual or Google OAuth)
+          try {
+            await fetch(`${BACKEND_URL}/api/v1/auth/send-welcome-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                toEmail: user.email,
+                userName: user.name || "Diner",
+              }),
+            });
+          } catch (error) {
+            console.error("Failed to send welcome email via Better Auth hook:", error);
+          }
+        },
+      },
+    },
+    session: {
+      create: {
+        after: async (session: any) => {
+          // Triggers on successful login sessions
+          try {
+            const userEmail = session.user?.email;
+            if (!userEmail) return;
+
+            await fetch(`${BACKEND_URL}/api/v1/auth/send-signin-email`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                toEmail: userEmail,
+                userName: session.user?.name || "Diner",
+                device: "Google Account (Web)",
+                loginDate: new Date().toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                }),
+                loginTime: new Date().toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+              }),
+            });
+          } catch (error) {
+            console.error("Failed to send sign-in email via Better Auth hook:", error);
+          }
+        },
+      },
+    },
   },
 });
