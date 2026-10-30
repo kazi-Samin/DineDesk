@@ -391,7 +391,7 @@ export default function CustomerDashboardOverviewPage() {
           {/* Core Content */}
           <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-10">
             {/* Quick Action Shortcuts */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Link
                 href="/explore"
                 className="p-5 bg-white/80 backdrop-blur-lg rounded-2xl border border-[#1b3b2b]/15 shadow-sm hover:shadow-md hover:border-[#1b3b2b] transition-all flex items-center gap-4 group"
@@ -701,15 +701,15 @@ export default function CustomerDashboardOverviewPage() {
                         <div
                           key={ord.orderId}
                           className={`p-5 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${isCancelled
-                              ? "bg-red-50/50 border-red-200 opacity-80"
-                              : "bg-white/90 backdrop-blur-xl border-[#1b3b2b]/15 shadow-sm hover:border-[#1b3b2b]"
+                            ? "bg-red-50/50 border-red-200 opacity-80"
+                            : "bg-white/90 backdrop-blur-xl border-[#1b3b2b]/15 shadow-sm hover:border-[#1b3b2b]"
                             }`}
                         >
                           <div className="flex items-center gap-4">
                             <div
                               className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${isCancelled
-                                  ? "bg-red-100 text-red-600"
-                                  : "bg-[#1b3b2b]/10 text-[#1b3b2b]"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-[#1b3b2b]/10 text-[#1b3b2b]"
                                 }`}
                             >
                               <span className="material-symbols-outlined text-xl">
@@ -720,8 +720,8 @@ export default function CustomerDashboardOverviewPage() {
                               <div className="flex items-center gap-2.5 flex-wrap">
                                 <h3
                                   className={`font-heading font-bold text-sm ${isCancelled
-                                      ? "text-red-950 line-through"
-                                      : "text-[#1b3b2b]"
+                                    ? "text-red-950 line-through"
+                                    : "text-[#1b3b2b]"
                                     }`}
                                 >
                                   {ord.restaurantName}
@@ -747,8 +747,8 @@ export default function CustomerDashboardOverviewPage() {
                           <div className="flex items-center justify-between sm:justify-end gap-4 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#1b3b2b]/10">
                             <span
                               className={`font-heading font-black text-base ${isCancelled
-                                  ? "text-gray-400 line-through"
-                                  : "text-[#1b3b2b]"
+                                ? "text-gray-400 line-through"
+                                : "text-[#1b3b2b]"
                                 }`}
                             >
                               ${ord.total.toLocaleString()}
