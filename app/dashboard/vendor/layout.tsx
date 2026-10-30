@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import RoleGuard from "@/components/auth/RoleGuard";
+import VendorLayoutClient from "@/components/vendor/VendorLayoutClient";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Operations & Restaurant Management — DineDesk",
-  description: "Manage restaurant reservations, guest seatings, live orders, floor plan, and daily operations for The Maple & Vine.",
+  description:
+    "Manage restaurant reservations, guest seatings, live orders, floor plan, and daily operations for DineDesk partner kitchens.",
 };
 
 export default function VendorDashboardLayout({
@@ -10,5 +13,9 @@ export default function VendorDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleGuard allowedRoles={["VENDOR"]}>{children}</RoleGuard>;
+  return (
+    <RoleGuard allowedRoles={["VENDOR"]}>
+      <VendorLayoutClient>{children}</VendorLayoutClient>
+    </RoleGuard>
+  );
 }
