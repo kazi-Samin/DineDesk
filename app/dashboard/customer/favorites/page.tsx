@@ -212,8 +212,6 @@ export default function CustomerFavoritesPage() {
         catalogList = catData.data || catData.menus || catData.items || [];
       }
 
-      // If catalog endpoint returns items, merge with user flags.
-      // If catalog endpoint is empty, fallback to the user's saved items.
       let normalizedMenus: DatabaseMenu[] = [];
 
       if (Array.isArray(catalogList) && catalogList.length > 0) {
@@ -240,7 +238,6 @@ export default function CustomerFavoritesPage() {
           };
         });
       } else if (userFavoriteMap.size > 0) {
-        // Fallback to favorite items list if general catalog returned nothing
         if (favoritesRes && favoritesRes.ok) {
           const favsData = await favoritesRes.json();
           const rawFavorites =
@@ -398,18 +395,64 @@ export default function CustomerFavoritesPage() {
     setAddingDishId(menu.id);
 
     try {
-      addItem({
-        id: menu.id,
-        name: menu.name,
-        price: menu.price,
-        quantity: 1,
-        variant: menu.description,
-        image: menu.image,
-        imageAlt: menu.imageAlt,
-      } as any);
-      openDrawer();
-      toast.success(`Dispatched ${menu.name} ($${menu.price}) to cart.`);
-    } catch (e) {
+      const targetRestaurant = menu.restaurantName || "SULTAN'S HERITAGE";
+      const targetId = menu.id;
+      const targetPrice = Number(menu.price || 0);
+
+      // 1. Sync via CartContext
+      try {
+        if (typeof addItem === "function") {
+          addItem({
+            id: targetId,
+            menuId: targetId,
+            name: menu.name,
+            price: targetPrice,
+            quantity: 1,
+            image: menu.image,
+            restaurantName: targetRestaurant,
+          } as any);
+        }
+      } catch (_) { }
+
+      // 2. Direct Sync into `dine_desk_cart` for Multi-Kitchen Drawer
+      try {
+        const saved = localStorage.getItem("dine_desk_cart");
+        let cartItems = saved ? JSON.parse(saved) : [];
+        if (!Array.isArray(cartItems)) cartItems = [];
+
+        const existingIndex = cartItems.findIndex(
+          (i: any) => i.id === targetId || i.menuId === targetId
+        );
+
+        if (existingIndex > -1) {
+          cartItems[existingIndex].quantity =
+            (Number(cartItems[existingIndex].quantity) || 1) + 1;
+        } else {
+          cartItems.push({
+            id: targetId,
+            menuId: targetId,
+            name: menu.name,
+            price: targetPrice,
+            quantity: 1,
+            image: menu.image,
+            restaurantName: targetRestaurant,
+          });
+        }
+
+        localStorage.setItem("dine_desk_cart", JSON.stringify(cartItems));
+        window.dispatchEvent(new Event("storage"));
+      } catch (storageErr) {
+        console.error("Local cart storage sync error:", storageErr);
+      }
+
+      // 3. Open Drawer
+      if (typeof openDrawer === "function") {
+        openDrawer();
+      }
+
+      toast.success(`Dispatched ${menu.name} ($${targetPrice}) to cart.`);
+    } catch (e: any) {
+      console.error("Cart addition failed:", e);
       toast.error("Could not add item to cart.");
     } finally {
       setTimeout(() => setAddingDishId(null), 1200);
