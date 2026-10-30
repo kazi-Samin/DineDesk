@@ -1,14 +1,35 @@
+// app/checkout/page.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
-import { placeOrder } from "@/services/mockOrderService";
 import { SAVED_ADDRESSES, DEFAULT_CONTACT } from "@/data/mockCartData";
-import { FulfillmentMode, PaymentMethod, DeliveryAddress, CustomerContact, OrderConfirmation } from "@/types/order";
+import { FulfillmentMode, PaymentMethod, DeliveryAddress, CustomerContact } from "@/types/order";
 
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
+).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
 
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+
+  const match = document.cookie.match(
+    /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
+  );
+  if (match && match[1]) return match[1].trim();
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    ""
+  ).trim();
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -40,7 +61,7 @@ export default function CheckoutPage() {
 
   // Order state
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
-  const [confirmedOrder, setConfirmedOrder] = useState<OrderConfirmation | null>(null);
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   const handleAddressSelect = (addr: DeliveryAddress) => {
     setSelectedAddressId(addr.id);
@@ -59,147 +80,76 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (cart.items.length === 0) return;
     setIsPlacingOrder(true);
+    setOrderError(null);
+
     try {
-      const orderRes = await placeOrder({
-        fulfillmentMode,
-        restaurantId: cart.restaurantId,
-        restaurantName: cart.restaurantName,
-        items: cart.items,
-        address:
-          fulfillmentMode === "delivery"
-            ? {
-              id: selectedAddressId,
-              type: "custom",
-              label: "Delivery Address",
-              street: streetAddress,
-              apartment,
-              floor,
-              instructions,
-            }
-            : undefined,
-        contact,
-        paymentMethod,
-        cardDetails:
-          paymentMethod === "card"
-            ? { cardholderName, cardNumber, expDate, cvc }
-            : undefined,
-        appliedCoupon: cart.appliedCoupon,
-        subtotal: cart.subtotal,
-        deliveryFee: fulfillmentMode === "delivery" ? cart.deliveryFee : 0,
-        packagingFee: cart.packagingFee,
-        tax: cart.tax,
-        discount: cart.discount,
-        total:
-          fulfillmentMode === "delivery"
-            ? cart.total
-            : Math.max(0, cart.subtotal + cart.packagingFee + cart.tax - cart.discount),
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const backendOrderType =
+        fulfillmentMode === "takeaway"
+          ? "PICKUP"
+          : (fulfillmentMode as string) === "dinein"
+            ? "DINE_IN"
+            : "DELIVERY";
+
+      const backendPaymentMethod = paymentMethod === "card" ? "STRIPE" : "COD";
+
+      const formattedAddress = `${apartment ? apartment + ", " : ""}${streetAddress}${floor ? " (" + floor + ")" : ""
+        }`;
+
+      // Build payload matching backend createOrder controller
+      const payload = {
+        orderType: backendOrderType,
+        paymentMethod: backendPaymentMethod,
+        deliveryAddress: formattedAddress,
+        deliveryLat: 22.3384,
+        deliveryLng: 91.8317,
+        couponCode: cart.appliedCoupon || undefined,
+        items: cart.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          restaurantId: (item as any).restaurantId || cart.restaurantId,
+        })),
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify(payload),
       });
 
-      // --- AUTOMATICALLY ADD +20 LOYALTY POINTS ON SUCCESSFUL ORDER/PAYMENT ---
-      try {
-        const existingPayments = JSON.parse(localStorage.getItem("dinedesk_stripe_payments") || "[]");
-        const uniquePaymentId = `order_pay_${orderRes.orderId}_${Date.now()}`;
-        existingPayments.push(uniquePaymentId);
-        localStorage.setItem("dinedesk_stripe_payments", JSON.stringify(existingPayments));
-        window.dispatchEvent(new Event("storage"));
-      } catch (err) {
-        console.error("Failed to sync loyalty points:", err);
-      }
-      // ------------------------------------------------------------------------
+      const json = await res.json();
 
-      setConfirmedOrder(orderRes);
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Failed to initiate order.");
+      }
+
+      // STRIPE CARD PAYMENT: Redirect to Stripe Checkout (Cart preserved until verified payment)
+      if (backendPaymentMethod === "STRIPE" && json.data?.stripeSessionUrl) {
+        window.location.href = json.data.stripeSessionUrl;
+        return;
+      }
+
+      // CASH ON DELIVERY: Cart is cleared and user is redirected to confirmation
       clearCart();
-      router.push(`/order-confirmation/${orderRes.orderId}`);
+      const createdOrderId = json.data?.order?.id;
+      router.push(`/order-confirmation/${createdOrderId}`);
+    } catch (err: any) {
+      console.error("Order dispatch error:", err);
+      setOrderError(err.message || "An error occurred while creating your order.");
     } finally {
       setIsPlacingOrder(false);
     }
   };
-
-  // Render Confirmation State if Order is Placed
-  if (confirmedOrder) {
-    return (
-      <main className="w-full pt-20 bg-surface min-h-screen">
-        <div className="max-w-[800px] mx-auto px-margin py-space-xl">
-          <div className="bg-surface-container-lowest p-space-xl rounded-xl shadow-md border border-outline-variant flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-primary-fixed flex items-center justify-center text-primary-container mb-space-md">
-              <span className="material-symbols-outlined text-4xl">check_circle</span>
-            </div>
-            <span className="font-label-sm text-label-sm uppercase tracking-widest text-secondary font-bold">
-              Order Dispatched
-            </span>
-            <h1 className="font-headline-lg text-headline-lg text-primary mt-1">
-              Thank You for Dining with DineDesk!
-            </h1>
-            <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-2">
-              Your order has been transmitted directly to{" "}
-              <span className="font-semibold text-on-surface">{confirmedOrder.restaurantName}</span>.
-            </p>
-
-            {/* Order Meta Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm w-full my-space-lg p-space-md bg-surface-container-low rounded-lg text-left">
-              <div>
-                <p className="text-[11px] font-label-sm text-on-surface-variant uppercase">
-                  Order ID
-                </p>
-                <p className="font-headline-sm text-primary font-bold">
-                  {confirmedOrder.orderId}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-label-sm text-on-surface-variant uppercase">
-                  Estimated Arrival
-                </p>
-                <p className="font-headline-sm text-primary font-bold">
-                  {confirmedOrder.estimatedDeliveryTime}
-                </p>
-              </div>
-              <div>
-                <p className="text-[11px] font-label-sm text-on-surface-variant uppercase">
-                  Total Paid
-                </p>
-                <p className="font-headline-sm text-primary font-bold">
-                  ${confirmedOrder.total.toLocaleString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Items summary */}
-            <div className="w-full text-left border-t border-outline-variant/60 pt-space-md space-y-2">
-              <h4 className="font-label-md font-semibold text-on-surface uppercase tracking-wider">
-                Dishes in Order
-              </h4>
-              {confirmedOrder.items.map((item) => (
-                <div key={item.id} className="flex justify-between text-body-sm text-on-surface">
-                  <span>
-                    {item.quantity}× {item.name}
-                  </span>
-                  <span className="font-semibold">
-                    ${(item.price * item.quantity).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-space-md mt-space-xl">
-              <Link
-                href="/explore"
-                className="px-space-xl py-space-md bg-primary-container text-on-primary rounded font-label-lg font-semibold hover:bg-primary transition-colors"
-              >
-                Explore More Restaurants
-              </Link>
-              <Link
-                href="/"
-                className="px-space-lg py-space-md bg-surface-container-high text-primary rounded font-label-md hover:bg-surface-container-highest transition-colors"
-              >
-                Return to Home
-              </Link>
-            </div>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   const activeDeliveryFee = fulfillmentMode === "delivery" ? cart.deliveryFee : 0;
   const grandTotal = Math.max(
@@ -220,7 +170,7 @@ export default function CheckoutPage() {
                 </Link>
                 <span>/</span>
                 <span className="hover:text-primary transition-colors">
-                  {cart.restaurantName}
+                  {cart.restaurantName || "Restaurant"}
                 </span>
                 <span>/</span>
                 <span className="text-primary font-semibold">Checkout</span>
@@ -241,6 +191,14 @@ export default function CheckoutPage() {
                 </button>
               </div>
             </div>
+
+            {/* Error Banner */}
+            {orderError && (
+              <div className="mb-space-lg p-space-md bg-error/10 border border-error/20 rounded text-error text-body-sm flex items-center gap-space-sm">
+                <span className="material-symbols-outlined text-base">error</span>
+                <span>{orderError}</span>
+              </div>
+            )}
 
             {/* Main Dual Experience Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
@@ -265,8 +223,8 @@ export default function CheckoutPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-1.5 bg-surface-container rounded">
                     <button
                       className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "delivery"
-                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface"
+                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                          : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       onClick={() => setFulfillmentMode("delivery")}
                       type="button"
@@ -276,8 +234,8 @@ export default function CheckoutPage() {
                     </button>
                     <button
                       className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "takeaway"
-                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface"
+                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                          : "text-on-surface-variant hover:text-on-surface"
                         }`}
                       onClick={() => setFulfillmentMode("takeaway")}
                       type="button"
@@ -286,11 +244,11 @@ export default function CheckoutPage() {
                       <span>Pickup / Takeaway</span>
                     </button>
                     <button
-                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${fulfillmentMode === "dinein"
-                        ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
-                        : "text-on-surface-variant hover:text-on-surface"
+                      className={`fulfillment-tab flex items-center justify-center gap-space-xs py-space-sm px-space-md rounded font-label-md text-label-md transition-all cursor-pointer ${(fulfillmentMode as string) === "dinein"
+                          ? "bg-surface-container-lowest text-primary-container font-semibold shadow-sm"
+                          : "text-on-surface-variant hover:text-on-surface"
                         }`}
-                      onClick={() => setFulfillmentMode("dinein")}
+                      onClick={() => setFulfillmentMode("dinein" as FulfillmentMode)}
                       type="button"
                     >
                       <span className="material-symbols-outlined text-base">table_restaurant</span>
@@ -312,10 +270,10 @@ export default function CheckoutPage() {
                         </h3>
                       </div>
                       <span className="font-label-sm text-label-sm text-primary-container flex items-center gap-1 font-semibold">
-                        <span className="material-symbols-outlined text-sm">my_location</span>{" "}
-                        Banani Express Hub
+                        <span className="material-symbols-outlined text-sm">my_location</span> Banani Express Hub
                       </span>
                     </div>
+
                     {/* Saved Addresses Radio Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md mb-space-lg">
                       {SAVED_ADDRESSES.map((addr) => {
@@ -325,8 +283,8 @@ export default function CheckoutPage() {
                             key={addr.id}
                             onClick={() => handleAddressSelect(addr)}
                             className={`relative flex flex-col p-space-md rounded cursor-pointer transition-all group ${isSelected
-                              ? "bg-surface-container-low border border-primary-container/40"
-                              : "bg-surface-container-lowest border border-outline-variant hover:bg-surface-container"
+                                ? "bg-surface-container-low border border-primary-container/40"
+                                : "bg-surface-container-lowest border border-outline-variant hover:bg-surface-container"
                               }`}
                           >
                             <div className="flex items-center justify-between mb-space-xs">
@@ -348,9 +306,7 @@ export default function CheckoutPage() {
                               {addr.street}
                             </p>
                             <span
-                              className={`mt-space-sm font-label-sm text-[10px] uppercase tracking-wider ${addr.isDefault
-                                ? "text-primary font-bold"
-                                : "text-on-surface-variant"
+                              className={`mt-space-sm font-label-sm text-[10px] uppercase tracking-wider ${addr.isDefault ? "text-primary font-bold" : "text-on-surface-variant"
                                 }`}
                             >
                               {addr.isDefault ? "Default Address" : "Secondary"}
@@ -419,14 +375,14 @@ export default function CheckoutPage() {
                           />
                         </div>
                       </div>
-                      {/* Location Map Preview with GPS pin */}
+
+                      {/* Location Map Preview */}
                       <div className="md:col-span-5 flex flex-col">
                         <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
                           Map Pin
                         </label>
                         <div className="relative w-full h-full min-h-[170px] bg-surface-container rounded overflow-hidden flex flex-col justify-end p-space-sm shadow-inner">
                           <div className="absolute inset-0 bg-primary/10 pointer-events-none"></div>
-                          {/* Center Marker Simulation */}
                           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                             <span className="material-symbols-outlined text-secondary text-3xl animate-bounce">
                               location_on
@@ -532,12 +488,12 @@ export default function CheckoutPage() {
 
                   {/* Radio Options Stack */}
                   <div className="space-y-space-md">
-                    {/* Option 1: Credit / Debit Card */}
+                    {/* Option 1: Credit / Debit Card via Stripe */}
                     <div
                       onClick={() => setPaymentMethod("card")}
                       className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "card"
-                        ? "bg-surface-container-low border border-primary-container/30"
-                        : "bg-surface-container-lowest hover:bg-surface-container-low"
+                          ? "bg-surface-container-low border border-primary-container/30"
+                          : "bg-surface-container-lowest hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -555,7 +511,7 @@ export default function CheckoutPage() {
                               Credit / Debit Card via Stripe
                             </p>
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
-                              Instant processing for international and local cards
+                              Secure hosted payment checkout for all credit and debit cards
                             </p>
                           </div>
                         </div>
@@ -571,74 +527,14 @@ export default function CheckoutPage() {
                           </span>
                         </div>
                       </label>
-                      {/* Nested Card Form Fields */}
-                      {paymentMethod === "card" && (
-                        <div className="mt-space-md pt-space-md space-y-space-sm border-t border-outline-variant/40">
-                          <div>
-                            <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                              Cardholder Name
-                            </label>
-                            <input
-                              className="w-full bg-surface-container-lowest rounded py-space-sm px-space-md font-body-sm text-body-sm text-on-surface focus:outline-none"
-                              type="text"
-                              value={cardholderName}
-                              onChange={(e) => setCardholderName(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                              Card Number
-                            </label>
-                            <div className="relative">
-                              <input
-                                className="w-full bg-surface-container-lowest rounded py-space-sm pl-10 pr-space-md font-body-sm text-body-sm text-on-surface focus:outline-none"
-                                placeholder="4242 •••• •••• 4242"
-                                type="text"
-                                value={cardNumber}
-                                onChange={(e) => setCardNumber(e.target.value)}
-                              />
-                              <span className="material-symbols-outlined text-base absolute left-2.5 top-2.5 text-on-surface-variant">
-                                credit_card
-                              </span>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-space-md">
-                            <div>
-                              <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                                Exp Date (MM/YY)
-                              </label>
-                              <input
-                                className="w-full bg-surface-container-lowest rounded py-space-sm px-space-md font-body-sm text-body-sm text-on-surface focus:outline-none"
-                                placeholder="08/28"
-                                type="text"
-                                value={expDate}
-                                onChange={(e) => setExpDate(e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <label className="block font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant mb-space-xs">
-                                CVC / CVV
-                              </label>
-                              <input
-                                className="w-full bg-surface-container-lowest rounded py-space-sm px-space-md font-body-sm text-body-sm text-on-surface focus:outline-none"
-                                maxLength={4}
-                                placeholder="•••"
-                                type="password"
-                                value={cvc}
-                                onChange={(e) => setCvc(e.target.value)}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     {/* Option 2: Cash on Delivery */}
                     <div
                       onClick={() => setPaymentMethod("cod")}
                       className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "cod"
-                        ? "bg-surface-container-low border border-primary-container/30"
-                        : "bg-surface-container-lowest hover:bg-surface-container-low"
+                          ? "bg-surface-container-low border border-primary-container/30"
+                          : "bg-surface-container-lowest hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -656,51 +552,13 @@ export default function CheckoutPage() {
                               Cash on Delivery
                             </p>
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
-                              Pay with exact cash or personal digital wallet upon arrival
+                              Pay with cash directly to the courier upon delivery
                             </p>
                           </div>
                         </div>
                         <span className="material-symbols-outlined text-xl text-on-surface-variant">
                           payments
                         </span>
-                      </label>
-                    </div>
-
-                    {/* Option 3: Direct Mobile Wallet (bKash / Nagad) */}
-                    <div
-                      onClick={() => setPaymentMethod("mfs")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "mfs"
-                        ? "bg-surface-container-low border border-primary-container/30"
-                        : "bg-surface-container-lowest hover:bg-surface-container-low"
-                        }`}
-                    >
-                      <label className="flex items-center justify-between cursor-pointer">
-                        <div className="flex items-center gap-space-sm">
-                          <input
-                            checked={paymentMethod === "mfs"}
-                            onChange={() => setPaymentMethod("mfs")}
-                            className="w-4 h-4 text-primary-container accent-primary-container"
-                            name="payment_method"
-                            type="radio"
-                            value="mfs"
-                          />
-                          <div>
-                            <p className="font-label-lg text-label-lg font-semibold text-on-surface">
-                              bKash / Nagad Direct Mobile Wallet
-                            </p>
-                            <p className="font-body-sm text-body-sm text-on-surface-variant">
-                              Pay via instant OTP &amp; PIN gateway redirect
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-space-xs">
-                          <span className="px-2 py-0.5 bg-secondary-fixed text-on-secondary-fixed font-bold text-[10px] tracking-wider rounded">
-                            bKash
-                          </span>
-                          <span className="px-2 py-0.5 bg-surface-container text-secondary font-bold text-[10px] tracking-wider rounded">
-                            Nagad
-                          </span>
-                        </div>
                       </label>
                     </div>
                   </div>
@@ -733,7 +591,6 @@ export default function CheckoutPage() {
                   {couponError && (
                     <p className="text-xs text-error mt-1">{couponError}</p>
                   )}
-                  {/* Applied coupon banner */}
                   {cart.appliedCoupon && (
                     <div className="mt-space-sm flex items-center justify-between bg-primary-fixed text-on-primary-fixed px-space-sm py-1.5 rounded text-xs font-label-sm">
                       <span className="flex items-center gap-1 font-semibold">
@@ -768,7 +625,7 @@ export default function CheckoutPage() {
                     </span>
                   </div>
 
-                  {/* Itemized mini preview */}
+                  {/* Itemized preview */}
                   <div className="py-space-md space-y-space-sm border-t border-b border-outline-variant/40">
                     {cart.items.map((item) => (
                       <div
@@ -836,7 +693,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Big Primary Action Button */}
+                  {/* Action Button */}
                   <button
                     onClick={handlePlaceOrder}
                     disabled={isPlacingOrder || cart.items.length === 0}
@@ -848,11 +705,19 @@ export default function CheckoutPage() {
                         <span className="material-symbols-outlined animate-spin text-lg">
                           progress_activity
                         </span>
-                        <span>Confirming Order...</span>
+                        <span>
+                          {paymentMethod === "card"
+                            ? "Connecting to Stripe..."
+                            : "Confirming Order..."}
+                        </span>
                       </>
                     ) : (
                       <>
-                        <span>Place Order &amp; Pay ${grandTotal.toLocaleString()}</span>
+                        <span>
+                          {paymentMethod === "card"
+                            ? `Pay $${grandTotal.toLocaleString()} with Card`
+                            : `Place COD Order ($${grandTotal.toLocaleString()})`}
+                        </span>
                         <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
                           arrow_forward
                         </span>
@@ -860,7 +725,7 @@ export default function CheckoutPage() {
                     )}
                   </button>
 
-                  {/* Trust and Security Badges */}
+                  {/* Trust Badges */}
                   <div className="mt-space-md pt-space-sm text-center">
                     <div className="flex items-center justify-center gap-space-xs text-[11px] font-label-sm text-on-surface-variant">
                       <span className="material-symbols-outlined text-xs text-primary-container">
@@ -873,7 +738,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Kitchen Chronicle & Note Card */}
+                {/* Kitchen Notice */}
                 <div className="bg-surface-container-low p-space-md rounded flex items-start gap-space-sm">
                   <span className="material-symbols-outlined text-secondary text-xl shrink-0 mt-0.5">
                     restaurant
@@ -883,7 +748,7 @@ export default function CheckoutPage() {
                       Fresh Preparation Notice
                     </p>
                     <p className="font-body-sm text-body-sm text-on-surface-variant">
-                      The Maple &amp; Vine prepares all hearth cuts and seasonal entrees fresh to order. Every package is sealed under kitchen quality control.
+                      All orders are prepared fresh upon confirmation. Packaging is sealed under kitchen quality control.
                     </p>
                   </div>
                 </div>
