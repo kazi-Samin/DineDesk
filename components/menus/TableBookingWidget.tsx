@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useReservation } from "@/context/ReservationContext";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import { formatDateToYMD, formatCustomDate } from "@/lib/reservationDates";
 
 interface TableBookingWidgetProps {
     restaurantName: string;
@@ -15,8 +16,8 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
     const reservationContext = useReservation() as any;
     const { isAuthenticated } = useAuth();
 
-    // Today's date formatted as YYYY-MM-DD for min date restriction
-    const todayStr = new Date().toISOString().split("T")[0];
+    // Today's date formatted as YYYY-MM-DD using timezone-safe local date
+    const todayStr = formatDateToYMD(new Date());
 
     // Date state
     const [selectedDateVal, setSelectedDateVal] = useState(todayStr);
@@ -72,12 +73,7 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
 
         setIsSubmitting(true);
 
-        const formattedDateReadable = new Date(selectedDateVal).toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-        }).toUpperCase();
-
+        const formattedDate = formatCustomDate(selectedDateVal);
         const fullTimeString = `${selectedHour} ${selectedAmPm}`;
 
         // Safely update context if functions exist
@@ -88,7 +84,10 @@ export default function TableBookingWidget({ restaurantName }: TableBookingWidge
             reservationContext.setGuests(guestsVal);
         }
         if (typeof reservationContext?.setSelectedDate === "function") {
-            reservationContext.setSelectedDate(formattedDateReadable);
+            reservationContext.setSelectedDate(formattedDate.displayDate);
+        }
+        if (typeof reservationContext?.setSelectedRawDate === "function") {
+            reservationContext.setSelectedRawDate(formattedDate.raw);
         }
         if (typeof reservationContext?.setSelectedTime === "function") {
             reservationContext.setSelectedTime(fullTimeString);

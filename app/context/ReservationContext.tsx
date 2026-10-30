@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 import { ReservationRequest, ReservationConfirmation } from "@/types/reservation";
 import { createReservation } from "@/services/mockReservationService";
+import { getReservationDates } from "@/lib/reservationDates";
 
 interface ReservationContextType {
     isModalOpen: boolean;
@@ -22,6 +23,8 @@ interface ReservationContextType {
     setGuests: (guests: number | ((prev: number) => number)) => void;
     selectedDate: string;
     setSelectedDate: (date: string) => void;
+    selectedRawDate?: string;
+    setSelectedRawDate?: (raw: string) => void;
     selectedTime: string;
     setSelectedTime: (time: string) => void;
     seatingArea: string;
@@ -47,9 +50,13 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
 
     const [lastReservation, setLastReservation] = useState<ReservationConfirmation | null>(null);
 
+    // Dynamically calculate initial reservation date based on current runtime date
+    const defaultInitialDate = getReservationDates()[0];
+
     // State for the full dedicated reservations page
     const [guests, setGuests] = useState<number>(2);
-    const [selectedDate, setSelectedDate] = useState("TODAY, OCT 20");
+    const [selectedDate, setSelectedDate] = useState(defaultInitialDate.displayDate);
+    const [selectedRawDate, setSelectedRawDate] = useState(defaultInitialDate.raw);
     const [selectedTime, setSelectedTime] = useState("8:00 PM");
     const [seatingArea, setSeatingArea] = useState("Main Hall");
 
@@ -84,6 +91,8 @@ export function ReservationProvider({ children }: { children: ReactNode }) {
                 setGuests,
                 selectedDate,
                 setSelectedDate,
+                selectedRawDate,
+                setSelectedRawDate,
                 selectedTime,
                 setSelectedTime,
                 seatingArea,
