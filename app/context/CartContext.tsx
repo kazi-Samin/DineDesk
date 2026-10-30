@@ -17,8 +17,12 @@ interface CartContextType {
     isCartOpen: boolean;
     setIsCartOpen: (open: boolean) => void;
     toggleDrawer: () => void;
-    addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number }) => Promise<void>;
+    openDrawer: () => void;
+    closeDrawer: () => void;
+    addToCart: (item: Omit<CartItem, "quantity"> & { quantity?: number; menuItemId?: string; variant?: string; imageAlt?: string; restaurantId?: string }) => Promise<void>;
+    addItem: (item: Omit<CartItem, "quantity"> & { quantity?: number; menuItemId?: string; variant?: string; imageAlt?: string; restaurantId?: string }) => Promise<void>;
     updateQuantity: (menuId: string, delta: number) => Promise<void>;
+    clearCart: () => void;
     totalItemsCount: number;
     totalItemCount: number;
     subtotal: number;
@@ -42,10 +46,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         try {
             const saved = localStorage.getItem("dine_desk_cart");
             if (saved) {
-                setCartItems(JSON.parse(saved));
+                const parsed = JSON.parse(saved);
+                setCartItems(Array.isArray(parsed) ? parsed : []);
+            } else {
+                setCartItems([]);
             }
         } catch (err) {
             console.error("Failed to load cart from storage:", err);
+            setCartItems([]);
         }
     };
 
@@ -56,10 +64,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     const toggleDrawer = () => setIsCartOpen((prev) => !prev);
+    const openDrawer = () => setIsCartOpen(true);
+    const closeDrawer = () => setIsCartOpen(false);
 
-    const addToCart = async (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    const clearCart = () => {
+        setCartItems([]);
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("dine_desk_cart");
+            window.dispatchEvent(new Event("storage"));
+        }
+    };
+
+    const addToCart = async (item: Omit<CartItem, "quantity"> & { quantity?: number; menuItemId?: string; variant?: string; imageAlt?: string; restaurantId?: string }) => {
         const qtyToAdd = item.quantity || 1;
-        const targetId = item.menuId || item.id;
+        const targetId = item.menuId || item.menuItemId || item.id;
 
         const existingIndex = cartItems.findIndex((i) => i.menuId === targetId || i.id === targetId);
         let updated: CartItem[];
@@ -83,7 +101,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         saveCartToStorage(updated);
-        setIsCartOpen(true); // Open drawer instantly on add!
+        setIsCartOpen(true);
     };
 
     const updateQuantity = async (menuId: string, delta: number) => {
@@ -110,8 +128,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 isCartOpen,
                 setIsCartOpen,
                 toggleDrawer,
+                openDrawer,
+                closeDrawer,
                 addToCart,
+                addItem: addToCart,
                 updateQuantity,
+                clearCart,
                 totalItemsCount,
                 totalItemCount: totalItemsCount,
                 subtotal,

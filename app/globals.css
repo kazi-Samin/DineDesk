@@ -29,94 +29,150 @@
   /* ------------------------------------------------------------------------
      1. BRAND & PRIMARY GREENS (Heritage Dining, Headers, Primary Buttons)
      ------------------------------------------------------------------------ */
-  --color-primary: #1f3d2b;                  /* Primary Forest Green — #1F3D2B */
-  --color-primary-container: #1f3d2b;        /* Hunter Green — Primary CTA buttons, active sidebar items */
-  --color-on-primary: #f7f7f4;               /* Clean Warm Soft White — Crisp & readable */
-  --color-on-primary-container: #d6e2d9;     /* Soft Sage — Secondary text on dark green containers */
-  --color-primary-fixed: #e2e8df;            /* Mint Sage — Verified badges, light green badge background */
-  --color-primary-fixed-dim: #cdd6c9;        /* Soft Sage — Hover state for sage badges */
-  --color-on-primary-fixed: #172e20;         /* Very Dark Green — High contrast text inside mint sage badges */
-  --color-on-primary-fixed-variant: #2d4c38; /* Deep Sage — Subtle text inside fixed green badges */
-  --color-surface-tint: #3b5c46;             /* Live Forest Pulse — "Live", "Synchronized" indicators */
+  --color-primary: #1f3d2b;
+  /* Primary Forest Green — #1F3D2B */
+  --color-primary-container: #1f3d2b;
+  /* Hunter Green — Primary CTA buttons, active sidebar items */
+  --color-on-primary: #f7f7f4;
+  /* Clean Warm Soft White — Crisp & readable */
+  --color-on-primary-container: #d6e2d9;
+  /* Soft Sage — Secondary text on dark green containers */
+  --color-primary-fixed: #e2e8df;
+  /* Mint Sage — Verified badges, light green badge background */
+  --color-primary-fixed-dim: #cdd6c9;
+  /* Soft Sage — Hover state for sage badges */
+  --color-on-primary-fixed: #172e20;
+  /* Very Dark Green — High contrast text inside mint sage badges */
+  --color-on-primary-fixed-variant: #2d4c38;
+  /* Deep Sage — Subtle text inside fixed green badges */
+  --color-surface-tint: #3b5c46;
+  /* Live Forest Pulse — "Live", "Synchronized" indicators */
 
   /* ------------------------------------------------------------------------
      2. ACCENT & SECONDARY TERRACOTTA (Warm Spice, Active Orders, Badges)
      ------------------------------------------------------------------------ */
-  --color-secondary: #9f4122;                /* Warm Terracotta Rust — #9F4122 */
-  --color-secondary-container: #e67d5c;      /* Coral Terracotta — Hover states, promotional chips */
-  --color-on-secondary: #ffffff;             /* Crisp White on secondary buttons & badges */
-  --color-on-secondary-container: #5c1f0b;   /* Deep Burnt Orange — Text on coral containers */
-  --color-secondary-fixed: #f7dfd6;          /* Soft Peach — Active order pills ("1 active", "Trending") */
-  --color-secondary-fixed-dim: #ebd0c5;      /* Muted Peach — Secondary badges */
-  --color-on-secondary-fixed: #3d1408;       /* Dark Espresso Brown — Text inside peach status pills */
-  --color-on-secondary-fixed-variant: #782910; /* Burnt Rust — Subtitle text on secondary chips */
+  --color-secondary: #9f4122;
+  /* Warm Terracotta Rust — #9F4122 */
+  --color-secondary-container: #e67d5c;
+  /* Coral Terracotta — Hover states, promotional chips */
+  --color-on-secondary: #ffffff;
+  /* Crisp White on secondary buttons & badges */
+  --color-on-secondary-container: #5c1f0b;
+  /* Deep Burnt Orange — Text on coral containers */
+  --color-secondary-fixed: #f7dfd6;
+  /* Soft Peach — Active order pills ("1 active", "Trending") */
+  --color-secondary-fixed-dim: #ebd0c5;
+  /* Muted Peach — Secondary badges */
+  --color-on-secondary-fixed: #3d1408;
+  /* Dark Espresso Brown — Text inside peach status pills */
+  --color-on-secondary-fixed-variant: #782910;
+  /* Burnt Rust — Subtitle text on secondary chips */
 
   /* ------------------------------------------------------------------------
      3. CLEAN NEUTRAL SURFACES & CANVAS BACKGROUNDS
      ------------------------------------------------------------------------ */
-  --color-background: #f7f7f4;               /* Main Page Background — #F7F7F4 */
-  --color-surface: #f7f7f4;                  /* Base Surface Canvas — #F7F7F4 */
-  --color-surface-bright: #f7f7f4;           /* Bright Neutral Surface — #F7F7F4 */
-  --color-surface-dim: #eaebe5;              /* Muted Canvas Surface */
-  --color-surface-container-lowest: #ffffff; /* Card & Form Surfaces — #FFFFFF */
-  --color-surface-container-low: #f7f7f4;    /* Canvas Surface — Standard page background */
-  --color-surface-container: #f0f1ec;        /* Secondary Section Background — #F0F1EC */
-  --color-surface-container-high: #e8eae3;   /* Neutral Tint — Hover background on list items */
-  --color-surface-container-highest: #e0e3dc;/* Subtle Neutral — Dividers, active selection backgrounds */
-  --color-surface-variant: #f0f1ec;          /* Surface variant */
+  --color-background: #f7f7f4;
+  /* Main Page Background — #F7F7F4 */
+  --color-surface: #f7f7f4;
+  /* Base Surface Canvas — #F7F7F4 */
+  --color-surface-bright: #f7f7f4;
+  /* Bright Neutral Surface — #F7F7F4 */
+  --color-surface-dim: #eaebe5;
+  /* Muted Canvas Surface */
+  --color-surface-container-lowest: #ffffff;
+  /* Card & Form Surfaces — #FFFFFF */
+  --color-surface-container-low: #f7f7f4;
+  /* Canvas Surface — Standard page background */
+  --color-surface-container: #f0f1ec;
+  /* Secondary Section Background — #F0F1EC */
+  --color-surface-container-high: #e8eae3;
+  /* Neutral Tint — Hover background on list items */
+  --color-surface-container-highest: #e0e3dc;
+  /* Subtle Neutral — Dividers, active selection backgrounds */
+  --color-surface-variant: #f0f1ec;
+  /* Surface variant */
 
   /* ------------------------------------------------------------------------
      4. TYPOGRAPHY & TEXT COLORS
      ------------------------------------------------------------------------ */
-  --color-on-surface: #252b26;               /* Main Text — #252B26 */
-  --color-on-surface-variant: #686d67;       /* Secondary Text — #686D67 */
-  --color-on-background: #252b26;            /* Primary page typography */
-  --color-inverse-surface: #252b26;          /* Deep Dark Charcoal — Dark mode tooltips, snackbars */
-  --color-inverse-on-surface: #f7f7f4;       /* Soft Light Neutral — Text inside dark tooltips */
+  --color-on-surface: #252b26;
+  /* Main Text — #252B26 */
+  --color-on-surface-variant: #686d67;
+  /* Secondary Text — #686D67 */
+  --color-on-background: #252b26;
+  /* Primary page typography */
+  --color-inverse-surface: #252b26;
+  /* Deep Dark Charcoal — Dark mode tooltips, snackbars */
+  --color-inverse-on-surface: #f7f7f4;
+  /* Soft Light Neutral — Text inside dark tooltips */
 
   /* ------------------------------------------------------------------------
      5. BORDERS, DIVIDERS & OUTLINES
      ------------------------------------------------------------------------ */
-  --color-outline: #8c9188;                  /* Balanced Medium Border */
-  --color-outline-variant: #e3e5df;          /* Subtle Borders — #E3E5DF */
+  --color-outline: #8c9188;
+  /* Balanced Medium Border */
+  --color-outline-variant: #e3e5df;
+  /* Subtle Borders — #E3E5DF */
 
   /* ------------------------------------------------------------------------
      6. ALERT, ERROR & DESTRUCTIVE ACTIONS
      ------------------------------------------------------------------------ */
-  --color-error: #ba1a1a;                    /* Crimson Red — Delete actions, reject buttons */
-  --color-error-container: #ffdad6;          /* Soft Rose/Pink — Error messages & delete modals */
-  --color-on-error: #ffffff;                 /* Pure White — Text on red error buttons */
-  --color-on-error-container: #93000a;       /* Deep Wine Red — Text inside error containers */
+  --color-error: #ba1a1a;
+  /* Crimson Red — Delete actions, reject buttons */
+  --color-error-container: #ffdad6;
+  /* Soft Rose/Pink — Error messages & delete modals */
+  --color-on-error: #ffffff;
+  /* Pure White — Text on red error buttons */
+  --color-on-error-container: #93000a;
+  /* Deep Wine Red — Text inside error containers */
 
   /* ------------------------------------------------------------------------
      7. TERTIARY WINE & SPECIALTY PALETTE
      ------------------------------------------------------------------------ */
-  --color-tertiary: #38181b;                 /* Vintage Dark Wine */
-  --color-tertiary-container: #512d30;       /* Muted Plum Container */
-  --color-on-tertiary: #ffffff;              /* Pure White on tertiary */
-  --color-on-tertiary-container: #c69497;    /* Dusty Rose on plum container */
-  --color-tertiary-fixed: #ffdadb;           /* Soft Blush Pink — Specialty badges */
-  --color-tertiary-fixed-dim: #efb9bc;       /* Dimmed Blush */
-  --color-on-tertiary-fixed: #301215;        /* Deep Wine Text on blush badge */
-  --color-on-tertiary-fixed-variant: #633c3f;/* Medium Wine Text */
+  --color-tertiary: #38181b;
+  /* Vintage Dark Wine */
+  --color-tertiary-container: #512d30;
+  /* Muted Plum Container */
+  --color-on-tertiary: #ffffff;
+  /* Pure White on tertiary */
+  --color-on-tertiary-container: #c69497;
+  /* Dusty Rose on plum container */
+  --color-tertiary-fixed: #ffdadb;
+  /* Soft Blush Pink — Specialty badges */
+  --color-tertiary-fixed-dim: #efb9bc;
+  /* Dimmed Blush */
+  --color-on-tertiary-fixed: #301215;
+  /* Deep Wine Text on blush badge */
+  --color-on-tertiary-fixed-variant: #633c3f;
+  /* Medium Wine Text */
 
   /* ------------------------------------------------------------------------
      8. RATINGS & SPECIAL HIGHLIGHTS
      ------------------------------------------------------------------------ */
-  --color-rating-star: #d97706;              /* Warm Golden Amber — Review Stars */
-  --color-rating-star-fill: #b45309;         /* Deep Amber Star Fill */
-  --color-rating-star-muted: #e3e5df;        /* Unfilled / Outline Variant Star */
+  --color-rating-star: #d97706;
+  /* Warm Golden Amber — Review Stars */
+  --color-rating-star-fill: #b45309;
+  /* Deep Amber Star Fill */
+  --color-rating-star-muted: #e3e5df;
+  /* Unfilled / Outline Variant Star */
 
   /* ------------------------------------------------------------------------
      9. BORDER RADIUS SCALE
      ------------------------------------------------------------------------ */
-  --radius-xs: 4px;                          /* Badges, micro indicators */
-  --radius-sm: 6px;                          /* Inputs, selects, small controls */
-  --radius-md: 8px;                          /* Standard buttons, dropdown toggles */
-  --radius-lg: 10px;                         /* Standard cards, list containers */
-  --radius-xl: 12px;                         /* Feature cards, hero panels */
-  --radius-2xl: 16px;                        /* Modals, bottom sheets */
-  --radius-full: 9999px;                     /* Pill buttons, circular avatars */
+  --radius-xs: 4px;
+  /* Badges, micro indicators */
+  --radius-sm: 6px;
+  /* Inputs, selects, small controls */
+  --radius-md: 8px;
+  /* Standard buttons, dropdown toggles */
+  --radius-lg: 10px;
+  /* Standard cards, list containers */
+  --radius-xl: 12px;
+  /* Feature cards, hero panels */
+  --radius-2xl: 16px;
+  /* Modals, bottom sheets */
+  --radius-full: 9999px;
+  /* Pill buttons, circular avatars */
 
   /* ------------------------------------------------------------------------
      10. SUBTLE ELEVATION & SHADOWS
@@ -129,41 +185,66 @@
   /* ------------------------------------------------------------------------
      11. STATUS BADGES & ACCENTS
      ------------------------------------------------------------------------ */
-  --color-status-confirmed-bg: #e2e8df;      /* Confirmed Seating Background */
-  --color-status-confirmed-text: #172e20;    /* Confirmed Seating Text */
-  --color-status-pending-bg: #fef3c7;        /* Pending Confirmation Background (Warm Amber) */
-  --color-status-pending-text: #92400e;      /* Pending Confirmation Text (Deep Amber) */
-  --color-status-pending-border: #fde68a;    /* Pending Confirmation Border */
-  --color-status-completed-bg: #f0f1ec;      /* Completed / Visited Background */
-  --color-status-completed-text: #686d67;    /* Completed / Visited Text */
-  --color-status-cancelled-bg: #ffdad6;      /* Cancelled / Declined Background */
-  --color-status-cancelled-text: #93000a;    /* Cancelled / Declined Text */
+  --color-status-confirmed-bg: #e2e8df;
+  /* Confirmed Seating Background */
+  --color-status-confirmed-text: #172e20;
+  /* Confirmed Seating Text */
+  --color-status-pending-bg: #fef3c7;
+  /* Pending Confirmation Background (Warm Amber) */
+  --color-status-pending-text: #92400e;
+  /* Pending Confirmation Text (Deep Amber) */
+  --color-status-pending-border: #fde68a;
+  /* Pending Confirmation Border */
+  --color-status-completed-bg: #f0f1ec;
+  /* Completed / Visited Background */
+  --color-status-completed-text: #686d67;
+  /* Completed / Visited Text */
+  --color-status-cancelled-bg: #ffdad6;
+  /* Cancelled / Declined Background */
+  --color-status-cancelled-text: #93000a;
+  /* Cancelled / Declined Text */
 
   /* Verification Badges */
-  --color-badge-dinein-bg: #e2e8df;          /* Verified Dine-in Background (Mint Sage) */
-  --color-badge-dinein-text: #172e20;        /* Verified Dine-in Text */
-  --color-badge-delivery-bg: #f7dfd6;        /* Verified Delivery Background (Soft Peach) */
-  --color-badge-delivery-text: #3d1408;      /* Verified Delivery Text */
+  --color-badge-dinein-bg: #e2e8df;
+  /* Verified Dine-in Background (Mint Sage) */
+  --color-badge-dinein-text: #172e20;
+  /* Verified Dine-in Text */
+  --color-badge-delivery-bg: #f7dfd6;
+  /* Verified Delivery Background (Soft Peach) */
+  --color-badge-delivery-text: #3d1408;
+  /* Verified Delivery Text */
 
   /* Reviews & Upvotes */
-  --color-upvote-active-bg: #f7dfd6;         /* Upvoted State Background */
-  --color-upvote-active-text: #782910;       /* Upvoted State Text */
-  --color-dish-chip-bg: #f0f1ec;             /* Tagged Dish Chip Background */
-  --color-dish-chip-text: #1f3d2b;           /* Tagged Dish Chip Text */
+  --color-upvote-active-bg: #f7dfd6;
+  /* Upvoted State Background */
+  --color-upvote-active-text: #782910;
+  /* Upvoted State Text */
+  --color-dish-chip-bg: #f0f1ec;
+  /* Tagged Dish Chip Background */
+  --color-dish-chip-text: #1f3d2b;
+  /* Tagged Dish Chip Text */
 
   /* Delivery Address Categories */
-  --color-addr-home-icon: #1f3d2b;           /* Home Coordinate Icon */
-  --color-addr-office-icon: #9f4122;         /* Office Coordinate Icon */
-  --color-addr-family-icon: #3b5c46;         /* Family Residence Icon */
-  --color-addr-custom-icon: #8c9188;         /* Custom Delivery Icon */
+  --color-addr-home-icon: #1f3d2b;
+  /* Home Coordinate Icon */
+  --color-addr-office-icon: #9f4122;
+  /* Office Coordinate Icon */
+  --color-addr-family-icon: #3b5c46;
+  /* Family Residence Icon */
+  --color-addr-custom-icon: #8c9188;
+  /* Custom Delivery Icon */
 
   /* TableMate AI Floating Concierge */
-  --color-tablemate-bg: #1f3d2b;             /* TableMate AI Background */
-  --color-tablemate-hover: #172e20;          /* TableMate AI Hover */
-  --color-tablemate-glow: rgba(31, 61, 43, 0.15); /* TableMate AI Shadow */
+  --color-tablemate-bg: #1f3d2b;
+  /* TableMate AI Background */
+  --color-tablemate-hover: #172e20;
+  /* TableMate AI Hover */
+  --color-tablemate-glow: rgba(31, 61, 43, 0.15);
+  /* TableMate AI Shadow */
 }
 
 @layer base {
+
   html,
   body {
     margin: 0;
@@ -171,14 +252,31 @@
     background-color: var(--color-background);
     color: var(--color-on-surface);
   }
+
   body {
     overscroll-behavior: none;
   }
-  main > :first-child {
+
+  main> :first-child {
     margin-top: 0 !important;
   }
-  main > :last-child {
+
+  main> :last-child {
     margin-bottom: 0 !important;
+  }
+}
+
+/* Vendor Dashboard Footer Logo Animation */
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-5px) rotate(0.5deg);
   }
 }
 
@@ -186,6 +284,7 @@
    REUSABLE DINEDESK COMPONENT UTILITIES
    ========================================================================== */
 @layer components {
+
   /* Standard Clean Surface Card */
   .dinedesk-card {
     @apply bg-surface-container-lowest border border-outline-variant rounded-xl shadow-2xs;

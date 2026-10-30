@@ -209,14 +209,16 @@ export default function HeroSection() {
                 <span className="material-symbols-outlined text-base">restaurant</span>
               </Link>
 
-              <button
-                onClick={() => openReservationModal()}
-                className="px-5 py-3.5 bg-surface-container-lowest border border-outline-variant text-primary rounded-2xl font-semibold text-xs sm:text-sm hover:bg-surface-container transition-all inline-flex items-center gap-2 cursor-pointer shadow-2xs"
-                type="button"
+              <Link
+                href="/reservations"
+                onClick={() => {
+                  router.push("/reservations");
+                }}
+                className="px-5 py-3.5 bg-surface-container-lowest border border-outline-variant text-primary rounded-2xl font-semibold text-xs sm:text-sm hover:bg-surface-container transition-all inline-flex items-center gap-2 cursor-pointer shadow-2xs relative z-20 pointer-events-auto"
               >
                 <span>Explore Reservations</span>
                 <span className="material-symbols-outlined text-base">table_restaurant</span>
-              </button>
+              </Link>
 
               <div className="flex items-center gap-3 ml-auto pl-4 text-on-surface-variant hidden md:flex">
                 <div className="flex -space-x-2">

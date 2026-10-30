@@ -204,7 +204,7 @@ export default function CustomerHeader({
                     <span>Browse Restaurants</span>
                   </Link>
                   <Link
-                    href="/explore"
+                    href="/reservations"
                     onClick={() => setExploreDropdownOpen(false)}
                     className="flex items-center gap-3 p-2.5 rounded-xl text-xs font-bold text-on-surface hover:bg-primary/10 hover:text-primary transition-all"
                   >
@@ -337,7 +337,7 @@ export default function CustomerHeader({
               <span>Browse Restaurants</span>
             </Link>
             <Link
-              href="/explore"
+              href="/reservations"
               onClick={() => setMobileMenuOpen(false)}
               className="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low font-bold text-xs text-on-surface"
             >

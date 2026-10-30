@@ -160,7 +160,7 @@ export default function CustomerDashboardOverviewPage() {
       // Active orders (in kitchen / on delivery)
       const activeCount = validOrders.filter(
         (o) => o.status !== "delivered" && o.status !== "completed"
-      ).length;
+      );
 
       // 4. Parse Live Reservations
       let parsedReservations: CustomerReservation[] = [];
@@ -218,7 +218,7 @@ export default function CustomerDashboardOverviewPage() {
       const resolvedPoints =
         dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalValidOrdersCount * 20;
 
-      setActiveOrdersCount(activeCount);
+      setActiveOrdersCount(activeCount.length);
       setOrders(parsedOrders);
       setReservations(parsedReservations);
       setFavorites(parsedFavorites);
@@ -391,7 +391,7 @@ export default function CustomerDashboardOverviewPage() {
           {/* Core Content */}
           <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-10">
             {/* Quick Action Shortcuts */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Link
                 href="/explore"
                 className="p-5 bg-white/80 backdrop-blur-lg rounded-2xl border border-[#1b3b2b]/15 shadow-sm hover:shadow-md hover:border-[#1b3b2b] transition-all flex items-center gap-4 group"
@@ -856,42 +856,43 @@ export default function CustomerDashboardOverviewPage() {
 
                   <div className="flex flex-col gap-3">
                     {topFavorites.length > 0 ? (
-                      topFavorites.map((spot) => (
-                        <div
-                          key={spot.id}
-                          className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#f8f9f6] border border-[#1b3b2b]/10 hover:border-[#1b3b2b] transition-all"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <img
-                              src={spot.image}
-                              alt={spot.name}
-                              className="w-12 h-12 rounded-xl object-cover shrink-0 bg-white shadow-xs"
-                            />
-                            <div className="min-w-0">
-                              <h3 className="font-heading font-bold text-xs text-[#1b3b2b] truncate">
-                                {spot.name}
-                              </h3>
-                              <span className="text-[11px] text-[#1b3b2b]/70 truncate block font-medium">
-                                {spot.cuisine} • {spot.neighborhood}
-                              </span>
-                            </div>
-                          </div>
+                      topFavorites.map((spot: any) => {
+                        const targetMenuId =
+                          spot.menuItemId ||
+                          spot.menuId ||
+                          spot.dishId ||
+                          spot.id;
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openReservationModal({
-                                id: spot.restaurantId,
-                                name: spot.name,
-                                neighborhood: spot.neighborhood,
-                              })
-                            }
-                            className="px-3.5 py-1.5 text-xs font-bold bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl transition-all shrink-0 shadow-sm cursor-pointer"
+                        return (
+                          <div
+                            key={spot.id}
+                            className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#f8f9f6] border border-[#1b3b2b]/10 hover:border-[#1b3b2b] transition-all"
                           >
-                            Book
-                          </button>
-                        </div>
-                      ))
+                            <div className="flex items-center gap-3 min-w-0">
+                              <img
+                                src={spot.image || spot.imageUrl || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=200&q=80"}
+                                alt={spot.name || spot.title}
+                                className="w-12 h-12 rounded-xl object-cover shrink-0 bg-white shadow-xs"
+                              />
+                              <div className="min-w-0">
+                                <h3 className="font-heading font-bold text-xs text-[#1b3b2b] truncate">
+                                  {spot.name || spot.title}
+                                </h3>
+                                <span className="text-[11px] text-[#1b3b2b]/70 truncate block font-medium">
+                                  • {spot.cuisine || spot.restaurantName || spot.neighborhood || "Gourmet Selection"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <Link
+                              href={`/menus/${targetMenuId}`}
+                              className="px-3.5 py-1.5 text-xs font-bold bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl transition-all shrink-0 shadow-sm text-center flex items-center justify-center cursor-pointer"
+                            >
+                              Book
+                            </Link>
+                          </div>
+                        );
+                      })
                     ) : (
                       <div className="py-8 px-4 bg-[#f8f9f6] rounded-2xl text-center flex flex-col items-center justify-center gap-2 border border-dashed border-[#1b3b2b]/20">
                         <span className="material-symbols-outlined text-2xl text-[#1b3b2b]/40">

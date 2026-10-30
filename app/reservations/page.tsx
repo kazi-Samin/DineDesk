@@ -1,23 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useReservation } from "@/context/ReservationContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+import { getReservationDates, formatCustomDate, formatDateToYMD } from "@/lib/reservationDates";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
-
-const DATES = [
-    { label: "TODAY", date: "OCT 20", raw: "2026-10-20" },
-    { label: "TMRW", date: "OCT 21", raw: "2026-10-21" },
-    { label: "THU", date: "OCT 22", raw: "2026-10-22" },
-    { label: "FRI", date: "OCT 23", raw: "2026-10-23" },
-    { label: "SAT", date: "OCT 24", raw: "2026-10-24" },
-    { label: "SUN", date: "OCT 25", raw: "2026-10-25" },
-    { label: "MON", date: "OCT 26", raw: "2026-10-26" },
-];
 
 const LUNCH_TIMES = ["12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM"];
 const DINNER_TIMES = ["7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM", "10:00 PM"];
@@ -38,11 +29,49 @@ export default function ReservationsPage() {
         setGuests,
         selectedDate,
         setSelectedDate,
+        selectedRawDate: contextRawDate,
+        setSelectedRawDate,
         selectedTime,
         setSelectedTime,
         seatingArea,
         setSeatingArea,
     } = useReservation() as any;
+
+    // Dynamically calculate 7 consecutive reservation dates starting with TODAY at runtime
+    const dateOptions = useMemo(() => getReservationDates(), []);
+    const todayItem = dateOptions[0];
+
+    // Track active raw date (YYYY-MM-DD)
+    const [localRawDate, setLocalRawDate] = useState<string>(() => {
+        if (contextRawDate) return contextRawDate;
+        const match = dateOptions.find((d) => d.displayDate === selectedDate);
+        return match ? match.raw : todayItem.raw;
+    });
+
+    const activeRawDate = contextRawDate || localRawDate || todayItem.raw;
+
+    // Automatically ensure valid TODAY default selection on page load, removing any stale hardcoded dates
+    useEffect(() => {
+        if (!selectedDate || selectedDate.includes("OCT 20")) {
+            setSelectedDate?.(todayItem.displayDate);
+            if (setSelectedRawDate) setSelectedRawDate(todayItem.raw);
+            setLocalRawDate(todayItem.raw);
+        }
+    }, [selectedDate, setSelectedDate, setSelectedRawDate, todayItem]);
+
+    // Professional reservation date label for confirmation button
+    // Hidden when today is selected; shows "Tomorrow" or "on <Date>" for future dates
+    const buttonDateText = useMemo(() => {
+        if (!selectedDate) return "";
+        const upper = selectedDate.toUpperCase();
+        if (upper.includes("TODAY") || activeRawDate === todayItem.raw) {
+            return "";
+        }
+        if (upper.includes("TOMORROW")) {
+            return " Tomorrow";
+        }
+        return ` on ${selectedDate}`;
+    }, [selectedDate, activeRawDate, todayItem.raw]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authRestrictionMessage, setAuthRestrictionMessage] = useState<string | null>(null);
@@ -80,6 +109,9 @@ export default function ReservationsPage() {
 
             console.log("Resolved Auth Token:", token ? "Found ✅" : "Missing ❌");
 
+            const effectiveRawDate = activeRawDate || todayItem.raw;
+            const effectiveDisplayDate = selectedDate || todayItem.displayDate;
+
             const reservationPayload = {
                 restaurantId: String(restaurantId),
                 restaurantName: String(currentRestaurant),
@@ -87,14 +119,14 @@ export default function ReservationsPage() {
                 neighborhood: String(restaurantInfo?.neighborhood || "Downtown"),
                 fullAddress: String(restaurantInfo?.address || "Global City"),
                 cuisine: String(restaurantInfo?.cuisine || "Fine Dining"),
-                date: new Date().toISOString().split("T")[0],
-                displayDate: String(selectedDate || "Today"),
+                date: effectiveRawDate,
+                displayDate: String(effectiveDisplayDate),
                 time: String(selectedTime || "8:00 PM"),
                 mealPeriod: "Dinner",
                 partySize: Number(guests) || 2,
                 seatingArea: String(seatingArea || "Main Hall"),
                 tableNumber: "12",
-                reservedFor: new Date().toISOString(), // Fixed: Sending a valid ISO date format to satisfy Zod!
+                reservedFor: `${effectiveRawDate}T12:00:00.000Z`,
                 specialNotes: "Confirmed via DineDesk Web Portal",
             };
 
@@ -211,15 +243,19 @@ export default function ReservationsPage() {
                                 <span className="material-symbols-outlined text-sm text-[#C05621]">calendar_month</span>
                                 <input
                                     type="date"
+                                    min={todayItem.raw}
+                                    value={activeRawDate}
                                     onChange={(e) => {
-                                        if (e.target.value) {
-                                            const formatted = new Date(e.target.value).toLocaleDateString("en-US", {
-                                                weekday: "short",
-                                                month: "short",
-                                                day: "numeric",
-                                            }).toUpperCase();
-                                            setSelectedDate(formatted);
+                                        const chosenVal = e.target.value;
+                                        if (!chosenVal) return;
+                                        if (chosenVal < todayItem.raw) {
+                                            toast.error("Past dates cannot be selected for reservations!");
+                                            return;
                                         }
+                                        const formatted = formatCustomDate(chosenVal);
+                                        setLocalRawDate(formatted.raw);
+                                        if (setSelectedRawDate) setSelectedRawDate(formatted.raw);
+                                        setSelectedDate(formatted.displayDate);
                                     }}
                                     className="bg-transparent text-xs font-bold text-[#1b3b2b] focus:outline-none cursor-pointer"
                                 />
@@ -228,13 +264,16 @@ export default function ReservationsPage() {
 
                         {/* Quick Date Pills */}
                         <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                            {DATES.map((item) => {
-                                const fullDateStr = `${item.label}, ${item.date}`;
-                                const isSelected = selectedDate === fullDateStr;
+                            {dateOptions.map((item) => {
+                                const isSelected = activeRawDate === item.raw;
                                 return (
                                     <button
-                                        key={item.date}
-                                        onClick={() => setSelectedDate(fullDateStr)}
+                                        key={item.raw}
+                                        onClick={() => {
+                                            setLocalRawDate(item.raw);
+                                            if (setSelectedRawDate) setSelectedRawDate(item.raw);
+                                            setSelectedDate(item.displayDate);
+                                        }}
                                         className={`flex flex-col items-center justify-center py-3 px-2 rounded-2xl border transition-all cursor-pointer ${isSelected
                                             ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-md"
                                             : "bg-[#f8f9f6] text-[#1b3b2b] border-[#1b3b2b]/15 hover:border-[#1b3b2b]"
@@ -363,7 +402,7 @@ export default function ReservationsPage() {
                         ) : (
                             <>
                                 <span className="material-symbols-outlined text-base">event_available</span>
-                                <span>Confirm Reservation for {guests} Guests at {selectedTime || "8:00 PM"}</span>
+                                <span>Confirm Reservation for {guests} {guests === 1 ? "Guest" : "Guests"}{buttonDateText} at {selectedTime || "8:00 PM"}</span>
                             </>
                         )}
                     </button>
