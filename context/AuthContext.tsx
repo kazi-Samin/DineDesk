@@ -414,7 +414,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("dinedesk_auth_token");
         localStorage.removeItem("accessToken");
         localStorage.removeItem("user");
+
+        // Clear cart records so the drawer empties on sign out
+        localStorage.removeItem("dine_desk_cart");
+
         sessionStorage.clear();
+
+        // Broadcast storage event so CartContext resets state to []
+        window.dispatchEvent(new Event("storage"));
 
         // 4. Clear all accessible cookies
         document.cookie.split(";").forEach((c) => {
