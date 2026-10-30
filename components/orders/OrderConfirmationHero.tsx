@@ -1,36 +1,35 @@
 "use client";
 
+import { useMemo } from "react";
 import { OrderConfirmation } from "@/types/order";
+import { useAuth } from "@/context/AuthContext";
+import { ImHappy } from "react-icons/im";
 
 interface OrderConfirmationHeroProps {
   order: OrderConfirmation;
 }
 
 export default function OrderConfirmationHero({ order }: OrderConfirmationHeroProps) {
+  const { user } = useAuth();
+
   const isCancelled = order.status === "cancelled";
   const isDelivered = order.status === "delivered" || order.status === "completed";
 
-  // Contextual heading and subtitle based on status and fulfillment mode
-  const getHeroHeading = () => {
-    if (isCancelled) {
-      return `Order #${order.orderId} was cancelled`;
-    }
-    if (isDelivered) {
-      if (order.fulfillmentMode === "takeaway") return `Thank you, ${order.contact.fullName}! Order picked up.`;
-      if (order.fulfillmentMode === "dinein") return `Thank you, ${order.contact.fullName}! Dining completed.`;
-      return `Thank you, ${order.contact.fullName}! Your order has arrived.`;
-    }
+  // Dynamic user name resolution
+  const customerName = useMemo(() => {
+    const raw =
+      user?.name ||
+      order.contact?.fullName ||
+      (order as any).customer?.name ||
+      "Diner";
 
-    if (order.status === "pending") {
-      return `Order received — awaiting restaurant confirmation`;
-    }
-
-    return `Thank you, ${order.contact.fullName}! Your order is confirmed.`;
-  };
+    const firstName = raw.split(" ")[0].trim();
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  }, [user?.name, order.contact?.fullName, (order as any).customer?.name]);
 
   const getHeroSubText = () => {
     if (isCancelled) {
-      return `This mock order has been marked as cancelled. Any demo charges will be voided.`;
+      return "This order has been marked as cancelled. Any charges will be voided.";
     }
     if (order.fulfillmentMode === "takeaway") {
       return order.status === "ready"
@@ -47,33 +46,32 @@ export default function OrderConfirmationHero({ order }: OrderConfirmationHeroPr
       : "Your order is being lovingly prepared in the kitchen.";
   };
 
-  // Status tag styling
   const getBadgeContent = () => {
     if (isCancelled) {
       return {
         label: "Order Cancelled",
         icon: "cancel",
-        colorClass: "bg-error/10 text-error",
+        colorClass: "bg-red-50 text-red-600 border border-red-200/60",
       };
     }
     if (isDelivered) {
       return {
         label: "Completed",
         icon: "check_circle",
-        colorClass: "bg-primary-container text-on-primary",
+        colorClass: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
       };
     }
     if (order.status === "pending") {
       return {
         label: "Awaiting Kitchen Confirmation",
         icon: "hourglass_top",
-        colorClass: "bg-surface-container-high text-on-surface-variant",
+        colorClass: "bg-neutral-100 text-neutral-700 border border-neutral-200/60",
       };
     }
     return {
       label: "Order Confirmed & In Production",
       icon: "verified",
-      colorClass: "bg-primary-container/10 text-primary-container",
+      colorClass: "bg-[#1b3b2b]/10 text-[#1b3b2b] border border-[#1b3b2b]/15",
     };
   };
 
@@ -81,66 +79,76 @@ export default function OrderConfirmationHero({ order }: OrderConfirmationHeroPr
   const placedTime = order.timeline?.placedAt || "Recently";
 
   return (
-    <div className="w-full bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden relative border border-outline-variant/40">
-      <div className="p-space-lg md:p-space-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-space-lg relative z-10">
-        <div className="flex items-start gap-space-lg max-w-2xl">
+    <div className="w-full bg-white rounded-2xl md:rounded-3xl shadow-xs overflow-hidden border border-[#1b3b2b]/10 transition-all">
+      <div className="p-5 sm:p-6 md:p-7 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+
+        {/* Left Side: Status Icon & Details */}
+        <div className="flex items-start gap-3.5 sm:gap-4 max-w-2xl">
+          {/* Sized-down checkmark container */}
           <div
-            className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center shadow-md ${
-              isCancelled
-                ? "bg-error text-on-error"
-                : "bg-primary text-on-primary"
-            }`}
+            className={`w-9 h-9 sm:w-10 sm:h-10 mt-0.5 shrink-0 rounded-xl flex items-center justify-center shadow-2xs transition-transform ${isCancelled
+              ? "bg-red-50 text-red-600 border border-red-200"
+              : isDelivered
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-[#1b3b2b] text-white"
+              }`}
           >
             <span
-              className="material-symbols-outlined text-3xl"
+              className="material-symbols-outlined text-lg sm:text-xl"
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
-              {isCancelled ? "cancel" : isDelivered ? "verified" : "check_circle"}
+              {isCancelled ? "cancel" : isDelivered ? "verified" : "check"}
             </span>
           </div>
 
-          <div className="flex flex-col gap-space-xs">
-            <div className={`inline-flex items-center gap-space-xs px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.colorClass} w-fit`}>
-              <span className="font-label-sm text-label-sm uppercase tracking-wider">
-                {badge.label}
-              </span>
-              <span className="material-symbols-outlined text-sm">{badge.icon}</span>
+          <div className="flex flex-col gap-1">
+            {/* Status Pill */}
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider ${badge.colorClass} w-fit`}>
+              <span>{badge.label}</span>
+              <span className="material-symbols-outlined text-xs sm:text-sm">{badge.icon}</span>
             </div>
 
-            <h1 className="font-headline-lg text-headline-lg text-primary leading-tight mt-1">
-              {getHeroHeading()}
-            </h1>
+            {/* Title with styled dynamic name */}
+            <div className="text-lg sm:text-xl lg:text-2xl font-extrabold text-[#1b3b2b] tracking-tight leading-snug mt-2">
+              <span>Thank you, </span>
+              <span className="text-[#C05621] text-xl sm:text-2xl lg:text-3xl">{customerName}</span>
+              <span className="italic text-md sm:text-lg lg:text-xl text-emerald-900 block font-normal">
+                <span className="flex flex-row items-center gap-0.5 my-1">
+                  <ImHappy className="shrink-0" />
+                  <span>Your order is confirmed.</span>
+                </span>
+              </span>
+            </div>
 
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+            {/* Reference & Restaurant */}
+            <p className="text-xs text-neutral-500 font-medium leading-relaxed">
               Order Reference:{" "}
-              <strong className="text-on-surface font-medium">#{order.orderId}</strong> • Placed at{" "}
-              {placedTime} at {order.restaurantName}.
+              <strong className="text-neutral-900 font-mono font-semibold">#{order.orderId}</strong>
+              {" • "}Placed {placedTime} at{" "}
+              <span className="text-neutral-800 font-semibold">{order.restaurantName}</span>.
             </p>
-            <p className="font-body-sm text-body-sm text-secondary font-medium">
+
+            <p className="text-xs text-[#C05621] font-semibold mt-0.5">
               {getHeroSubText()}
             </p>
           </div>
         </div>
 
-        {/* Estimated Arrival / Ready Time Widget */}
+        {/* Right Side: Estimated Arrival Widget */}
         {!isCancelled && (
-          <div className="w-full md:w-auto bg-surface-container-low rounded-lg p-space-md flex flex-col gap-1 min-w-[280px] border border-outline-variant/30">
-            <span className="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-semibold">
-              {order.fulfillmentMode === "delivery"
-                ? "Estimated Arrival"
-                : order.fulfillmentMode === "takeaway"
-                ? "Estimated Ready Time"
-                : "Estimated Table Readiness"}
+          <div className="w-full md:w-auto bg-[#FBFBFA] rounded-2xl p-4 sm:p-5 flex flex-col gap-1 min-w-[220px] md:min-w-[240px] border border-[#1b3b2b]/10 self-stretch md:self-auto shadow-2xs">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              Estimated Arrival
             </span>
 
             <div className="flex items-baseline gap-2">
-              <span className="font-headline-md text-headline-md text-secondary font-display font-medium">
-                {isDelivered ? "Delivered" : order.estimatedDeliveryTime}
+              <span className="text-xl sm:text-2xl font-black text-[#1b3b2b]">
+                {isDelivered ? "Delivered" : order.estimatedDeliveryTime || "25-35 mins"}
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 font-body-sm text-body-sm text-primary font-medium">
-              <span className="material-symbols-outlined text-base">schedule</span>
+            <div className="flex items-center gap-1.5 text-xs text-neutral-500 font-medium">
+              <span className="material-symbols-outlined text-sm text-[#1b3b2b]">schedule</span>
               <span>
                 {isDelivered
                   ? "Order finalized"
@@ -149,6 +157,7 @@ export default function OrderConfirmationHero({ order }: OrderConfirmationHeroPr
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
