@@ -268,20 +268,23 @@ export default function CustomerProfilePage() {
         }
       }
 
-      // 2. Orders Metrics
+      // 2. Orders Metrics (Using case-insensitive matching)
       let rawOrders: any[] = [];
       if (ordersRes && ordersRes.ok) {
         const apiData = await ordersRes.json();
         rawOrders = apiData.data || apiData.orders || [];
       }
 
-      const nonCancelledOrders = rawOrders.filter(
-        (o: any) => !String(o.status || "").toLowerCase().includes("cancel")
-      );
-      const totalOrders = nonCancelledOrders.length;
-      const activeOrders = nonCancelledOrders.filter(
-        (o: any) => o.status !== "delivered" && o.status !== "completed"
-      ).length;
+      const validOrders = rawOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return !st.includes("cancel") && !st.includes("reject");
+      });
+
+      const totalOrders = validOrders.length;
+      const activeOrders = validOrders.filter((ord: any) => {
+        const st = String(ord.status || "").toLowerCase();
+        return st !== "delivered" && st !== "completed";
+      }).length;
 
       // 3. Bookings Metrics
       let liveReservations: any[] = [];
@@ -314,7 +317,6 @@ export default function CustomerProfilePage() {
       const calculatedLoyalty = dbLoyaltyPoints > 0 ? dbLoyaltyPoints : totalOrders * 20;
 
       setProfile((prev) => {
-        // Protect newly updated in-memory avatar from being reverted while editing
         const chosenAvatar = isEditingRef.current && prev.avatarUrl ? prev.avatarUrl : currentAvatar;
         return {
           ...EMPTY_PROFILE,
@@ -379,7 +381,6 @@ export default function CustomerProfilePage() {
     loadDatabaseProfile();
 
     const handleExternalSync = (e: any) => {
-      // Ignore profile-updated events that are already handled locally to avoid race conditions
       if (e?.detail?.source === "local_photo_upload") return;
       loadDatabaseProfile();
     };
@@ -397,7 +398,6 @@ export default function CustomerProfilePage() {
     };
   }, [loadDatabaseProfile]);
 
-  // Sync basic user info when user logs in, but never override during edit mode
   useEffect(() => {
     if (isEditingRef.current) return;
 
@@ -438,7 +438,6 @@ export default function CustomerProfilePage() {
     savedSnapshot,
   ]);
 
-  // Cloudinary Upload & Instant DB Persistence
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -464,17 +463,14 @@ export default function CustomerProfilePage() {
       if (result.success && result.url) {
         const newUrl = result.url.trim();
 
-        // 1. Immediately update local UI states
         setLiveAvatar(newUrl);
         setProfile((prev) => ({ ...prev, avatarUrl: newUrl }));
         setSavedSnapshot((prev) => ({ ...prev, avatarUrl: newUrl }));
         setImageError(false);
 
-        // 2. Update context state
         if (updateAuthUser) updateAuthUser({ avatarUrl: newUrl });
         if (updateUserAvatar) updateUserAvatar(newUrl);
 
-        // 3. Persist to Neon DB backend
         const token = getAuthToken();
         const currentEmail = (email || profile.email || user?.email || "").trim().toLowerCase();
         const currentName = (fullName || profile.fullName || user?.name || "Diner").trim();
@@ -497,7 +493,6 @@ export default function CustomerProfilePage() {
         });
 
         if (res.ok) {
-          // 4. Broadcast to Sidebar & Header with source tag to avoid race-condition reload
           window.dispatchEvent(
             new CustomEvent("profile-updated", {
               detail: { avatarUrl: newUrl, image: newUrl, source: "local_photo_upload" },
@@ -750,7 +745,7 @@ export default function CustomerProfilePage() {
             onToggle={toggleSidebar}
             loyaltyPoints={loyaltyPoints}
             upcomingReservationsCount={activeBookingsCount}
-            activeOrdersCount={totalOrdersCount}
+            activeOrdersCount={activeOrdersCount}
             activeOrderCount={activeOrdersCount}
             avatarUrl={displayAvatarSrc}
           />
@@ -783,7 +778,7 @@ export default function CustomerProfilePage() {
           onClose={closeSidebar}
           onToggle={toggleSidebar}
           activeOrderCount={activeOrdersCount}
-          activeOrdersCount={totalOrdersCount}
+          activeOrdersCount={activeOrdersCount}
           upcomingReservationsCount={activeBookingsCount}
           loyaltyPoints={loyaltyPoints}
         />
