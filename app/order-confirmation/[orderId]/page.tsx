@@ -4,6 +4,7 @@
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import {
   getMockOrder,
@@ -40,7 +41,6 @@ export interface UserAddressData {
   isDefault?: boolean;
 }
 
-// Extends base OrderConfirmation cleanly using a type intersection
 export type FullOrderConfirmation = Omit<OrderConfirmation, "pricing" | "delivery"> & {
   pointsEarned?: number;
   subtotal?: number;
@@ -164,6 +164,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
               city: "Local",
               recipientName: user?.name || "Customer",
               contactNumber: user?.phone || "+880 1700000000",
+              deliveryInstructions: "Leave with reception security or call intercom.",
             });
             return;
           }
@@ -188,7 +189,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      // Handle direct redirect from Stripe checkout if session_id is in URL
       if (typeof window !== "undefined" && !confirmAttemptedRef.current) {
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get("session_id");
@@ -205,7 +205,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
       let dbOrder: any = null;
 
-      // Fetch by ID
       const singleRes = await fetch(`${API_BASE_URL}/api/v1/orders/${targetOrderId}`, {
         headers,
         credentials: "include",
@@ -216,7 +215,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
         dbOrder = resData.data || resData.order || resData;
       }
 
-      // Fallback search across user's order list
       if (!dbOrder) {
         const listRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
           headers,
@@ -232,7 +230,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
         }
       }
 
-      // Mock fallback for local UI prototyping
       if (!dbOrder) {
         const mockFound = getMockOrder(targetOrderId);
         if (mockFound) {
@@ -270,7 +267,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
       }
 
       if (dbOrder) {
-        // Intercept unpaid Stripe checkout sessions
         const isStripe = String(dbOrder.paymentMethod || "").toUpperCase() === "STRIPE";
         const isPaid = String(dbOrder.paymentStatus || "").toUpperCase() === "PAID";
 
@@ -318,6 +314,17 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
               },
             ];
 
+        const rawOrderAddress = String(dbOrder.deliveryAddress || "").trim();
+        const isPlaceholderAddress =
+          !rawOrderAddress ||
+          rawOrderAddress.toLowerCase() === "standard address" ||
+          rawOrderAddress.toLowerCase() === "standard delivery address" ||
+          rawOrderAddress.toLowerCase() === "address on file";
+
+        const resolvedAddress = !isPlaceholderAddress
+          ? rawOrderAddress
+          : (addressData?.addressLine || "");
+
         const formattedConfirmation = {
           orderId: dbOrder.id || targetOrderId,
           restaurantName:
@@ -332,7 +339,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           paymentMethod: dbOrder.paymentMethod || "STRIPE",
           fulfillmentMode: (dbOrder.orderType?.toLowerCase() === "pickup" ? "pickup" : "delivery") as any,
 
-          // Root numeric values required by OrderReceipt.tsx and legacy components
           subtotal: subtotalNum,
           deliveryFee: deliveryFeeNum,
           discount: discountNum,
@@ -342,7 +348,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           total: totalNum,
           pointsEarned: dbOrder.pointsEarned || 20,
 
-          // Nested pricing structure
           pricing: {
             subtotal: subtotalNum,
             deliveryFee: deliveryFeeNum,
@@ -360,7 +365,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           },
 
           delivery: {
-            address: dbOrder.deliveryAddress || addressData?.addressLine || "Address on File",
+            address: resolvedAddress,
             lat: Number(dbOrder.deliveryLat) || 22.3384,
             lng: Number(dbOrder.deliveryLng) || 91.8317,
             instructions: addressData?.deliveryInstructions || "Leave at reception security or call intercom.",
@@ -392,7 +397,6 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
     fetchUserAddress();
     loadOrderData();
 
-    // Poll for live kitchen status changes every 8 seconds
     const interval = setInterval(loadOrderData, 8000);
     return () => clearInterval(interval);
   }, [fetchUserAddress, loadOrderData]);
@@ -513,6 +517,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const isDelivery = order.fulfillmentMode === "delivery";
   const courierData = order.courier || MOCK_COURIER;
 
+  // Verification: Valid destination exists only if user has a real saved address or specific address string
+  const hasValidAddress = Boolean(
+    order.delivery?.address &&
+    order.delivery.address.trim() !== "" &&
+    order.delivery.address.toLowerCase() !== "standard address" &&
+    order.delivery.address.toLowerCase() !== "standard delivery address" &&
+    order.delivery.address.toLowerCase() !== "address on file"
+  );
+
   return (
     <main className="w-full pt-24 pb-16 bg-[#FBFBFA] min-h-screen antialiased">
       <div className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 sm:gap-8">
@@ -561,62 +574,167 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
               <DeliveryTrackingCard order={order as unknown as OrderConfirmation} addressData={addressData ?? undefined} />
             </div>
 
-            {/* Address Information Display */}
-            {!addressData && !order.delivery?.address ? (
-              <div className="relative overflow-hidden bg-gradient-to-br from-red-50/90 via-white to-red-50/40 rounded-3xl p-6 sm:p-7 border-2 border-red-300 shadow-sm transition-all animate-in fade-in duration-300">
-                <div className="flex flex-col sm:flex-row items-start gap-5 relative z-10">
-                  <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-md">
-                    <span className="material-symbols-outlined text-2xl animate-pulse">wrong_location</span>
+            {/* ADDRESS SECTION: Show Alert Card (Image 5) OR 3-Card Stack (Image 3) */}
+            {!hasValidAddress ? (
+              /* PREMIUM ANIMATED RED ALERT CARD */
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="relative overflow-hidden bg-gradient-to-br from-white via-red-50/20 to-rose-50/40 rounded-[28px] p-6 sm:p-7 border border-red-200/80 shadow-[0_12px_40px_rgba(235,50,35,0.08)] backdrop-blur-md"
+              >
+                {/* Ambient Soft Glow Background Element */}
+                <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-red-400/10 blur-3xl pointer-events-none" />
+
+                <div className="flex items-start gap-4 sm:gap-5 relative z-10">
+                  {/* Glowing Icon Beacon with Double Ripple Pulse */}
+                  <div className="relative shrink-0 mt-0.5">
+                    <span className="absolute -inset-2 rounded-2xl bg-red-500/15 animate-ping opacity-75" />
+                    <span className="absolute -inset-1 rounded-2xl bg-red-400/25 blur-sm" />
+                    <motion.div
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                      className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#c5221f] via-[#eb3223] to-[#ff5247] text-white flex items-center justify-center shadow-lg shadow-red-500/30 border border-white/25"
+                    >
+                      <span className="material-symbols-outlined text-2xl font-light">
+                        home_pin
+                      </span>
+                    </motion.div>
                   </div>
 
-                  <div className="flex flex-col flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-100 text-red-700 border border-red-200">
-                        Address Required
+                  {/* Body Details */}
+                  <div className="flex-1 space-y-2.5">
+                    {/* Header Live Status Badges */}
+                    <div className="flex items-center gap-2 flex-wrap text-[11px] font-black uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5 text-[#eb3223]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#eb3223] animate-pulse" />
+                        ADDRESS REQUIRED
+                      </span>
+                      <span className="text-neutral-300">•</span>
+                      <span className="text-neutral-500 font-bold">Pending Manager Review</span>
+                    </div>
+
+                    {/* Headline */}
+                    <h3 className="text-lg sm:text-xl font-bold text-[#eb3223] tracking-tight">
+                      PLEASE SET YOUR ADDRESS FIRST.
+                    </h3>
+
+                    {/* Description Paragraph */}
+                    <p className="text-xs text-neutral-600 font-medium leading-relaxed">
+                      If you still have not set your exact address, your order cannot be confirmed by the restaurant manager. Your order is currently in <strong className="text-neutral-800 underline decoration-red-300 decoration-2 underline-offset-2">pending mode</strong>. To confirm dispatch, please set your address now.
+                    </p>
+
+                    {/* Premium Green Trust Status Bar (Exact to Image 5) */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#e6f4ea]/95 text-[#137333] border border-[#ceead6] text-[11px] font-semibold leading-snug shadow-2xs">
+                      <span
+                        className="material-symbols-outlined text-base text-[#137333] shrink-0"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        check_circle
+                      </span>
+                      <span>
+                        We make sure your delivery details remain fully protected and securely encrypted for our valuable customers.
                       </span>
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-bold text-red-700 tracking-tight mt-1.5">
-                      Delivery Address Incomplete
-                    </h3>
-
-                    <p className="text-xs text-red-900/90 font-medium leading-relaxed mt-1">
-                      To ensure timely courier dispatch, verify your destination address in your profile settings.
-                    </p>
-
-                    <div className="mt-4">
-                      <Link
-                        href="/dashboard/customer/addresses"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shadow-sm"
-                      >
-                        <span className="material-symbols-outlined text-base">add_location_alt</span>
-                        Set Delivery Address Now
-                      </Link>
+                    {/* Premium Magnetic Action Button */}
+                    <div className="pt-2">
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-block">
+                        <Link
+                          href="/dashboard/customer/addresses"
+                          className="group relative inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#eb3223] to-[#d92a1c] hover:from-[#d92a1c] hover:to-[#c5221f] text-white text-xs font-bold transition-all shadow-md shadow-red-500/25 hover:shadow-lg hover:shadow-red-500/35 overflow-hidden cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-base transition-transform group-hover:rotate-12">
+                            add_location_alt
+                          </span>
+                          <span>Set Delivery Address Now</span>
+                          <span className="material-symbols-outlined text-base transition-transform group-hover:translate-x-1">
+                            arrow_forward
+                          </span>
+                        </Link>
+                      </motion.div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ) : (
-              <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#1b3b2b]/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                    <span className="material-symbols-outlined text-xl">home</span>
+              /* 3-Card Stack matching Image 3 */
+              <div className="flex flex-col gap-3">
+                {/* 1. Primary Destination Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b] text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <span className="material-symbols-outlined text-xl">home</span>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#C05621]">
+                          Primary Destination ({addressData?.category?.toUpperCase() || "HOME"})
+                        </span>
+                        {addressData?.isDefault && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-sm font-bold text-[#1b3b2b] mt-0.5">
+                        {addressData?.label || order.delivery?.address?.split(",")[0] || "Default Location"}
+                      </h4>
+                      <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                        {order.delivery?.address || addressData?.addressLine}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#C05621]">
-                      Destination Address
-                    </span>
-                    <h4 className="text-sm font-bold text-[#1b3b2b] mt-0.5">
-                      {order.delivery?.address || addressData?.addressLine}
-                    </h4>
-                    <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                      Recipient: <strong className="text-neutral-700">{order.contact.fullName}</strong> • {order.contact.phone}
-                    </p>
+                  <span className="text-[10px] font-bold text-neutral-700 bg-neutral-100 px-2.5 py-1 rounded-lg border border-neutral-200 shrink-0">
+                    Word 24 Delivery Zone
+                  </span>
+                </div>
+
+                {/* 2. Exact Location & Street Address Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#C05621] border border-amber-200 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-xl">pin_drop</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                        Exact Location &amp; Street Address
+                      </span>
+                      <h4 className="text-xs font-bold text-[#1b3b2b] mt-0.5">
+                        {addressData?.building ? `${addressData.building}, ` : ""}
+                        {addressData?.road || addressData?.city || order.delivery?.address}
+                      </h4>
+                      <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
+                        Building: <strong className="text-neutral-700">{addressData?.building || "Standard Residence"}</strong> • Postal Code: <strong className="text-neutral-700">{addressData?.postalCode || "4000"}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
+                    GPS Verified
+                  </span>
+                </div>
+
+                {/* 3. Recipient & Delivery Note Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-neutral-100 text-[#1b3b2b] flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-lg">badge</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
+                        Recipient &amp; Delivery Note
+                      </span>
+                      <h4 className="text-xs font-bold text-[#1b3b2b]">
+                        {addressData?.recipientName || order.contact.fullName} • {addressData?.contactNumber || order.contact.phone}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex items-start gap-2 text-xs text-neutral-600 font-medium">
+                    <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0 mt-0.5">assignment</span>
+                    <span>Note: {addressData?.deliveryInstructions || order.delivery?.instructions || "Leave with reception security or call intercom."}</span>
                   </div>
                 </div>
-                <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200 shrink-0">
-                  Verified Dispatch Zone
-                </span>
               </div>
             )}
 
