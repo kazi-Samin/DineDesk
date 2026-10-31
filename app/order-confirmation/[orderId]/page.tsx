@@ -1,8 +1,10 @@
+// app/order-confirmation/[orderId]/page.tsx
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import {
   getMockOrder,
@@ -20,7 +22,7 @@ import OrderSupportModal from "@/components/orders/OrderSupportModal";
 import CancelOrderModal from "@/components/orders/CancelOrderModal";
 
 interface OrderConfirmationPageProps {
-  params: Promise<{ orderId: string }>;
+  params: Promise<{ id?: string; orderId?: string }>;
 }
 
 export interface UserAddressData {
@@ -39,9 +41,38 @@ export interface UserAddressData {
   isDefault?: boolean;
 }
 
+export type FullOrderConfirmation = Omit<OrderConfirmation, "pricing" | "delivery"> & {
+  pointsEarned?: number;
+  subtotal?: number;
+  discount?: number;
+  deliveryFee?: number;
+  packagingFee?: number;
+  serviceFee?: number;
+  tax?: number;
+  total?: number;
+  delivery?: {
+    address?: string;
+    lat?: number;
+    lng?: number;
+    instructions?: string;
+  };
+  pricing?: {
+    subtotal: number;
+    deliveryFee: number;
+    serviceFee: number;
+    tax: number;
+    discount: number;
+    total: number;
+    pointsEarned: number;
+  };
+  [key: string]: any;
+};
+
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app"
-).replace(/\/+$/, "");
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:5000"
+).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
@@ -62,272 +93,313 @@ const getAuthToken = () => {
 
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
   const resolvedParams = use(params);
-  const orderId = resolvedParams.orderId;
+  const targetOrderId = resolvedParams.id || resolvedParams.orderId || "";
   const router = useRouter();
   const { user } = useAuth();
 
-  const [order, setOrder] = useState<OrderConfirmation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [supportModalOpen, setSupportModalOpen] = useState(false);
-  const [cancelModalOpen, setCancelModalOpen] = useState(false);
-
-  // Address state: null when user has never configured a saved address
+  const [order, setOrder] = useState<FullOrderConfirmation | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isUnpaidStripe, setIsUnpaidStripe] = useState<boolean>(false);
+  const [supportModalOpen, setSupportModalOpen] = useState<boolean>(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState<boolean>(false);
   const [addressData, setAddressData] = useState<UserAddressData | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const confirmAttemptedRef = useRef(false);
 
-    async function fetchUserRealAddress() {
-      try {
-        const token = getAuthToken();
-        const headers = {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        };
+  // 1. Fetch Customer Address Profile
+  const fetchUserAddress = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
 
-        let res = await fetch(`${API_BASE_URL}/api/v1/users/addresses`, {
+      let res = await fetch(`${API_BASE_URL}/api/v1/users/addresses`, {
+        headers,
+        credentials: "include",
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        res = await fetch(`${API_BASE_URL}/api/v1/addresses`, {
           headers,
           credentials: "include",
         }).catch(() => null);
-
-        if (!res || !res.ok) {
-          res = await fetch(`${API_BASE_URL}/api/v1/addresses`, {
-            headers,
-            credentials: "include",
-          }).catch(() => null);
-        }
-
-        if (res && res.ok) {
-          const json = await res.json();
-          const list: UserAddressData[] = json.data || json.addresses || [];
-          if (Array.isArray(list) && list.length > 0) {
-            const def = list.find((a) => a.isDefault) || list[0];
-            if (isMounted) {
-              setAddressData({
-                ...def,
-                label: def.label || "Chattogram, Bangladesh",
-                recipientName: def.recipientName || user?.name || "FOURKAN BIN ILIAS",
-                contactNumber: def.contactNumber || user?.phone || "+880 1680224284",
-                category: def.category || "home",
-                apartment: def.apartment || "Shofi Villa",
-                building: def.building || "House 721, Word 24",
-                road: def.road || "Rongipara",
-                city: def.city || "Chattogram",
-                postalCode: def.postalCode || "4126",
-                deliveryInstructions:
-                  def.deliveryInstructions || "Leave with reception security or call intercom.",
-                addressLine:
-                  def.addressLine ||
-                  `${def.apartment || ""}, ${def.building || ""}, ${def.road || ""}, ${def.city || ""}`.replace(/^, |, $/g, ""),
-              });
-              return;
-            }
-          }
-        }
-
-        // Check fallback local profile
-        if (typeof window !== "undefined") {
-          const localProfile = localStorage.getItem("dinedesk_customer_profile");
-          if (localProfile) {
-            const parsed = JSON.parse(localProfile);
-            if (parsed.deliveryAddress) {
-              setAddressData({
-                addressLine: parsed.deliveryAddress,
-                apartment: "Customer Address",
-                road: "Local Route",
-                city: "Local",
-                recipientName: user?.name || "FOURKAN",
-                contactNumber: user?.phone || "+880 1680224284",
-              });
-              return;
-            }
-          }
-        }
-
-        // If no addresses found anywhere, set to null
-        if (isMounted) {
-          setAddressData(null);
-        }
-      } catch (err) {
-        console.error("Address fetch error:", err);
-        if (isMounted) setAddressData(null);
       }
-    }
 
-    async function loadOrderData() {
-      try {
-        await fetchUserRealAddress();
-
-        const mockFound = getMockOrder(orderId);
-        if (mockFound) {
-          if (isMounted) {
-            setOrder({
-              ...mockFound,
-              contact: {
-                ...mockFound.contact,
-                fullName: user?.name || mockFound.contact?.fullName || "FOURKAN",
-              },
-            });
-            setLoading(false);
-          }
+      if (res && res.ok) {
+        const json = await res.json();
+        const list: UserAddressData[] = json.data || json.addresses || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const def = list.find((a) => a.isDefault) || list[0];
+          setAddressData({
+            ...def,
+            label: def.label || `${def.city || "Chattogram"}, Bangladesh`,
+            recipientName: def.recipientName || user?.name || "Customer",
+            contactNumber: def.contactNumber || user?.phone || "+880 1700000000",
+            category: def.category || "home",
+            apartment: def.apartment || "Flat",
+            building: def.building || "Building",
+            road: def.road || "Street",
+            city: def.city || "Chattogram",
+            postalCode: def.postalCode || "4000",
+            deliveryInstructions: def.deliveryInstructions || "Leave at reception or call intercom.",
+            addressLine:
+              def.addressLine ||
+              `${def.apartment || ""}, ${def.building || ""}, ${def.road || ""}, ${def.city || ""}`.replace(/^, |, $/g, ""),
+          });
           return;
         }
+      }
 
-        const token = getAuthToken();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        };
+      if (typeof window !== "undefined") {
+        const localProfile = localStorage.getItem("dinedesk_customer_profile");
+        if (localProfile) {
+          const parsed = JSON.parse(localProfile);
+          if (parsed.deliveryAddress) {
+            setAddressData({
+              addressLine: parsed.deliveryAddress,
+              apartment: "Registered Location",
+              road: "Local Route",
+              city: "Local",
+              recipientName: user?.name || "Customer",
+              contactNumber: user?.phone || "+880 1700000000",
+              deliveryInstructions: "Leave with reception security or call intercom.",
+            });
+            return;
+          }
+        }
+      }
 
-        let dbOrder: any = null;
+      setAddressData(null);
+    } catch (err) {
+      console.error("Address fetch error:", err);
+      setAddressData(null);
+    }
+  }, [user]);
 
-        const singleRes = await fetch(`${API_BASE_URL}/api/v1/orders/${orderId}`, {
+  // 2. Fetch Order Data and verify payment state
+  const loadOrderData = useCallback(async () => {
+    try {
+      if (!targetOrderId) return;
+
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      if (typeof window !== "undefined" && !confirmAttemptedRef.current) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get("session_id");
+        if (sessionId) {
+          confirmAttemptedRef.current = true;
+          await fetch(`${API_BASE_URL}/api/v1/orders/confirm-payment`, {
+            method: "POST",
+            headers,
+            credentials: "include",
+            body: JSON.stringify({ orderId: targetOrderId, sessionId }),
+          }).catch(() => null);
+        }
+      }
+
+      let dbOrder: any = null;
+
+      const singleRes = await fetch(`${API_BASE_URL}/api/v1/orders/${targetOrderId}`, {
+        headers,
+        credentials: "include",
+      }).catch(() => null);
+
+      if (singleRes && singleRes.ok) {
+        const resData = await singleRes.json();
+        dbOrder = resData.data || resData.order || resData;
+      }
+
+      if (!dbOrder) {
+        const listRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
           headers,
           credentials: "include",
         }).catch(() => null);
 
-        if (singleRes && singleRes.ok) {
-          const resData = await singleRes.json();
-          dbOrder = resData.data || resData.order || resData;
+        if (listRes && listRes.ok) {
+          const listData = await listRes.json();
+          const rawList = listData.data || listData.orders || [];
+          dbOrder = rawList.find(
+            (o: any) => o.id === targetOrderId || o.orderId === targetOrderId || o._id === targetOrderId
+          );
+        }
+      }
+
+      if (!dbOrder) {
+        const mockFound = getMockOrder(targetOrderId);
+        if (mockFound) {
+          const mockSubtotal = Number(mockFound.subtotal ?? mockFound.total ?? 0);
+          const mockDelivery = Number(mockFound.deliveryFee ?? 0);
+          const mockDiscount = Number(mockFound.discount ?? 0);
+          const mockTotal = Number(mockFound.total ?? mockSubtotal + mockDelivery - mockDiscount);
+
+          setOrder({
+            ...mockFound,
+            subtotal: mockSubtotal,
+            deliveryFee: mockDelivery,
+            discount: mockDiscount,
+            packagingFee: 2.0,
+            serviceFee: 2.0,
+            tax: 0,
+            total: mockTotal,
+            pricing: {
+              subtotal: mockSubtotal,
+              deliveryFee: mockDelivery,
+              serviceFee: 2.0,
+              tax: 0,
+              discount: mockDiscount,
+              total: mockTotal,
+              pointsEarned: 20,
+            },
+            contact: {
+              ...mockFound.contact,
+              fullName: user?.name || mockFound.contact?.fullName || "Guest Customer",
+            },
+          } as FullOrderConfirmation);
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (dbOrder) {
+        const isStripe = String(dbOrder.paymentMethod || "").toUpperCase() === "STRIPE";
+        const isPaid = String(dbOrder.paymentStatus || "").toUpperCase() === "PAID";
+
+        if (isStripe && !isPaid) {
+          setIsUnpaidStripe(true);
+        } else {
+          setIsUnpaidStripe(false);
         }
 
-        if (!dbOrder) {
-          const listRes = await fetch(`${API_BASE_URL}/api/v1/orders/my`, {
-            headers,
-            credentials: "include",
-          }).catch(() => null);
-
-          if (listRes && listRes.ok) {
-            const listData = await listRes.json();
-            const rawList = listData.data || listData.orders || [];
-            dbOrder = rawList.find(
-              (o: any) => o.id === orderId || o.orderId === orderId || o._id === orderId
-            );
-          }
+        const rawStatus = String(dbOrder.status || "PENDING").toLowerCase();
+        let normalizedStatus: OrderStatus = "confirmed";
+        if (rawStatus === "delivered" || rawStatus === "completed") {
+          normalizedStatus = "delivered";
+        } else if (rawStatus === "out_for_delivery") {
+          normalizedStatus = "out_for_delivery";
+        } else if (rawStatus === "preparing") {
+          normalizedStatus = "preparing";
+        } else if (rawStatus === "cancelled" || rawStatus === "rejected") {
+          normalizedStatus = "cancelled";
         }
 
-        if (dbOrder && isMounted) {
-          const rawStatus = String(dbOrder.status || "PENDING").toLowerCase();
-          let normalizedStatus: OrderStatus = "confirmed";
-          if (rawStatus === "delivered" || rawStatus === "completed") {
-            normalizedStatus = "delivered";
-          } else if (rawStatus === "out_for_delivery") {
-            normalizedStatus = "out_for_delivery";
-          } else if (rawStatus === "preparing") {
-            normalizedStatus = "preparing";
-          } else if (rawStatus === "cancelled" || rawStatus === "rejected") {
-            normalizedStatus = "cancelled";
-          }
+        const rawPaymentStatus = String(dbOrder.paymentStatus || "UNPAID").toLowerCase();
+        const normalizedPayment: PaymentStatus = rawPaymentStatus === "paid" ? "paid" : "pending";
 
-          const rawPaymentStatus = String(dbOrder.paymentStatus || "UNPAID").toLowerCase();
-          const normalizedPayment: PaymentStatus =
-            rawPaymentStatus === "paid" ? "paid" : "pending";
+        const subtotalNum = Number(dbOrder.subtotal || dbOrder.total || 0);
+        const deliveryFeeNum = Number(dbOrder.deliveryFee || 0);
+        const discountNum = Number(dbOrder.discount || 0);
+        const totalNum = Number(dbOrder.total || subtotalNum + deliveryFeeNum - discountNum);
 
-          const subtotalNum = Number(dbOrder.subtotal || dbOrder.total || 0);
-          const deliveryFeeNum = Number(dbOrder.deliveryFee || 0);
-          const discountNum = Number(dbOrder.discount || 0);
-          const totalNum = Number(dbOrder.total || subtotalNum + deliveryFeeNum - discountNum);
+        const mappedItems =
+          Array.isArray(dbOrder.items) && dbOrder.items.length > 0
+            ? dbOrder.items.map((item: any, idx: number) => ({
+              id: item.id || `item-${idx}`,
+              name: item.name || item.menuItem?.name || item.menuName || "Gourmet Dish",
+              quantity: Number(item.quantity || 1),
+              price: Number(item.price || 0),
+              customizations: item.customizations || [],
+            }))
+            : [
+              {
+                id: "item-default",
+                name: "DineDesk Specialty Selection",
+                quantity: 1,
+                price: totalNum,
+              },
+            ];
 
-          const mappedItems =
-            Array.isArray(dbOrder.items) && dbOrder.items.length > 0
-              ? dbOrder.items.map((item: any, idx: number) => ({
-                id: item.id || `item-${idx}`,
-                name: item.name || item.menuItem?.name || item.menuName || "Gourmet Dish",
-                quantity: Number(item.quantity || 1),
-                price: Number(item.price || 0),
-                customizations: item.customizations || [],
-              }))
-              : [
-                {
-                  id: "item-default",
-                  name: "DineDesk Specialty Selection",
-                  quantity: 1,
-                  price: totalNum,
-                },
-              ];
+        const rawOrderAddress = String(dbOrder.deliveryAddress || "").trim();
+        const isPlaceholderAddress =
+          !rawOrderAddress ||
+          rawOrderAddress.toLowerCase() === "standard address" ||
+          rawOrderAddress.toLowerCase() === "standard delivery address" ||
+          rawOrderAddress.toLowerCase() === "address on file";
 
-          const formattedConfirmation = {
-            orderId: dbOrder.id || orderId,
-            restaurantName:
-              dbOrder.restaurant?.name ||
-              dbOrder.restaurantName ||
-              "DineDesk Central Kitchen",
-            restaurantAddress:
-              dbOrder.restaurant?.address ||
-              dbOrder.restaurantAddress ||
-              "Central Kitchen, Agrabad, Chattogram",
-            restaurantPhone:
-              dbOrder.restaurant?.phone ||
-              dbOrder.restaurantPhone ||
-              "+880 1712-490211",
-            createdAt: dbOrder.createdAt || new Date().toISOString(),
-            status: normalizedStatus,
-            paymentStatus: normalizedPayment,
-            paymentMethod: dbOrder.paymentMethod || "STRIPE",
-            fulfillmentMode: (dbOrder.orderType?.toLowerCase() === "pickup"
-              ? "pickup"
-              : "delivery") as any,
+        const resolvedAddress = !isPlaceholderAddress
+          ? rawOrderAddress
+          : (addressData?.addressLine || "");
 
+        const formattedConfirmation = {
+          orderId: dbOrder.id || targetOrderId,
+          restaurantName:
+            dbOrder.restaurant?.name || dbOrder.restaurantName || "DineDesk Partner Kitchen",
+          restaurantAddress:
+            dbOrder.restaurant?.address || dbOrder.restaurantAddress || "Central Culinary Outlet",
+          restaurantPhone:
+            dbOrder.restaurant?.phone || dbOrder.restaurantPhone || "+880 1712-490211",
+          createdAt: dbOrder.createdAt || new Date().toISOString(),
+          status: normalizedStatus,
+          paymentStatus: normalizedPayment,
+          paymentMethod: dbOrder.paymentMethod || "STRIPE",
+          fulfillmentMode: (dbOrder.orderType?.toLowerCase() === "pickup" ? "pickup" : "delivery") as any,
+
+          subtotal: subtotalNum,
+          deliveryFee: deliveryFeeNum,
+          discount: discountNum,
+          packagingFee: 2.0,
+          serviceFee: 2.0,
+          tax: 0,
+          total: totalNum,
+          pointsEarned: dbOrder.pointsEarned || 20,
+
+          pricing: {
             subtotal: subtotalNum,
-            discount: discountNum,
             deliveryFee: deliveryFeeNum,
             serviceFee: 2.0,
             tax: 0,
+            discount: discountNum,
             total: totalNum,
             pointsEarned: dbOrder.pointsEarned || 20,
+          },
 
-            pricing: {
-              subtotal: subtotalNum,
-              deliveryFee: deliveryFeeNum,
-              serviceFee: 2.0,
-              tax: 0,
-              discount: discountNum,
-              total: totalNum,
-              pointsEarned: dbOrder.pointsEarned || 20,
-            },
+          contact: {
+            fullName: user?.name || dbOrder.user?.name || "Customer",
+            email: user?.email || dbOrder.user?.email || "customer@dinedesk.com",
+            phone: user?.phone || dbOrder.user?.phone || "+880 1700000000",
+          },
 
-            contact: {
-              fullName: user?.name || dbOrder.user?.name || "FOURKAN",
-              email: user?.email || dbOrder.user?.email || "pinonfurkan1@gmail.com",
-              phone: user?.phone || dbOrder.user?.phone || "+880 1680224284",
-            },
+          delivery: {
+            address: resolvedAddress,
+            lat: Number(dbOrder.deliveryLat) || 22.3384,
+            lng: Number(dbOrder.deliveryLng) || 91.8317,
+            instructions: addressData?.deliveryInstructions || "Leave at reception security or call intercom.",
+          },
+          customer: {
+            name: user?.name || dbOrder.user?.name || "Customer",
+            email: user?.email || dbOrder.user?.email || "customer@dinedesk.com",
+            phone: user?.phone || dbOrder.user?.phone || "+880 1700000000",
+          },
 
-            deliveryAddress: addressData?.addressLine || dbOrder.deliveryAddress || "Awaiting Customer Address",
-            delivery: {
-              address: addressData?.addressLine || dbOrder.deliveryAddress || "Awaiting Customer Address",
-              lat: 22.3384,
-              lng: 91.8317,
-              instructions: addressData?.deliveryInstructions || "Leave with reception security or call intercom.",
-            },
-            customer: {
-              name: user?.name || "FOURKAN",
-              email: user?.email || "pinonfurkan1@gmail.com",
-              phone: user?.phone || "+880 1680224284",
-            },
+          estimatedDeliveryTime: dbOrder.estimatedDeliveryAt || "25-35 mins",
+          items: mappedItems,
+          courier: {
+            ...MOCK_COURIER,
+            name: "DineDesk Priority Fleet",
+          },
+        };
 
-            estimatedDeliveryTime: dbOrder.estimatedDeliveryAt || "25-35 mins",
-            items: mappedItems,
-            courier: {
-              ...MOCK_COURIER,
-              name: "DineDesk Priority Fleet",
-            },
-          };
-
-          setOrder(formattedConfirmation as unknown as OrderConfirmation);
-        }
-      } catch (err) {
-        console.error("Failed to load order tracker data:", err);
-      } finally {
-        if (isMounted) setLoading(false);
+        setOrder(formattedConfirmation as unknown as FullOrderConfirmation);
       }
+    } catch (err) {
+      console.error("Failed to load order tracker data:", err);
+    } finally {
+      setLoading(false);
     }
+  }, [targetOrderId, user, addressData]);
 
+  useEffect(() => {
+    fetchUserAddress();
     loadOrderData();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [orderId, user]);
+    const interval = setInterval(loadOrderData, 8000);
+    return () => clearInterval(interval);
+  }, [fetchUserAddress, loadOrderData]);
 
   const handleConfirmCancel = async () => {
     if (!order) return;
@@ -362,8 +434,48 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             progress_activity
           </span>
           <p className="font-body-md text-[#1b3b2b]/70 font-medium">
-            Fetching order tracking...
+            Connecting to live kitchen telemetry...
           </p>
+        </div>
+      </main>
+    );
+  }
+
+  // Intercept state: Unpaid Stripe checkout draft
+  if (isUnpaidStripe && order) {
+    return (
+      <main className="w-full pt-28 pb-20 bg-[#FBFBFA] min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-[#1b3b2b]/10 shadow-lg text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+            <span className="material-symbols-outlined text-3xl">credit_card_clock</span>
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-xl font-bold text-[#1b3b2b]">Payment Awaiting Completion</h1>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Order <strong className="text-[#1b3b2b]">#{order.orderId.slice(-6).toUpperCase()}</strong> has been initiated, but payment was not confirmed by Stripe. Kitchen preparation begins immediately upon card authorization.
+            </p>
+          </div>
+
+          <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100 flex items-center justify-between text-xs font-bold text-[#1b3b2b]">
+            <span>Amount Due</span>
+            <span className="text-base">${Number(order.pricing?.total ?? order.total ?? 0).toFixed(2)}</span>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <Link
+              href="/checkout"
+              className="w-full py-3 bg-[#1b3b2b] text-white rounded-xl text-xs font-bold block hover:bg-[#1b3b2b]/90 transition shadow-sm"
+            >
+              Complete Checkout
+            </Link>
+            <Link
+              href="/dashboard/customer"
+              className="w-full py-3 bg-neutral-100 text-[#1b3b2b] rounded-xl text-xs font-bold block hover:bg-neutral-200 transition"
+            >
+              Return to Dashboard
+            </Link>
+          </div>
         </div>
       </main>
     );
@@ -379,8 +491,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
             </div>
             <h1 className="text-2xl font-bold text-[#1b3b2b]">Order Not Found</h1>
             <p className="text-xs text-[#1b3b2b]/70 mt-2 max-w-sm leading-relaxed">
-              We couldn&apos;t find an order with reference{" "}
-              <strong className="text-[#1b3b2b] font-mono">#{orderId}</strong>.
+              We couldn&apos;t find an active order with reference{" "}
+              <strong className="text-[#1b3b2b] font-mono">#{targetOrderId}</strong>.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
               <Link
@@ -405,6 +517,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const isDelivery = order.fulfillmentMode === "delivery";
   const courierData = order.courier || MOCK_COURIER;
 
+  // Verification: Valid destination exists only if user has a real saved address or specific address string
+  const hasValidAddress = Boolean(
+    order.delivery?.address &&
+    order.delivery.address.trim() !== "" &&
+    order.delivery.address.toLowerCase() !== "standard address" &&
+    order.delivery.address.toLowerCase() !== "standard delivery address" &&
+    order.delivery.address.toLowerCase() !== "address on file"
+  );
+
   return (
     <main className="w-full pt-24 pb-16 bg-[#FBFBFA] min-h-screen antialiased">
       <div className="w-full max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-6 sm:gap-8">
@@ -414,17 +535,17 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           <div className="flex items-center gap-2.5">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full text-[#1b3b2b] text-[11px] font-bold uppercase tracking-wider border border-[#1b3b2b]/10 shadow-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Live Order Tracking
+              Live Kitchen Dispatch Tracking
             </span>
             <span className="hidden sm:inline text-xs text-neutral-500 font-medium">
-              Real-time dispatch updates
+              Real-time telemetry from kitchen station
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             <span className="text-xs text-neutral-500">Order Ref:</span>
             <span className="text-xs font-mono font-bold text-[#1b3b2b] px-2.5 py-1 bg-white rounded-lg border border-neutral-200 shadow-2xs">
-              #{order.orderId}
+              #{order.orderId.slice(-6).toUpperCase()}
             </span>
             {canCancel && (
               <button
@@ -440,8 +561,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
         {/* Dynamic Hero & Stepper */}
         <div className="flex flex-col gap-4">
-          <OrderConfirmationHero order={order} />
-          <OrderStatusTracker order={order} />
+          <OrderConfirmationHero order={order as unknown as OrderConfirmation} />
+          <OrderStatusTracker order={order as unknown as OrderConfirmation} />
         </div>
 
         {/* 2-Column Responsive Layout */}
@@ -450,164 +571,171 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           {/* LEFT: Map & Logistics Section */}
           <div className="lg:col-span-7 flex flex-col gap-4 sm:gap-5">
             <div id="live-transit-map-wrapper">
-              <DeliveryTrackingCard order={order} addressData={addressData ?? undefined} />
+              <DeliveryTrackingCard order={order as unknown as OrderConfirmation} addressData={addressData ?? undefined} />
             </div>
 
-            {/* CONDITIONAL ADDRESS PRESENTATION: ALERT IF NULL, 3 CARDS IF SET */}
-            {!addressData ? (
-              <div className="relative overflow-hidden bg-gradient-to-br from-red-50/90 via-white to-red-50/40 rounded-3xl p-6 sm:p-7 border-2 border-red-300 shadow-sm transition-all animate-in fade-in zoom-in-95 duration-300">
-                {/* Background ambient decorative warning glow */}
-                <div className="absolute top-0 right-0 w-48 h-48 bg-red-200/30 rounded-full blur-3xl pointer-events-none" />
+            {/* ADDRESS SECTION: Show Alert Card (Image 5) OR 3-Card Stack (Image 3) */}
+            {!hasValidAddress ? (
+              /* PREMIUM ANIMATED RED ALERT CARD */
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="relative overflow-hidden bg-gradient-to-br from-white via-red-50/20 to-rose-50/40 rounded-[28px] p-6 sm:p-7 border border-red-200/80 shadow-[0_12px_40px_rgba(235,50,35,0.08)] backdrop-blur-md"
+              >
+                {/* Ambient Soft Glow Background Element */}
+                <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-red-400/10 blur-3xl pointer-events-none" />
 
-                <div className="flex flex-col sm:flex-row items-start gap-5 relative z-10">
-                  {/* Animated Alert Beacon Icon */}
+                <div className="flex items-start gap-4 sm:gap-5 relative z-10">
+                  {/* Glowing Icon Beacon with Double Ripple Pulse */}
                   <div className="relative shrink-0 mt-0.5">
-                    <span className="absolute -inset-1 rounded-2xl bg-red-400 opacity-30 animate-ping" />
-                    <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-red-700 text-white flex items-center justify-center shadow-md">
-                      <span className="material-symbols-outlined text-2xl animate-pulse">
-                        wrong_location
+                    <span className="absolute -inset-2 rounded-2xl bg-red-500/15 animate-ping opacity-75" />
+                    <span className="absolute -inset-1 rounded-2xl bg-red-400/25 blur-sm" />
+                    <motion.div
+                      animate={{ y: [0, -3, 0] }}
+                      transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                      className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#c5221f] via-[#eb3223] to-[#ff5247] text-white flex items-center justify-center shadow-lg shadow-red-500/30 border border-white/25"
+                    >
+                      <span className="material-symbols-outlined text-2xl font-light">
+                        home_pin
                       </span>
-                    </div>
+                    </motion.div>
                   </div>
 
-                  <div className="flex flex-col flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-100 text-red-700 border border-red-200">
-                        Address Required
+                  {/* Body Details */}
+                  <div className="flex-1 space-y-2.5">
+                    {/* Header Live Status Badges */}
+                    <div className="flex items-center gap-2 flex-wrap text-[11px] font-black uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5 text-[#eb3223]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#eb3223] animate-pulse" />
+                        ADDRESS REQUIRED
                       </span>
-                      <span className="text-xs font-bold text-red-600 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                        Pending Manager Review
-                      </span>
+                      <span className="text-neutral-300">•</span>
+                      <span className="text-neutral-500 font-bold">Pending Manager Review</span>
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-extrabold text-red-700 tracking-tight mt-1.5">
-                      Please Set your address first.
+                    {/* Headline */}
+                    <h3 className="text-lg sm:text-xl font-bold text-[#eb3223] tracking-tight">
+                      PLEASE SET YOUR ADDRESS FIRST.
                     </h3>
 
-                    <p className="text-xs sm:text-[13px] text-red-900/90 font-medium leading-relaxed mt-1">
-                      If you still have not set your exact address, your order cannot be confirmed by the restaurant manager. Your order is currently in <span className="font-bold underline decoration-red-400 decoration-2">pending mode</span>. To confirm dispatch, please set your address now.
+                    {/* Description Paragraph */}
+                    <p className="text-xs text-neutral-600 font-medium leading-relaxed">
+                      If you still have not set your exact address, your order cannot be confirmed by the restaurant manager. Your order is currently in <strong className="text-neutral-800 underline decoration-red-300 decoration-2 underline-offset-2">pending mode</strong>. To confirm dispatch, please set your address now.
                     </p>
 
-                    {/* Privacy & Security Guarantee Note */}
-                    <div className="mt-3.5 p-3 rounded-2xl bg-white/80 backdrop-blur-xs border border-red-200/80 flex items-center gap-2.5 shadow-2xs">
-                      <span className="material-symbols-outlined text-base text-emerald-700 shrink-0">
-                        verified_user
+                    {/* Premium Green Trust Status Bar (Exact to Image 5) */}
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#e6f4ea]/95 text-[#137333] border border-[#ceead6] text-[11px] font-semibold leading-snug shadow-2xs">
+                      <span
+                        className="material-symbols-outlined text-base text-[#137333] shrink-0"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        check_circle
                       </span>
-                      <p className="text-[11px] text-neutral-600 font-medium leading-tight">
-                        We make sure your delivery details remain <span className="font-bold text-neutral-900">fully protected and securely encrypted</span> for our valuable customers.
-                      </p>
+                      <span>
+                        We make sure your delivery details remain fully protected and securely encrypted for our valuable customers.
+                      </span>
                     </div>
 
-                    {/* Action Button */}
-                    <div className="mt-4 pt-1">
-                      <Link
-                        href="/dashboard/customer/addresses"
-                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white text-xs font-bold transition-all shadow-sm shadow-red-200 group"
-                      >
-                        <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">
-                          add_location_alt
-                        </span>
-                        Set Delivery Address Now
-                        <span className="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">
-                          arrow_forward
-                        </span>
-                      </Link>
+                    {/* Premium Magnetic Action Button */}
+                    <div className="pt-2">
+                      <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-block">
+                        <Link
+                          href="/dashboard/customer/addresses"
+                          className="group relative inline-flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#eb3223] to-[#d92a1c] hover:from-[#d92a1c] hover:to-[#c5221f] text-white text-xs font-bold transition-all shadow-md shadow-red-500/25 hover:shadow-lg hover:shadow-red-500/35 overflow-hidden cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-base transition-transform group-hover:rotate-12">
+                            add_location_alt
+                          </span>
+                          <span>Set Delivery Address Now</span>
+                          <span className="material-symbols-outlined text-base transition-transform group-hover:translate-x-1">
+                            arrow_forward
+                          </span>
+                        </Link>
+                      </motion.div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ) : (
-              <>
-                {/* CARD 1: PRIMARY DESTINATION */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#1b3b2b]/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              /* 3-Card Stack matching Image 3 */
+              <div className="flex flex-col gap-3">
+                {/* 1. Primary Destination Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                    <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b] text-white flex items-center justify-center shrink-0 shadow-xs">
                       <span className="material-symbols-outlined text-xl">home</span>
                     </div>
-                    <div className="flex flex-col">
+                    <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-[#C05621]">
-                          Primary Destination ({addressData.category || "Home"})
+                          Primary Destination ({addressData?.category?.toUpperCase() || "HOME"})
                         </span>
-                        {addressData.isDefault && (
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        {addressData?.isDefault && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                             Default
                           </span>
                         )}
                       </div>
-                      <h4 className="text-base font-extrabold text-[#1b3b2b] mt-0.5">
-                        {addressData.apartment}, {addressData.road}
+                      <h4 className="text-sm font-bold text-[#1b3b2b] mt-0.5">
+                        {addressData?.label || order.delivery?.address?.split(",")[0] || "Default Location"}
                       </h4>
-                      <p className="text-xs text-neutral-500 font-medium">
-                        {addressData.label || `${addressData.city}, Bangladesh`}
+                      <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                        {order.delivery?.address || addressData?.addressLine}
                       </p>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold text-neutral-700 bg-[#FBFBFA] px-3 py-1 rounded-xl border border-neutral-200/70 self-start sm:self-auto shrink-0">
+                  <span className="text-[10px] font-bold text-neutral-700 bg-neutral-100 px-2.5 py-1 rounded-lg border border-neutral-200 shrink-0">
                     Word 24 Delivery Zone
                   </span>
                 </div>
 
-                {/* CARD 2: EXACT DISPATCH LOCATION */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#1b3b2b]/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-[#C05621]/10 text-[#C05621] flex items-center justify-center shrink-0 border border-[#C05621]/20">
+                {/* 2. Exact Location & Street Address Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-amber-50 text-[#C05621] border border-amber-200 flex items-center justify-center shrink-0">
                       <span className="material-symbols-outlined text-xl">pin_drop</span>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
                         Exact Location &amp; Street Address
                       </span>
-                      <h4 className="text-sm font-bold text-[#1b3b2b] mt-0.5 leading-snug">
-                        {addressData.addressLine}
+                      <h4 className="text-xs font-bold text-[#1b3b2b] mt-0.5">
+                        {addressData?.building ? `${addressData.building}, ` : ""}
+                        {addressData?.road || addressData?.city || order.delivery?.address}
                       </h4>
-                      <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-neutral-500 font-medium">
-                        <span className="bg-[#FBFBFA] px-2.5 py-0.5 rounded-lg border border-neutral-200/60 font-semibold text-neutral-700">
-                          Building: {addressData.building}
-                        </span>
-                        <span className="bg-[#FBFBFA] px-2.5 py-0.5 rounded-lg border border-neutral-200/60 font-mono font-semibold text-neutral-700">
-                          Postal Code: {addressData.postalCode}
-                        </span>
-                      </div>
+                      <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
+                        Building: <strong className="text-neutral-700">{addressData?.building || "Standard Residence"}</strong> • Postal Code: <strong className="text-neutral-700">{addressData?.postalCode || "4000"}</strong>
+                      </span>
                     </div>
                   </div>
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 self-start sm:self-auto shrink-0">
+                  <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shrink-0">
                     GPS Verified
                   </span>
                 </div>
 
-                {/* CARD 3: RECIPIENT & DELIVERY INSTRUCTIONS */}
-                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#1b3b2b]/10 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3.5 w-full">
-                    <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b]/5 text-[#1b3b2b] flex items-center justify-center shrink-0 border border-[#1b3b2b]/10">
-                      <span className="material-symbols-outlined text-xl">person_pin</span>
+                {/* 3. Recipient & Delivery Note Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#1b3b2b]/10 shadow-xs space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-neutral-100 text-[#1b3b2b] flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-lg">badge</span>
                     </div>
-                    <div className="flex flex-col w-full">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
                         Recipient &amp; Delivery Note
                       </span>
-                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <h4 className="text-sm font-bold text-[#1b3b2b]">
-                          {addressData.recipientName}
-                        </h4>
-                        <span className="text-xs text-neutral-400">•</span>
-                        <span className="text-xs font-mono font-semibold text-[#1b3b2b]">
-                          {addressData.contactNumber}
-                        </span>
-                      </div>
-                      <p className="text-xs text-neutral-600 font-medium mt-2 bg-[#FBFBFA] p-3 rounded-2xl border border-neutral-100 flex items-start gap-1.5">
-                        <span className="material-symbols-outlined text-xs text-[#C05621] mt-0.5 shrink-0">
-                          sticky_note_2
-                        </span>
-                        <span>
-                          Note: {addressData.deliveryInstructions || "Leave with reception security or call intercom."}
-                        </span>
-                      </p>
+                      <h4 className="text-xs font-bold text-[#1b3b2b]">
+                        {addressData?.recipientName || order.contact.fullName} • {addressData?.contactNumber || order.contact.phone}
+                      </h4>
                     </div>
                   </div>
+
+                  <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-100 flex items-start gap-2 text-xs text-neutral-600 font-medium">
+                    <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0 mt-0.5">assignment</span>
+                    <span>Note: {addressData?.deliveryInstructions || order.delivery?.instructions || "Leave with reception security or call intercom."}</span>
+                  </div>
                 </div>
-              </>
+              </div>
             )}
 
             {isDelivery && order.status !== "cancelled" && (
@@ -631,10 +759,10 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                   Culinary Quality Standard
                 </span>
                 <h4 className="text-base font-bold text-[#1b3b2b]">
-                  Freshly Cooked &amp; Sealed
+                  Freshly Cooked &amp; Insulated
                 </h4>
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  {order.restaurantName} packs every dish inside temperature-controlled insulated packaging with tamper-proof seal tape.
+                  {order.restaurantName} packs every order in temperature-controlled packaging with sealed tamper-evident security tape.
                 </p>
               </div>
             </div>
@@ -653,7 +781,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                       {order.restaurantName}
                     </Link>
                   </h2>
-                  <span className="text-xs text-neutral-500">
+                  <span className="text-xs text-neutral-500 block mt-0.5">
                     {order.restaurantAddress} • {order.restaurantPhone}
                   </span>
                 </div>
@@ -662,8 +790,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                 </div>
               </div>
 
-              <OrderItemsSummary order={order} />
-              <OrderReceipt order={order} />
+              <OrderItemsSummary order={order as unknown as OrderConfirmation} />
+              <OrderReceipt order={order as unknown as OrderConfirmation} />
 
               {/* Earned Rewards Highlight Card */}
               <div className="bg-gradient-to-br from-[#1b3b2b]/5 to-[#C05621]/10 rounded-2xl p-4 border border-[#1b3b2b]/10 flex items-center justify-between gap-3">
@@ -673,15 +801,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                   </div>
                   <div>
                     <span className="text-xs font-bold text-[#1b3b2b] block">
-                      +20 Loyalty Points Earned
+                      +{order.pricing?.pointsEarned || order.pointsEarned || 20} Loyalty Points Credited
                     </span>
                     <span className="text-[11px] text-neutral-500 font-medium">
-                      Credited directly to your diner rewards tier
+                      Applied directly to your DineDesk member tier
                     </span>
                   </div>
                 </div>
-                <span className="text-xs font-black text-[#C05621] uppercase tracking-wider">
-                  Active
+                <span className="text-xs font-bold text-[#C05621] uppercase tracking-wider">
+                  Verified
                 </span>
               </div>
 
@@ -699,7 +827,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                   type="button"
                 >
                   <span className="material-symbols-outlined text-base">print</span>
-                  Print / Download PDF Receipt
+                  Print / Download Receipt
                 </button>
               </div>
 
