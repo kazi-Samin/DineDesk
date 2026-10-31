@@ -47,7 +47,48 @@ interface AnalyticsMetrics {
   estimatedOccupancy: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://dine-desk-backend.vercel.app"
+)
+  .replace(/\/api\/v1\/?$/, "")
+  .replace(/\/+$/, "") + "/api/v1";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+
+  const match = document.cookie.match(
+    /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
+  );
+  if (match && match[1]) return match[1].trim();
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  ).trim();
+};
+
+const getRequestHeaders = () => {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["x-session-token"] = token;
+    headers["better-auth-session-token"] = token;
+  }
+
+  return headers;
+};
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -89,27 +130,30 @@ export default function VendorIncomingOrdersPage() {
 
   const loadOrders = useCallback(async () => {
     try {
+      const headers = getRequestHeaders();
+
       const [analyticsRes, queueRes] = await Promise.all([
         fetch(`${API_BASE_URL}/orders/vendor/analytics`, {
           credentials: "include",
-          headers: { "Cache-Control": "no-cache" },
+          headers,
         }),
         fetch(`${API_BASE_URL}/orders/vendor/queue`, {
           credentials: "include",
-          headers: { "Cache-Control": "no-cache" },
+          headers,
         }),
       ]);
 
       if (analyticsRes.ok) {
         const json = await analyticsRes.json();
-        if (json.data?.metrics) {
-          setAnalyticsMetrics(json.data.metrics);
+        const data = json.data || json;
+        if (data?.metrics) {
+          setAnalyticsMetrics(data.metrics);
         }
       }
 
       if (queueRes.ok) {
         const json = await queueRes.json();
-        const data: OrderEntity[] = json.data || [];
+        const data: OrderEntity[] = json.data || json.orders || [];
         setOrders(data);
 
         if (data.length > 0) {
@@ -132,9 +176,11 @@ export default function VendorIncomingOrdersPage() {
   const handleUpdateStatus = async (orderId: string, nextStatus: string, label: string) => {
     try {
       setActionLoadingId(orderId);
+      const headers = getRequestHeaders();
+
       const res = await fetch(`${API_BASE_URL}/orders/vendor/${orderId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "include",
         body: JSON.stringify({ status: nextStatus }),
       });
@@ -191,7 +237,6 @@ export default function VendorIncomingOrdersPage() {
         return true;
       })
       .sort((a, b) => {
-        // When looking at "all", keep active kitchen orders (PENDING, PREPARING, ACCEPTED) above CANCELLED orders
         if (activeTab === "all") {
           const isACancelled = a.status === "CANCELLED" || a.status === "REJECTED";
           const isBCancelled = b.status === "CANCELLED" || b.status === "REJECTED";
