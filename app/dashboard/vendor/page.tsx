@@ -1,3 +1,4 @@
+// app/dashboard/vendor/page.tsx
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
@@ -57,7 +58,48 @@ interface TableHold {
   };
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://dine-desk-backend.vercel.app"
+)
+  .replace(/\/api\/v1\/?$/, "")
+  .replace(/\/+$/, "") + "/api/v1";
+
+const getAuthToken = () => {
+  if (typeof window === "undefined") return "";
+
+  const match = document.cookie.match(
+    /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
+  );
+  if (match && match[1]) return match[1].trim();
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("dinedesk_token") ||
+    localStorage.getItem("auth_token") ||
+    ""
+  ).trim();
+};
+
+const getRequestHeaders = () => {
+  const token = getAuthToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-cache",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    headers["x-session-token"] = token;
+    headers["better-auth-session-token"] = token;
+  }
+
+  return headers;
+};
 
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
@@ -93,39 +135,42 @@ export default function VendorExecutiveDashboardPage() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
+      const headers = getRequestHeaders();
+
       const [analyticsRes, ordersRes, holdsRes] = await Promise.all([
         fetch(`${API_BASE_URL}/orders/vendor/analytics`, {
           credentials: "include",
-          headers: { "Cache-Control": "no-cache" },
+          headers,
         }),
         fetch(`${API_BASE_URL}/orders/vendor/queue`, {
           credentials: "include",
-          headers: { "Cache-Control": "no-cache" },
+          headers,
         }),
         fetch(`${API_BASE_URL}/reservations/vendor/holds`, {
           credentials: "include",
-          headers: { "Cache-Control": "no-cache" },
+          headers,
         }),
       ]);
 
       if (analyticsRes.ok) {
         const json = await analyticsRes.json();
-        if (json.data?.metrics) {
-          setMetrics(json.data.metrics);
+        const data = json.data || json;
+        if (data?.metrics) {
+          setMetrics(data.metrics);
         }
-        if (json.data?.restaurantName) {
-          setRestaurantName(json.data.restaurantName);
+        if (data?.restaurantName) {
+          setRestaurantName(data.restaurantName);
         }
       }
 
       if (ordersRes.ok) {
         const json = await ordersRes.json();
-        setOrders(json.data || []);
+        setOrders(json.data || json.orders || []);
       }
 
       if (holdsRes.ok) {
         const json = await holdsRes.json();
-        setReservations(json.data || []);
+        setReservations(json.data || json.reservations || json.holds || []);
       }
 
       setLastRefreshed(new Date());
@@ -145,9 +190,11 @@ export default function VendorExecutiveDashboardPage() {
   const handleUpdateStatus = async (orderId: string, nextStatus: string) => {
     try {
       setActionLoadingId(orderId);
+      const headers = getRequestHeaders();
+
       const res = await fetch(`${API_BASE_URL}/orders/vendor/${orderId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "include",
         body: JSON.stringify({ status: nextStatus }),
       });
@@ -287,7 +334,7 @@ export default function VendorExecutiveDashboardPage() {
             </div>
             <div className="mt-3">
               <span className="text-3xl font-bold text-[#C05621] tracking-tight">
-                {loading ? "..." : metrics?.activePrepCount ?? activeOrders.length}
+                {loading ? "..." : (metrics?.activePrepCount ?? activeOrders.length)}
               </span>
             </div>
             <div className="flex items-center gap-1.5 mt-3">
@@ -583,7 +630,12 @@ export default function VendorExecutiveDashboardPage() {
                             </p>
 
                             <div className="flex items-center gap-2 text-[11px] text-neutral-500">
-                              <span>Guest: <strong className="text-neutral-700 font-bold">{ord.user?.name || "Direct Diner"}</strong></span>
+                              <span>
+                                Guest:{" "}
+                                <strong className="text-neutral-700 font-bold">
+                                  {ord.user?.name || "Direct Diner"}
+                                </strong>
+                              </span>
                               {ord.user?.phone && <span>({ord.user.phone})</span>}
                             </div>
                           </div>
