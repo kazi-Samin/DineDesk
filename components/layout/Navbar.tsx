@@ -110,8 +110,8 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`pointer-events-auto max-w-[1400px] mx-auto h-20 px-5 sm:px-8 flex items-center justify-between gap-4 transition-all duration-500 rounded-3xl border shadow-xl ${scrolled
-            ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
-            : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
+          ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
+          : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
           }`}
       >
         {/* Brand Logo Image & Desktop Navigation Links */}
@@ -261,7 +261,8 @@ export default function Navbar() {
                     <span>Open Dashboard</span>
                   </Link>
 
-                  <button
+                  <Link
+                    href="/sign-in"
                     type="button"
                     onClick={() => {
                       setMobileMenuOpen(false);
@@ -271,7 +272,7 @@ export default function Navbar() {
                   >
                     <span className="material-symbols-outlined text-sm">logout</span>
                     <span>Sign Out</span>
-                  </button>
+                  </Link>
                 </div>
               ) : (
                 <Link
