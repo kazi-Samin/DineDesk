@@ -14,7 +14,6 @@ import {
 import { OrderConfirmation, OrderStatus, PaymentStatus } from "@/types/order";
 import OrderConfirmationHero from "@/components/orders/OrderConfirmationHero";
 import OrderStatusTracker from "@/components/orders/OrderStatusTracker";
-import DeliveryTrackingCard from "@/components/orders/DeliveryTrackingCard";
 import CourierCard from "@/components/orders/CourierCard";
 import OrderItemsSummary from "@/components/orders/OrderItemsSummary";
 import OrderReceipt from "@/components/orders/OrderReceipt";
@@ -319,7 +318,8 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
           !rawOrderAddress ||
           rawOrderAddress.toLowerCase() === "standard address" ||
           rawOrderAddress.toLowerCase() === "standard delivery address" ||
-          rawOrderAddress.toLowerCase() === "address on file";
+          rawOrderAddress.toLowerCase() === "address on file" ||
+          rawOrderAddress.toLowerCase().includes("shofi villa");
 
         const resolvedAddress = !isPlaceholderAddress
           ? rawOrderAddress
@@ -328,9 +328,9 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
         const formattedConfirmation = {
           orderId: dbOrder.id || targetOrderId,
           restaurantName:
-            dbOrder.restaurant?.name || dbOrder.restaurantName || "DineDesk Partner Kitchen",
+            dbOrder.restaurant?.name || dbOrder.restaurantName || "DineDesk Flagship Central Kitchen",
           restaurantAddress:
-            dbOrder.restaurant?.address || dbOrder.restaurantAddress || "Central Culinary Outlet",
+            dbOrder.restaurant?.address || dbOrder.restaurantAddress || "Gulshan Avenue, Dhaka • +880 1712-490211",
           restaurantPhone:
             dbOrder.restaurant?.phone || dbOrder.restaurantPhone || "+880 1712-490211",
           createdAt: dbOrder.createdAt || new Date().toISOString(),
@@ -518,13 +518,19 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const courierData = order.courier || MOCK_COURIER;
 
   // Verification: Valid destination exists only if user has a real saved address or specific address string
+  const destinationAddress = (order.delivery?.address || addressData?.addressLine || "").trim();
   const hasValidAddress = Boolean(
-    order.delivery?.address &&
-    order.delivery.address.trim() !== "" &&
-    order.delivery.address.toLowerCase() !== "standard address" &&
-    order.delivery.address.toLowerCase() !== "standard delivery address" &&
-    order.delivery.address.toLowerCase() !== "address on file"
+    destinationAddress &&
+    destinationAddress.toLowerCase() !== "standard address" &&
+    destinationAddress.toLowerCase() !== "standard delivery address" &&
+    destinationAddress.toLowerCase() !== "address on file" &&
+    !destinationAddress.toLowerCase().includes("shofi villa")
   );
+
+  // Dynamic Google Map Query Resolution
+  const mapSearchQuery = hasValidAddress
+    ? encodeURIComponent(`${destinationAddress}, Chattogram, Bangladesh`)
+    : encodeURIComponent("Agrabad, Chattogram, Bangladesh");
 
   return (
     <main className="w-full pt-24 pb-16 bg-[#FBFBFA] min-h-screen antialiased">
@@ -570,8 +576,73 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
 
           {/* LEFT: Map & Logistics Section */}
           <div className="lg:col-span-7 flex flex-col gap-4 sm:gap-5">
-            <div id="live-transit-map-wrapper">
-              <DeliveryTrackingCard order={order as unknown as OrderConfirmation} addressData={addressData ?? undefined} />
+
+            {/* ULTRA-PREMIUM LIVE GOOGLE TRANSIT MAP (Replacing Gold Vintage Map) */}
+            <div id="live-transit-map-wrapper" className="w-full bg-white rounded-3xl p-5 border border-[#1b3b2b]/10 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-lg text-[#1b3b2b]">near_me</span>
+                  <h3 className="text-sm font-bold text-[#1b3b2b] tracking-tight">Live Transit Map</h3>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                  <span>Real GPS Telemetry</span>
+                </div>
+              </div>
+
+              {/* Responsive Google Maps Container with HUD Overlays */}
+              <div className="relative w-full h-[320px] sm:h-[360px] rounded-2xl overflow-hidden border border-neutral-200 shadow-inner bg-neutral-100">
+                <iframe
+                  title="Live Google Transit Map"
+                  width="100%"
+                  height="100%"
+                  loading="lazy"
+                  className="w-full h-full border-0 filter contrast-[1.02] brightness-[0.98]"
+                  src={`https://maps.google.com/maps?q=${mapSearchQuery}&t=&z=14&ie=UTF8&iwloc=&output=embed`}
+                />
+
+                {/* Top-Left: Origin Culinary Kitchen Badge */}
+                <div className="absolute top-3.5 left-3.5 z-10 max-w-[210px] bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-md border border-[#1b3b2b]/15 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#1b3b2b] text-white flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-sm">restaurant</span>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block leading-none">
+                      Kitchen Origin
+                    </span>
+                    <span className="text-xs font-bold text-[#1b3b2b] truncate block mt-0.5">
+                      {order.restaurantName || "DineDesk Flagship Central Kitchen"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Bottom-Right: Dynamic Real Destination Badge (Replaced Hardcoded Shofi Villa) */}
+                <div className="absolute bottom-3.5 right-3.5 z-10 max-w-[260px] bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-xl shadow-md border border-neutral-200/80 flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${hasValidAddress ? "bg-[#C05621] text-white" : "bg-amber-100 text-amber-800"
+                    }`}>
+                    <span className="material-symbols-outlined text-sm">
+                      {hasValidAddress ? "pin_drop" : "location_searching"}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest block leading-none">
+                      {hasValidAddress ? "Destination Point" : "Delivery Destination"}
+                    </span>
+                    <span className={`text-xs font-bold truncate block mt-0.5 ${hasValidAddress ? "text-[#1b3b2b]" : "text-amber-800 animate-pulse"
+                      }`}>
+                      {hasValidAddress
+                        ? destinationAddress
+                        : "Awaiting Address • Route Pending"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ambient Fleet Pulse Indicator */}
+                <div className="absolute bottom-3.5 left-3.5 z-10 bg-black/75 backdrop-blur-md text-white px-2.5 py-1 rounded-lg text-[10px] font-mono flex items-center gap-2 border border-white/10 shadow-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>Fleet 28 km/h • Electric</span>
+                </div>
+              </div>
             </div>
 
             {/* ADDRESS SECTION: Show Alert Card (Image 5) OR 3-Card Stack (Image 3) */}
@@ -678,15 +749,15 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                         )}
                       </div>
                       <h4 className="text-sm font-bold text-[#1b3b2b] mt-0.5">
-                        {addressData?.label || order.delivery?.address?.split(",")[0] || "Default Location"}
+                        {addressData?.label || destinationAddress.split(",")[0] || "Default Location"}
                       </h4>
                       <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                        {order.delivery?.address || addressData?.addressLine}
+                        {destinationAddress}
                       </p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold text-neutral-700 bg-neutral-100 px-2.5 py-1 rounded-lg border border-neutral-200 shrink-0">
-                    Word 24 Delivery Zone
+                    Active Delivery Zone
                   </span>
                 </div>
 
@@ -702,7 +773,7 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
                       </span>
                       <h4 className="text-xs font-bold text-[#1b3b2b] mt-0.5">
                         {addressData?.building ? `${addressData.building}, ` : ""}
-                        {addressData?.road || addressData?.city || order.delivery?.address}
+                        {addressData?.road || addressData?.city || destinationAddress}
                       </h4>
                       <span className="text-[11px] text-neutral-500 font-medium block mt-0.5">
                         Building: <strong className="text-neutral-700">{addressData?.building || "Standard Residence"}</strong> • Postal Code: <strong className="text-neutral-700">{addressData?.postalCode || "4000"}</strong>
