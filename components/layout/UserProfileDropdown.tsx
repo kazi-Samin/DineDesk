@@ -217,7 +217,8 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
 
                             {/* Sign Out Action Footer */}
                             <div className="p-2 border-t border-outline-variant/60 mt-1">
-                                <button
+                                <Link
+                                    href="/"
                                     type="button"
                                     onClick={() => {
                                         setIsOpen(false);
@@ -229,7 +230,7 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                                         <span className="material-symbols-outlined text-base">logout</span>
                                     </div>
                                     <span>Sign Out Securely</span>
-                                </button>
+                                </Link>
                             </div>
                         </motion.div>
                     </>
