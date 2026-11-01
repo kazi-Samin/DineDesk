@@ -30,6 +30,7 @@ interface LiveOrder {
   status: "PENDING" | "ACCEPTED" | "PREPARING" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "REJECTED";
   total: string | number;
   createdAt: string;
+  deliveryAddress?: string;
   user?: {
     id: string;
     name: string;
@@ -130,8 +131,8 @@ export default function VendorExecutiveDashboardPage() {
   const [orders, setOrders] = useState<LiveOrder[]>([]);
   const [reservations, setReservations] = useState<TableHold[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [inspectedOrder, setInspectedOrder] = useState<LiveOrder | null>(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -187,28 +188,6 @@ export default function VendorExecutiveDashboardPage() {
     return () => clearInterval(interval);
   }, [fetchDashboardData]);
 
-  const handleUpdateStatus = async (orderId: string, nextStatus: string) => {
-    try {
-      setActionLoadingId(orderId);
-      const headers = getRequestHeaders();
-
-      const res = await fetch(`${API_BASE_URL}/orders/vendor/${orderId}/status`, {
-        method: "PATCH",
-        headers,
-        credentials: "include",
-        body: JSON.stringify({ status: nextStatus }),
-      });
-
-      if (res.ok) {
-        await fetchDashboardData();
-      }
-    } catch (err) {
-      console.error("Failed to update order status:", err);
-    } finally {
-      setActionLoadingId(null);
-    }
-  };
-
   // Only display active tickets that require kitchen dispatch in the overview queue
   const activeOrders = useMemo(() => {
     return orders.filter(
@@ -221,10 +200,10 @@ export default function VendorExecutiveDashboardPage() {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="w-full min-h-screen bg-[#FBFBFA] text-[#1b3b2b] pb-16 font-sans selection:bg-[#1b3b2b] selection:text-white"
+      className="w-full min-h-screen bg-[#FBFBFA] text-[#1b3b2b] pb-16 font-sans selection:bg-[#1b3b2b] selection:text-white relative overflow-hidden"
     >
       {/* 1. Header Banner & Quick Status Ribbon */}
-      <section className="w-full bg-white/90 backdrop-blur-md border-b border-[#1b3b2b]/10 px-4 sm:px-6 lg:px-10 py-6 sticky top-0 z-10 shadow-2xs">
+      <section className="w-full bg-white/90 backdrop-blur-md border-b border-[#1b3b2b]/10 px-4 sm:px-6 lg:px-10 py-6 sticky top-0 z-20 shadow-2xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -589,9 +568,7 @@ export default function VendorExecutiveDashboardPage() {
                   <AnimatePresence mode="popLayout">
                     {activeOrders.map((ord) => {
                       const isPending = ord.status === "PENDING";
-                      const isAccepted = ord.status === "ACCEPTED";
                       const isPrep = ord.status === "PREPARING";
-                      const isActing = actionLoadingId === ord.id;
 
                       return (
                         <motion.div
@@ -601,7 +578,7 @@ export default function VendorExecutiveDashboardPage() {
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.25 }}
                           key={ord.id}
-                          className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:bg-neutral-50/70 -mx-2 px-3 rounded-xl"
+                          className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:bg-neutral-50/70 -mx-2 px-3 rounded-2xl group/row"
                         >
                           <div className="space-y-1.5 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
@@ -640,46 +617,44 @@ export default function VendorExecutiveDashboardPage() {
                             </div>
                           </div>
 
+                          {/* Dynamic Telemetry Radar & Expedite Capsule */}
                           <div className="flex items-center justify-between sm:justify-end gap-3.5 shrink-0">
                             <span className="text-base font-bold text-[#1b3b2b]">
                               ${Number(ord.total).toFixed(2)}
                             </span>
 
-                            {isPending && (
-                              <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => handleUpdateStatus(ord.id, "ACCEPTED")}
-                                disabled={isActing}
-                                className="px-4 py-1.5 rounded-xl bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer disabled:opacity-50"
-                              >
-                                {isActing ? "..." : "Accept"}
-                              </motion.button>
-                            )}
+                            <motion.button
+                              whileHover={{ scale: 1.04 }}
+                              whileTap={{ scale: 0.96 }}
+                              onClick={() => setInspectedOrder(ord)}
+                              type="button"
+                              className="relative overflow-hidden inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1b3b2b] to-[#254f3b] text-white text-xs font-bold shadow-xs hover:shadow-md transition-all cursor-pointer group/pill border border-emerald-900/20"
+                            >
+                              {/* Ambient Shimmer Sweep Animation */}
+                              <motion.div
+                                animate={{ x: ["-100%", "200%"] }}
+                                transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none"
+                              />
 
-                            {isAccepted && (
-                              <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => handleUpdateStatus(ord.id, "PREPARING")}
-                                disabled={isActing}
-                                className="px-4 py-1.5 rounded-xl bg-[#C05621] hover:bg-[#C05621]/90 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer disabled:opacity-50"
-                              >
-                                {isActing ? "..." : "Start Cooking"}
-                              </motion.button>
-                            )}
+                              {/* Telemetry Radar Dot */}
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isPending ? "bg-amber-400" : isPrep ? "bg-blue-400" : "bg-emerald-400"
+                                  }`} />
+                                <span className={`relative inline-flex rounded-full h-2 w-2 ${isPending ? "bg-amber-300" : isPrep ? "bg-blue-300" : "bg-emerald-300"
+                                  }`} />
+                              </span>
 
-                            {isPrep && (
-                              <motion.button
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => handleUpdateStatus(ord.id, "DELIVERED")}
-                                disabled={isActing}
-                                className="px-4 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                              <span className="tracking-wide text-[11px] font-semibold">Expedite</span>
+
+                              <motion.span
+                                animate={{ x: [0, 3, 0] }}
+                                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                                className="material-symbols-outlined text-[15px] opacity-80 group-hover/pill:opacity-100"
                               >
-                                {isActing ? "..." : "Mark Ready"}
-                              </motion.button>
-                            )}
+                                bolt
+                              </motion.span>
+                            </motion.button>
                           </div>
                         </motion.div>
                       );
@@ -878,6 +853,101 @@ export default function VendorExecutiveDashboardPage() {
         </motion.div>
 
       </div>
+
+      {/* 5. Live KOT Telemetry Slip Modal (Inspect & Expedite) */}
+      <AnimatePresence>
+        {inspectedOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+              className="bg-white w-full max-w-md rounded-3xl border border-[#1b3b2b]/15 shadow-2xl overflow-hidden p-6 relative"
+            >
+              {/* Slip Header */}
+              <div className="flex items-start justify-between pb-4 border-b border-neutral-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b] text-white flex items-center justify-center shadow-xs">
+                    <span className="material-symbols-outlined text-xl">bolt</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold tracking-widest uppercase text-neutral-400 block">
+                      Live Thermal Slip
+                    </span>
+                    <h3 className="text-lg font-bold font-mono text-[#1b3b2b]">
+                      #{inspectedOrder.id.slice(-6).toUpperCase()}
+                    </h3>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setInspectedOrder(null)}
+                  type="button"
+                  className="w-8 h-8 rounded-full bg-neutral-100 hover:bg-neutral-200 text-neutral-600 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">close</span>
+                </button>
+              </div>
+
+              {/* Guest & Dispatch Details */}
+              <div className="my-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-neutral-50">
+                  <span className="text-neutral-500">Customer:</span>
+                  <strong className="text-[#1b3b2b]">{inspectedOrder.user?.name || "Direct Guest"}</strong>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-neutral-50">
+                  <span className="text-neutral-500">Service:</span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 font-bold text-[10px] uppercase">
+                    {inspectedOrder.orderType} • {inspectedOrder.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-1 border-b border-neutral-50">
+                  <span className="text-neutral-500">Placed Time:</span>
+                  <span className="font-mono text-neutral-700">
+                    {new Date(inspectedOrder.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Ordered Menu Items Box */}
+              <div className="bg-neutral-50/80 rounded-2xl p-4 border border-neutral-100 my-4 max-h-48 overflow-y-auto space-y-2">
+                <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-400 block">
+                  Kitchen Dispatch Items
+                </span>
+                {inspectedOrder.items?.map((item, idx) => (
+                  <div key={item.id || idx} className="flex items-center justify-between text-xs">
+                    <span className="text-[#1b3b2b]">
+                      <strong className="text-[#C05621]">{item.quantity}x</strong> {item.name}
+                    </span>
+                    <span className="font-bold text-[#1b3b2b]">
+                      ${(Number(item.price) * item.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Action Buttons Footer */}
+              <div className="pt-2 flex items-center justify-between gap-3">
+                <div className="text-left">
+                  <span className="text-[10px] text-neutral-400 uppercase font-bold block">Grand Total</span>
+                  <span className="text-lg font-bold text-[#1b3b2b]">
+                    ${Number(inspectedOrder.total).toFixed(2)}
+                  </span>
+                </div>
+
+                <Link
+                  href="/dashboard/vendor/orders"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                >
+                  <span>Open Kitchen Queue</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
