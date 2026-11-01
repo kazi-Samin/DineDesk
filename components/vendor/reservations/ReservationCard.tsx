@@ -1,3 +1,4 @@
+// components/vendor/reservations/ReservationCard.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,9 +7,29 @@ import {
   TableEntity,
 } from "@/types/reservation";
 
+interface ExtendedReservation extends VendorReservation {
+  avatarUrl?: string | null;
+  avatar?: string | null;
+  userImage?: string | null;
+  tableNumber?: string;
+  tableId?: string;
+  displayDate?: string;
+  date?: string;
+  time?: string;
+  specialNotes?: string;
+  user?: {
+    id?: string;
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+  } | null;
+  [key: string]: any;
+}
+
 interface ReservationCardProps {
-  reservation: VendorReservation;
-  tables: TableEntity[];
+  reservation: ExtendedReservation;
+  tables: (TableEntity & { [key: string]: any })[];
   onAccept: (reservationId: string, tableId: string) => void;
   onReject: (reservationId: string) => void;
   onSeat: (reservationId: string) => void;
@@ -27,277 +48,293 @@ export default function ReservationCard({
   onCancel,
   onOpenMessage,
 }: ReservationCardProps) {
-  const [selectedTableId, setSelectedTableId] = useState<string>(
-    reservation.assignedTableId || tables[0]?.id || "C-4"
-  );
+  const rawTableRef =
+    reservation.assignedTableId ||
+    reservation.tableNumber ||
+    reservation.tableId ||
+    tables[0]?.label ||
+    tables[0]?.name ||
+    tables[0]?.id ||
+    "Table 1";
+
+  const cleanTableNumber = String(rawTableRef).startsWith("Table ")
+    ? rawTableRef
+    : `Table ${rawTableRef}`;
+
+  const [selectedTableId, setSelectedTableId] = useState<string>(cleanTableNumber);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
-  // Left stripe color based on priority/occasion
-  const stripeColor =
-    reservation.occasionType === "celebration" || reservation.status === "pending"
-      ? "bg-secondary"
-      : reservation.occasionType === "business"
-      ? "bg-primary-container"
-      : reservation.occasionType === "accessibility"
-      ? "bg-surface-tint"
-      : "bg-outline-variant";
+  // 1. Resolve Avatar directly from user relation (never restaurant image)
+  const avatarSrc =
+    reservation.user?.avatarUrl ||
+    reservation.avatarUrl ||
+    null;
 
-  // Filter tables that can accommodate party size
+  // 2. Resolve Guest Name directly from user relation
+  const displayName =
+    reservation.user?.name ||
+    reservation.guestName ||
+    "Dining Guest";
+
+  // 3. Resolve Unique Phone Number directly from user relation
+  const displayPhone =
+    reservation.user?.phone ||
+    reservation.phone ||
+    "No contact provided";
+
+  // 4. Fallback Initials
+  const guestInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((part: string) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "DG";
+
   const suitableTables = tables.filter(
-    (t) => t.capacity >= reservation.partySize && (t.status === "available" || t.id === reservation.assignedTableId)
+    (t) =>
+      t.capacity >= reservation.partySize &&
+      (t.status === "available" ||
+        t.id === reservation.assignedTableId ||
+        t.label === reservation.assignedTableId ||
+        t.name === reservation.assignedTableId)
   );
 
-  const allFilteredTables = suitableTables.length > 0 ? suitableTables : tables;
+  const availableTableOptions = suitableTables.length > 0 ? suitableTables : tables;
 
   const handleConfirmClick = () => {
     setIsProcessing(true);
     setTimeout(() => {
       onAccept(reservation.id, selectedTableId);
       setIsProcessing(false);
-    }, 400);
+    }, 300);
   };
 
-  return (
-    <div className="bg-surface-container-lowest rounded-xl p-space-lg shadow-2xs hover:shadow-xs border border-outline-variant transition-all relative overflow-hidden">
-      {/* Left Accent Stripe */}
-      <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${stripeColor}`}></div>
+  const isPending = reservation.status === "pending";
+  const isConfirmed = reservation.status === "confirmed";
+  const isSeated = reservation.status === "seated";
+  const isCancelled = reservation.status === "cancelled";
+  const isRejected = reservation.status === "rejected";
 
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-space-md">
-        {/* Diner & Meta Info */}
-        <div className="flex items-start gap-space-md">
-          <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary font-headline-sm text-headline-sm flex-shrink-0 font-semibold">
-            {reservation.initials}
+  const displaySlotDate =
+    reservation.displayDate ||
+    reservation.reservationDate ||
+    reservation.date ||
+    "Today";
+
+  const displaySlotTime =
+    reservation.reservationTime ||
+    reservation.time ||
+    "08:00 PM";
+
+  const guestNoteText =
+    reservation.specialNotes ||
+    reservation.guestNotes ||
+    "";
+
+  return (
+    <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-xs hover:shadow-md border border-[#1b3b2b]/10 transition-all relative overflow-hidden group">
+      {/* Dynamic Left Status Accent Line */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1.5 ${isPending
+            ? "bg-amber-500 animate-pulse"
+            : isSeated
+              ? "bg-[#C05621]"
+              : isConfirmed
+                ? "bg-emerald-600"
+                : isRejected || isCancelled
+                  ? "bg-red-400"
+                  : "bg-[#1b3b2b]"
+          }`}
+      />
+
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+        {/* Guest Profile & Avatar */}
+        <div className="flex items-start gap-4">
+          <div className="relative w-12 h-12 rounded-2xl overflow-hidden shrink-0 border border-neutral-200/80 bg-neutral-100 flex items-center justify-center shadow-xs">
+            {avatarSrc && !imageError ? (
+              <img
+                src={avatarSrc}
+                alt={displayName}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-tr from-[#1b3b2b] to-[#2d5f46] text-white flex items-center justify-center font-bold text-sm shadow-inner uppercase tracking-wider">
+                {guestInitials}
+              </div>
+            )}
           </div>
-          <div className="space-y-1">
+
+          <div className="space-y-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-headline-sm text-headline-sm text-on-surface font-semibold">
-                {reservation.guestName}
+              <h3 className="text-base font-bold text-[#1b3b2b] truncate capitalize">
+                {displayName}
               </h3>
 
-              {reservation.guestType === "VIP Diner" && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
-                  <span className="material-symbols-outlined text-xs">verified</span> VIP Diner
-                </span>
-              )}
-
-              {reservation.guestType === "Corporate Guest" && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold">
-                  <span className="material-symbols-outlined text-xs">domain</span> Corporate Guest
-                </span>
-              )}
-
-              {reservation.guestType === "First-time Diner" && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface font-label-sm text-label-sm">
-                  First-time Diner
-                </span>
-              )}
-
-              {reservation.guestSubtitle && (
-                <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-                  {reservation.guestSubtitle}
-                </span>
-              )}
-
-              {/* Status Badge for Non-pending */}
-              {reservation.status === "confirmed" && (
-                <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-label-sm text-label-sm font-semibold">
+              {isConfirmed && (
+                <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
                   Confirmed
                 </span>
               )}
-              {reservation.status === "seated" && (
-                <span className="px-2 py-0.5 rounded-md bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold animate-pulse">
+              {isSeated && (
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">
                   Seated Now
                 </span>
               )}
-              {reservation.status === "rejected" && (
-                <span className="px-2 py-0.5 rounded-md bg-error-container text-error font-label-sm text-label-sm font-semibold">
+              {isPending && (
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                  Pending Request
+                </span>
+              )}
+              {isRejected && (
+                <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold uppercase tracking-wider">
                   Declined
                 </span>
               )}
-              {reservation.status === "cancelled" && (
-                <span className="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+              {isCancelled && (
+                <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-600 border border-neutral-200 text-[10px] font-bold uppercase tracking-wider">
                   Cancelled
                 </span>
               )}
               {reservation.status === "completed" && (
-                <span className="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+                <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold uppercase tracking-wider">
                   Completed
                 </span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-space-md text-on-surface-variant font-body-sm text-body-sm">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-500 font-medium">
               <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">call</span> {reservation.phone}
+                <span className="material-symbols-outlined text-sm text-neutral-400">call</span>
+                <span className="font-mono text-neutral-600">{displayPhone}</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">confirmation_number</span>{" "}
-                {reservation.id}
+              <span className="text-neutral-300">•</span>
+              <span className="flex items-center gap-1 font-mono text-[11px] text-neutral-400">
+                <span className="material-symbols-outlined text-sm text-neutral-400">tag</span>
+                <span>{reservation.id.slice(-8)}</span>
               </span>
-              <span className={`flex items-center gap-1 ${reservation.status === "pending" ? "text-secondary font-medium" : ""}`}>
-                <span className="material-symbols-outlined text-sm">schedule</span>{" "}
-                {reservation.requestAge}
+              <span className="text-neutral-300">•</span>
+              <span className="flex items-center gap-1 text-[#1b3b2b] font-semibold">
+                <span className="material-symbols-outlined text-sm text-neutral-400">table_bar</span>
+                <span>{cleanTableNumber}</span>
               </span>
             </div>
           </div>
         </div>
 
-        {/* Booking Slot & Party Badges */}
-        <div className="flex lg:flex-col items-start lg:items-end justify-between gap-1 flex-shrink-0">
-          <div className="text-left lg:text-right">
-            <span className="font-label-lg text-label-lg font-bold text-primary">
-              {reservation.displayDate || reservation.reservationDate}
+        {/* Slot & Party Details */}
+        <div className="flex sm:flex-col items-start sm:items-end justify-between gap-1 shrink-0">
+          <div className="text-left sm:text-right">
+            <span className="text-xs font-bold text-[#1b3b2b] block">
+              {displaySlotDate}
             </span>
-            <span className="block font-headline-sm text-headline-sm text-on-surface">
-              {reservation.reservationTime} ({reservation.mealPeriod})
+            <span className="text-sm font-bold text-[#C05621] block mt-0.5">
+              {displaySlotTime} ({reservation.mealPeriod || "Dining"})
             </span>
           </div>
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
-            <span className="material-symbols-outlined text-sm">
-              {reservation.occasionType === "accessibility"
-                ? "accessible"
-                : reservation.partySize > 6
-                ? "diversity_3"
-                : "group"}
-            </span>{" "}
-            {reservation.partySize} Guests · {reservation.preferredZone}
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-neutral-100 text-[#1b3b2b] text-xs font-bold border border-neutral-200/80 mt-1">
+            <span className="material-symbols-outlined text-sm text-[#1b3b2b]">group</span>
+            <span>{reservation.partySize} Guests • {reservation.preferredZone || "Main Hall"}</span>
           </span>
         </div>
       </div>
 
-      {/* Special Occasion / Dietary / Request Highlight Box */}
-      {(reservation.occasion || reservation.guestNotes) && (
-        <div className="mt-space-md bg-surface-container-low p-space-md rounded-lg flex items-start gap-space-sm border border-outline-variant/30">
-          <span
-            className={`material-symbols-outlined text-lg mt-0.5 ${
-              reservation.occasionType === "celebration"
-                ? "text-secondary"
-                : reservation.occasionType === "business"
-                ? "text-primary"
-                : reservation.occasionType === "accessibility"
-                ? "text-primary-container"
-                : "text-on-surface-variant"
-            }`}
-          >
-            {reservation.occasionType === "celebration"
-              ? "celebration"
-              : reservation.occasionType === "business"
-              ? "business_center"
-              : reservation.occasionType === "accessibility"
-              ? "accessible_forward"
-              : "info"}
+      {/* Guest Note Box */}
+      {guestNoteText && (
+        <div className="mt-4 bg-[#FBFBFA] p-3.5 rounded-xl flex items-start gap-2.5 border border-neutral-100 text-xs">
+          <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0 mt-0.5">
+            notes
           </span>
           <div className="flex-1">
-            <div className="flex items-center justify-between">
-              <span className="font-label-md text-label-md font-semibold text-on-surface">
-                {reservation.occasion || "Guest Booking Preference"}
-              </span>
-              {reservation.occasionBadge && (
-                <span
-                  className={`font-label-sm text-label-sm font-semibold uppercase tracking-wide ${
-                    reservation.occasionType === "celebration"
-                      ? "text-secondary"
-                      : "text-on-surface-variant"
-                  }`}
-                >
-                  {reservation.occasionBadge}
-                </span>
-              )}
-            </div>
-            {reservation.guestNotes && (
-              <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5 italic">
-                &ldquo;{reservation.guestNotes}&rdquo;
-              </p>
-            )}
-            {reservation.rejectionReason && (
-              <p className="font-body-sm text-body-sm text-error mt-1 font-medium">
-                Note: {reservation.rejectionReason}
-              </p>
-            )}
+            <span className="font-bold text-[#1b3b2b] block">Guest Special Request:</span>
+            <p className="text-neutral-600 mt-0.5 italic leading-relaxed">
+              &ldquo;{guestNoteText}&rdquo;
+            </p>
           </div>
         </div>
       )}
 
-      {/* Bottom Action Bar */}
-      <div className="mt-space-lg pt-space-md border-t border-outline-variant/30 bg-surface-container-lowest flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-md">
-        {/* Table Selector / Assigned Display */}
-        <div className="flex items-center gap-space-sm">
-          {reservation.status === "pending" ? (
+      {/* Bottom Action Strip */}
+      <div className="mt-5 pt-4 border-t border-neutral-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        {/* Serial Table Selection & Allocation */}
+        <div className="flex items-center gap-2">
+          {isPending ? (
             <>
               <label
-                className="font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase whitespace-nowrap"
+                className="text-[11px] text-neutral-400 font-bold uppercase tracking-wider whitespace-nowrap"
                 htmlFor={`table-select-${reservation.id}`}
               >
                 Assign Table:
               </label>
-              <div className="relative w-full md:w-64">
+              <div className="relative">
                 <select
-                  className="w-full bg-surface-container-low py-2 pl-3 pr-8 rounded-lg font-label-md text-label-md text-on-surface focus:outline-none focus:bg-surface-container border border-outline-variant/40 cursor-pointer"
                   id={`table-select-${reservation.id}`}
                   value={selectedTableId}
                   onChange={(e) => setSelectedTableId(e.target.value)}
+                  className="bg-neutral-50 py-1.5 pl-3 pr-8 rounded-xl text-xs font-bold text-[#1b3b2b] border border-neutral-200 focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] cursor-pointer"
                 >
-                  {allFilteredTables.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                  <option value="WAITING_BUFFER">Hold in Waiting Buffer</option>
+                  {availableTableOptions.map((t) => {
+                    const label = t.label || t.name || `Table ${t.id}`;
+                    return (
+                      <option key={t.id} value={label}>
+                        {label} ({t.capacity} Seats - {t.zone})
+                      </option>
+                    );
+                  })}
                 </select>
-                <span className="material-symbols-outlined text-base absolute right-2.5 top-2.5 pointer-events-none text-on-surface-variant">
+                <span className="material-symbols-outlined text-base absolute right-2 top-2 pointer-events-none text-neutral-400">
                   expand_more
                 </span>
               </div>
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold uppercase">
+              <span className="text-[11px] text-neutral-400 font-bold uppercase tracking-wider">
                 Allocated Table:
               </span>
-              <span className="px-2.5 py-1 rounded-md bg-surface-container text-primary font-label-md font-bold">
-                {reservation.assignedTableId
-                  ? `Table ${reservation.assignedTableId}`
-                  : "General Seating"}
+              <span className="px-2.5 py-1 rounded-lg bg-[#1b3b2b]/5 text-[#1b3b2b] border border-[#1b3b2b]/15 text-xs font-bold">
+                {cleanTableNumber}
               </span>
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-space-sm justify-end">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 justify-end">
           <button
             onClick={() => onOpenMessage(reservation)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 text-xs font-bold border border-neutral-200 transition-colors cursor-pointer"
             type="button"
           >
-            <span className="material-symbols-outlined text-base">chat</span>
+            <span className="material-symbols-outlined text-sm">chat</span>
             <span>Message</span>
           </button>
 
-          {/* Conditional actions based on reservation status */}
-          {reservation.status === "pending" && (
+          {isPending && (
             <>
               <button
                 onClick={() => onReject(reservation.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-error-container hover:bg-error/20 text-error font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold border border-red-200 transition-colors cursor-pointer"
                 type="button"
               >
-                <span>Reject</span>
+                Reject
               </button>
               <button
                 onClick={handleConfirmClick}
                 disabled={isProcessing}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm transition-colors cursor-pointer disabled:opacity-75"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 type="button"
               >
                 {isProcessing ? (
                   <>
-                    <span className="material-symbols-outlined text-base animate-spin">refresh</span>
+                    <span className="material-symbols-outlined text-sm animate-spin">refresh</span>
                     <span>Confirming...</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-base">check</span>
+                    <span className="material-symbols-outlined text-sm">check</span>
                     <span>Accept &amp; Confirm</span>
                   </>
                 )}
@@ -305,33 +342,33 @@ export default function ReservationCard({
             </>
           )}
 
-          {reservation.status === "confirmed" && (
+          {isConfirmed && (
             <>
               <button
                 onClick={() => onCancel(reservation.id)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-error/10 text-error font-label-md text-label-md font-semibold transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-xl text-neutral-500 hover:text-red-600 hover:bg-red-50 text-xs font-bold transition-colors cursor-pointer"
                 type="button"
               >
-                <span>Cancel</span>
+                Cancel
               </button>
               <button
                 onClick={() => onSeat(reservation.id)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-secondary hover:bg-secondary/90 text-on-secondary font-label-md text-label-md font-semibold shadow-sm transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#C05621] hover:bg-[#C05621]/90 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
                 type="button"
               >
-                <span className="material-symbols-outlined text-base">chair</span>
+                <span className="material-symbols-outlined text-sm">chair</span>
                 <span>Mark Seated</span>
               </button>
             </>
           )}
 
-          {reservation.status === "seated" && (
+          {isSeated && (
             <button
               onClick={() => onComplete(reservation.id)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold shadow-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
               type="button"
             >
-              <span className="material-symbols-outlined text-base">done_all</span>
+              <span className="material-symbols-outlined text-sm">done_all</span>
               <span>Complete Service</span>
             </button>
           )}
