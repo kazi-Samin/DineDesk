@@ -154,8 +154,8 @@ export default function VendorHeader({
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "ops" ? null : "ops")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isOpsActive
-                  ? "bg-[#1b3b2b] text-white shadow-2xs"
-                  : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
+                ? "bg-[#1b3b2b] text-white shadow-2xs"
+                : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
             >
               <span className="material-symbols-outlined text-base">tune</span>
@@ -221,8 +221,8 @@ export default function VendorHeader({
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "menu" ? null : "menu")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isMenuActive
-                  ? "bg-[#1b3b2b] text-white shadow-2xs"
-                  : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
+                ? "bg-[#1b3b2b] text-white shadow-2xs"
+                : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
             >
               <span className="material-symbols-outlined text-base">restaurant_menu</span>
@@ -269,8 +269,8 @@ export default function VendorHeader({
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "settings" ? null : "settings")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isSettingsActive
-                  ? "bg-[#1b3b2b] text-white shadow-2xs"
-                  : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
+                ? "bg-[#1b3b2b] text-white shadow-2xs"
+                : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
             >
               <span className="material-symbols-outlined text-base">store</span>
@@ -444,7 +444,8 @@ export default function VendorHeader({
 
                   <div className="my-1 border-t border-neutral-100" />
 
-                  <button
+                  <Link
+                    href="/sign-in"
                     type="button"
                     onClick={() => {
                       setRoleMenuOpen(false);
@@ -454,7 +455,7 @@ export default function VendorHeader({
                   >
                     <span className="material-symbols-outlined text-base">logout</span>
                     <span>Sign Out</span>
-                  </button>
+                  </Link>
                 </div>
               </div>
             )}
