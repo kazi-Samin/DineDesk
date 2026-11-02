@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { TableEntity, TableStatus } from "@/types/reservation";
 
 interface ToastMessage {
   id: string;
@@ -12,37 +11,19 @@ interface ToastMessage {
   type: "success" | "error" | "info";
 }
 
-interface ServerReservation {
+interface DynamicFloorTable {
   id: string;
-  restaurantId?: string;
-  tableNumber?: string;
-  assignedTableId?: string;
-  tableId?: string;
-  seatingArea?: string;
-  preferredZone?: string;
-  guestName?: string;
-  reservedFor?: string;
+  tableNumber: string;
+  label: string;
+  shortName: string;
+  section: string;
+  capacity: number;
+  shape: string;
+  status: "available" | "occupied" | "reserved";
+  currentGuest: string | null;
+  currentReservationId: string | null;
   partySize: number;
-  status: string;
-  date?: string;
-  time?: string;
-  user?: {
-    name?: string | null;
-    phone?: string | null;
-    avatarUrl?: string | null;
-  } | null;
-  [key: string]: any;
 }
-
-export type FloorTableEntity = TableEntity & {
-  currentReservationId?: string;
-  currentGuest?: string;
-  currentGuestName?: string;
-  shortName?: string;
-  zone?: any;
-  shape?: any;
-  [key: string]: any;
-};
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_BACKEND_URL ||
@@ -57,8 +38,7 @@ const getAuthToken = () => {
   const match = document.cookie.match(
     /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
   );
-  if (match && match[1]) return match[1].trim();
-  return "";
+  return match && match[1] ? match[1].trim() : "";
 };
 
 const getRequestHeaders = () => {
@@ -75,26 +55,23 @@ const getRequestHeaders = () => {
   return headers;
 };
 
-// 50 Tables configured across the 7 dynamic sections
-const FLOOR_SECTIONS = [
-  { name: "Main Dining Hall", aliases: ["main dining hall", "main hall", "main dining", "main"], range: [1, 12], defaultCap: 4, icon: "table_bar", color: "from-emerald-500/10 to-transparent" },
-  { name: "Courtyard Terrace", aliases: ["courtyard terrace", "courtyard", "terrace"], range: [13, 20], defaultCap: 4, icon: "deck", color: "from-amber-500/10 to-transparent" },
-  { name: "Private Heritage Dining", aliases: ["private heritage dining", "heritage dining", "private heritage", "heritage"], range: [21, 26], defaultCap: 6, icon: "meeting_room", color: "from-purple-500/10 to-transparent" },
-  { name: "Family Hall", aliases: ["family hall", "family booth", "family", "booth"], range: [27, 34], defaultCap: 6, icon: "family_restroom", color: "from-blue-500/10 to-transparent" },
-  { name: "Party Hall", aliases: ["party hall", "party"], range: [35, 42], defaultCap: 8, icon: "celebration", color: "from-rose-500/10 to-transparent" },
-  { name: "Big Occasion Hall", aliases: ["big occasion hall", "big occasion", "occasion hall"], range: [43, 46], defaultCap: 16, icon: "festival", color: "from-amber-600/10 to-transparent" },
-  { name: "General Hall", aliases: ["general hall", "general"], range: [47, 50], defaultCap: 2, icon: "storefront", color: "from-teal-500/10 to-transparent" },
-];
+// Section Icon and Radial Accents mapping
+const SECTION_ICONS: Record<string, string> = {
+  "Main Dining Hall": "table_bar",
+  "Courtyard Terrace": "deck",
+  "Private Heritage Dining": "meeting_room",
+  "Family Hall": "family_restroom",
+  "Party Hall": "celebration",
+  "Big Occasion Hall": "festival",
+  "General Hall": "storefront",
+};
 
 export default function DiningRoomFloorPage() {
-  const [rawReservations, setRawReservations] = useState<ServerReservation[]>([]);
-  const [tableStatusOverrides, setTableStatusOverrides] = useState<
-    Record<string, { status: TableStatus; guest?: string; resId?: string }>
-  >({});
+  const [tables, setTables] = useState<DynamicFloorTable[]>([]);
   const [restaurantName, setRestaurantName] = useState<string>("DineDesk Flagship Central Kitchen");
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Filters & Toggles
+  // Filters & State
   const [selectedZone, setSelectedZone] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [vipHighlightOnly, setVipHighlightOnly] = useState<boolean>(false);
@@ -102,20 +79,15 @@ export default function DiningRoomFloorPage() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Quick Table Edit Dialog
-  const [activeTableForModal, setActiveTableForModal] = useState<FloorTableEntity | null>(null);
+  // Quick Seating Dialog
+  const [activeTableForModal, setActiveTableForModal] = useState<DynamicFloorTable | null>(null);
   const [guestNameInput, setGuestNameInput] = useState("");
   const [partySizeInput, setPartySizeInput] = useState("2");
-  const [guestNotesInput, setGuestNotesInput] = useState("");
 
-  // Toasts
+  // Toast Notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const addToast = (
-    title: string,
-    message: string,
-    type: "success" | "error" | "info" = "success"
-  ) => {
+  const addToast = (title: string, message: string, type: "success" | "error" | "info" = "success") => {
     const id = `${Date.now()}-${Math.random()}`;
     setToasts((prev) => [...prev, { id, title, message, type }]);
     setTimeout(() => {
@@ -123,26 +95,25 @@ export default function DiningRoomFloorPage() {
     }, 3800);
   };
 
+  // 1. Fetch 100% real database table objects and statuses directly from PostgreSQL
   const fetchFloorTelemetry = useCallback(async () => {
     try {
       const headers = getRequestHeaders();
-      const res = await fetch(`${API_BASE_URL}/reservations/vendor/holds?limit=500`, {
+      const res = await fetch(`${API_BASE_URL}/reservations/vendor/floor-tables`, {
         credentials: "include",
         headers,
       });
 
       if (res.ok) {
         const json = await res.json();
-        const records: ServerReservation[] = json.data || json.reservations || json.holds || [];
-        setRawReservations(records);
-
+        setTables(json.tables || []);
         if (json.restaurantName) {
           setRestaurantName(json.restaurantName);
         }
       }
     } catch (err) {
-      console.error("Failed to fetch live floor telemetry:", err);
-      addToast("Connection Alert", "Could not sync real-time dining room state.", "error");
+      console.error("Failed to load floor tables:", err);
+      addToast("Network Error", "Unable to pull live dining floor state.", "error");
     } finally {
       setLoading(false);
     }
@@ -160,172 +131,50 @@ export default function DiningRoomFloorPage() {
     }
   }, [isSearchOpen]);
 
-  // Extract numeric digits from table definitions: ("Table 27", "27", "table-27") -> 27
-  const extractTableIndex = (tableVal?: string | number | null): number | null => {
-    if (!tableVal) return null;
-    const match = String(tableVal).match(/\d+/);
-    return match ? parseInt(match[0], 10) : null;
-  };
+  // Dynamically derive all sections directly from the tables returned by the database
+  const dynamicSections = useMemo(() => {
+    const unique = Array.from(new Set(tables.map((t) => t.section))).filter(Boolean);
+    return unique.map((sec) => ({
+      name: sec,
+      count: tables.filter((t) => t.section === sec).length,
+      icon: SECTION_ICONS[sec] || "table_restaurant",
+    }));
+  }, [tables]);
 
-  // Resolve matching Section Name from aliases ("Family Booth" -> "Family Hall")
-  const resolveSectionName = (zoneString?: string): string => {
-    if (!zoneString) return "Main Dining Hall";
-    const cleanZone = zoneString.toLowerCase().trim();
-    const found = FLOOR_SECTIONS.find((s) =>
-      s.aliases.some((alias) => cleanZone.includes(alias))
-    );
-    return found ? found.name : "Main Dining Hall";
-  };
+  // Dynamic 4x2 Grid: Line 1 (4 buttons) and Line 2 (4 buttons)
+  const firstRowSections = useMemo(() => [
+    { name: "all", label: "All Sections", icon: "grid_view", count: tables.length },
+    ...dynamicSections.slice(0, 3).map((s) => ({
+      name: s.name,
+      label: s.name,
+      icon: s.icon,
+      count: s.count,
+    })),
+  ], [dynamicSections, tables.length]);
 
-  // =========================================================================
-  // 100% REAL DATABASE PROJECTION (NO FAKE / NO HARDCODED FORMULAS / NO MOCKS)
-  // =========================================================================
-  const tables = useMemo((): FloorTableEntity[] => {
-    const tableList: FloorTableEntity[] = [];
+  const secondRowSections = useMemo(() => [
+    ...dynamicSections.slice(3).map((s) => ({
+      name: s.name,
+      label: s.name,
+      icon: s.icon,
+      count: s.count,
+    })),
+  ], [dynamicSections]);
 
-    // 1. Only consider real active reservations from database
-    const activeReservations = rawReservations.filter((r) => {
-      const s = String(r.status || "").toUpperCase();
-      return s === "CONFIRMED" || s === "SEATED" || s === "PENDING";
-    });
-
-    const allocatedTableIndexMap = new Map<number, ServerReservation>();
-    const pendingAreaReservations: ServerReservation[] = [];
-
-    // 2. Direct Table Number match (e.g. Table 12, Table 28, etc.)
-    activeReservations.forEach((r) => {
-      const specifiedIndex =
-        extractTableIndex(r.tableNumber) ||
-        extractTableIndex(r.assignedTableId) ||
-        extractTableIndex(r.tableId);
-
-      // Verify if table specified matches its declared seating zone
-      const declaredZone = resolveSectionName(r.seatingArea || r.preferredZone);
-      const sectionMeta = FLOOR_SECTIONS.find((s) => s.name === declaredZone);
-
-      if (
-        specifiedIndex &&
-        sectionMeta &&
-        specifiedIndex >= sectionMeta.range[0] &&
-        specifiedIndex <= sectionMeta.range[1] &&
-        !allocatedTableIndexMap.has(specifiedIndex)
-      ) {
-        allocatedTableIndexMap.set(specifiedIndex, r);
-      } else {
-        pendingAreaReservations.push(r);
-      }
-    });
-
-    // 3. Smart Zone Routing for bookings with generic numbers (e.g. Anaiya's 18 guests in Family Booth)
-    pendingAreaReservations.forEach((r) => {
-      const targetZone = resolveSectionName(r.seatingArea || r.preferredZone);
-      const sectionMeta = FLOOR_SECTIONS.find((s) => s.name === targetZone);
-
-      if (sectionMeta) {
-        const [start, end] = sectionMeta.range;
-        for (let i = start; i <= end; i++) {
-          if (!allocatedTableIndexMap.has(i)) {
-            allocatedTableIndexMap.set(i, r);
-            break;
-          }
-        }
-      }
-    });
-
-    // 4. Construct all 50 tables dynamically based solely on real DB status
-    FLOOR_SECTIONS.forEach((section) => {
-      const [start, end] = section.range;
-      for (let i = start; i <= end; i++) {
-        const tableId = `table-${i}`;
-        const tableLabel = `Table ${i}`;
-        const shortName = `T-${i}`;
-        const capacity = section.defaultCap;
-
-        // Manual shift override check (real-time vendor action)
-        const override =
-          tableStatusOverrides[tableLabel] ||
-          tableStatusOverrides[tableId] ||
-          tableStatusOverrides[String(i)];
-
-        if (override) {
-          tableList.push({
-            id: tableId,
-            label: tableLabel,
-            name: tableLabel,
-            shortName,
-            capacity,
-            zone: section.name as any,
-            shape: capacity <= 2 ? "circle" : "rectangle",
-            x: ((i - 1) % 6) * 16 + 10,
-            y: Math.floor((i - 1) / 6) * 25 + 15,
-            isAccessible: true,
-            status: override.status,
-            currentGuest: override.guest,
-            currentGuestName: override.guest,
-            currentReservationId: override.resId,
-          } as unknown as FloorTableEntity);
-          continue;
-        }
-
-        // Real Database Match
-        const matchedRes = allocatedTableIndexMap.get(i);
-
-        let calculatedStatus: TableStatus = "available";
-        let guestName: string | undefined = undefined;
-
-        if (matchedRes) {
-          const s = String(matchedRes.status || "").toUpperCase();
-          calculatedStatus = s === "SEATED" ? "occupied" : "reserved";
-          guestName =
-            matchedRes.user?.name ||
-            matchedRes.guestName ||
-            matchedRes.reservedFor ||
-            "Registered Diner";
-        }
-
-        tableList.push({
-          id: tableId,
-          label: tableLabel,
-          name: tableLabel,
-          shortName,
-          capacity,
-          zone: section.name as any,
-          shape: capacity <= 2 ? "circle" : "rectangle",
-          x: ((i - 1) % 6) * 16 + 10,
-          y: Math.floor((i - 1) / 6) * 25 + 15,
-          isAccessible: true,
-          status: calculatedStatus,
-          currentGuest: guestName,
-          currentGuestName: guestName,
-          partySize: matchedRes ? matchedRes.partySize : undefined,
-          currentReservationId: matchedRes ? matchedRes.id : undefined,
-        } as unknown as FloorTableEntity);
-      }
-    });
-
-    return tableList;
-  }, [rawReservations, tableStatusOverrides]);
-
+  // Direct PostgreSQL status modification with coordinated reservation update
   const handleSetStatus = async (
-    tableId: string,
-    newStatus: TableStatus,
+    table: DynamicFloorTable,
+    newStatus: "available" | "occupied" | "reserved",
     guest?: string
   ) => {
-    const targetTable = tables.find((t) => t.id === tableId || t.label === tableId);
-    const tableLabel = targetTable?.label || tableId;
-
-    setTableStatusOverrides((prev) => ({
-      ...prev,
-      [tableLabel]: { status: newStatus, guest },
-    }));
-
-    if (targetTable?.currentReservationId) {
+    // 1. If linked to an active booking, update that reservation record directly
+    if (table.currentReservationId) {
       try {
         const headers = getRequestHeaders();
         const serverStatus =
           newStatus === "occupied" ? "SEATED" : newStatus === "available" ? "COMPLETED" : "CONFIRMED";
 
-        await fetch(`${API_BASE_URL}/reservations/vendor/${targetTable.currentReservationId}/status`, {
+        await fetch(`${API_BASE_URL}/reservations/vendor/${table.currentReservationId}/status`, {
           method: "PATCH",
           headers,
           credentials: "include",
@@ -339,85 +188,85 @@ export default function DiningRoomFloorPage() {
                   : "Confirmed",
           }),
         });
-      } catch (err) {
-        console.error("Failed to commit status change to backend:", err);
+      } catch (e) {
+        console.error("Failed to update reservation record:", e);
       }
     }
 
-    if (newStatus === "available") {
-      addToast("Table Sanitized", `${tableLabel} is now sanitized and available for seating.`, "success");
-    } else if (newStatus === "occupied") {
-      addToast("Party Seated", `${tableLabel} marked as Occupied by ${guest || "Guests"}.`, "success");
-    } else if (newStatus === "reserved") {
-      addToast("Table Reserved", `${tableLabel} placed on priority hold for upcoming party.`, "info");
-    }
+    // 2. Update table directly in PostgreSQL & pass reservationId so release cleans the link completely
+    try {
+      const headers = getRequestHeaders();
+      const res = await fetch(
+        `${API_BASE_URL}/reservations/vendor/floor-tables/${encodeURIComponent(table.tableNumber)}/status`,
+        {
+          method: "PATCH",
+          headers,
+          credentials: "include",
+          body: JSON.stringify({
+            status: newStatus.toUpperCase(),
+            reservationId: table.currentReservationId || undefined,
+            guestName: guest,
+          }),
+        }
+      );
 
-    fetchFloorTelemetry();
+      if (res.ok) {
+        addToast("Table Updated", `${table.tableNumber} marked as ${newStatus}.`, "success");
+        await fetchFloorTelemetry();
+      }
+    } catch (err) {
+      addToast("Error", "Could not commit status update to database.", "error");
+    }
   };
 
   const handleTurnaroundAllTables = async () => {
     const occupied = tables.filter((t) => t.status === "occupied");
     if (occupied.length === 0) {
-      addToast("Shift Clear", "All tables are already sanitized and open.", "info");
+      addToast("Shift Clear", "All tables are already sanitized and available.", "info");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Clear and sanitize all ${occupied.length} currently occupied tables for the incoming dining service?`
-    );
-    if (!confirmed) return;
-
-    const newOverrides = { ...tableStatusOverrides };
-    occupied.forEach((t) => {
-      newOverrides[t.label] = { status: "available" };
-    });
-    setTableStatusOverrides(newOverrides);
+    if (!window.confirm(`Sanitize and release all ${occupied.length} currently occupied tables?`)) return;
 
     try {
       const headers = getRequestHeaders();
       await Promise.all(
-        occupied
-          .filter((t) => t.currentReservationId)
-          .map((t) =>
-            fetch(`${API_BASE_URL}/reservations/vendor/${t.currentReservationId}/status`, {
+        occupied.map(async (t) => {
+          if (t.currentReservationId) {
+            await fetch(`${API_BASE_URL}/reservations/vendor/${t.currentReservationId}/status`, {
               method: "PATCH",
               headers,
               credentials: "include",
               body: JSON.stringify({ status: "COMPLETED", statusDisplay: "Completed" }),
-            })
-          )
+            });
+          }
+          await fetch(`${API_BASE_URL}/reservations/vendor/floor-tables/${encodeURIComponent(t.tableNumber)}/status`, {
+            method: "PATCH",
+            headers,
+            credentials: "include",
+            body: JSON.stringify({ status: "AVAILABLE", reservationId: t.currentReservationId || undefined }),
+          });
+        })
       );
-      addToast("Floor Turned Over", `Sanitized and released ${occupied.length} tables for next shift.`, "success");
-      fetchFloorTelemetry();
+      addToast("Shift Cleared", "All occupied tables turned around for new diners.", "success");
+      await fetchFloorTelemetry();
     } catch {
-      addToast("Sync Warning", "Local tables reset; backend will reconcile shortly.", "info");
+      addToast("Error", "Could not complete full turnaround.", "error");
     }
-  };
-
-  const handleOpenSeatingModal = (table: FloorTableEntity) => {
-    setActiveTableForModal(table);
-    setGuestNameInput(table.currentGuest?.split(" (")[0] || "");
-    setPartySizeInput(table.capacity.toString());
-    setGuestNotesInput("");
   };
 
   const handleConfirmSeating = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTableForModal) return;
 
-    const guest = guestNameInput.trim() || "Seated Diner";
-    const guestLabel = `${guest} (${partySizeInput || activeTableForModal.capacity} Guests)`;
-
-    await handleSetStatus(activeTableForModal.id, "occupied", guestLabel);
+    await handleSetStatus(activeTableForModal, "occupied", guestNameInput.trim() || "Seated Diner");
     setActiveTableForModal(null);
   };
 
   // Pure dynamic metrics strictly reflecting backend database counts
   const totalTables = tables.length;
   const occupiedTables = tables.filter((t) => t.status === "occupied").length;
-  const reservedTables = tables.filter(
-    (t) => t.status === "reserved" || (t.status as string) === "assigned"
-  ).length;
+  const reservedTables = tables.filter((t) => t.status === "reserved").length;
   const availableTables = tables.filter((t) => t.status === "available").length;
 
   const totalSeats = tables.reduce((acc, t) => acc + t.capacity, 0);
@@ -430,39 +279,18 @@ export default function DiningRoomFloorPage() {
   // Filtered dataset
   const filteredTables = useMemo(() => {
     return tables.filter((table) => {
-      if (selectedZone !== "all" && table.zone !== selectedZone) return false;
+      if (selectedZone !== "all" && table.section !== selectedZone) return false;
       if (selectedStatus !== "all" && table.status !== selectedStatus) return false;
       if (vipHighlightOnly && table.capacity < 6) return false;
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const matchesId = table.id.toLowerCase().includes(query);
-        const matchesLabel = table.label.toLowerCase().includes(query);
+        const matchesLabel = table.tableNumber.toLowerCase().includes(query);
         const matchesGuest = table.currentGuest?.toLowerCase().includes(query) || false;
-        if (!matchesId && !matchesLabel && !matchesGuest) return false;
+        if (!matchesLabel && !matchesGuest) return false;
       }
       return true;
     });
   }, [tables, selectedZone, selectedStatus, vipHighlightOnly, searchQuery]);
-
-  // Two rows of 4 buttons each
-  const firstRowItems = useMemo(() => [
-    { name: "all", label: "All Sections", icon: "grid_view", count: totalTables },
-    ...FLOOR_SECTIONS.slice(0, 3).map((s) => ({
-      name: s.name,
-      label: s.name,
-      icon: s.icon,
-      count: tables.filter((t) => t.zone === s.name).length,
-    })),
-  ], [totalTables, tables]);
-
-  const secondRowItems = useMemo(() => [
-    ...FLOOR_SECTIONS.slice(3).map((s) => ({
-      name: s.name,
-      label: s.name,
-      icon: s.icon,
-      count: tables.filter((t) => t.zone === s.name).length,
-    })),
-  ], [tables]);
 
   return (
     <div className="w-full min-h-screen bg-[#FBFBFA] font-sans text-[#1b3b2b] antialiased selection:bg-[#1b3b2b] selection:text-white pb-20 overflow-x-hidden">
@@ -485,12 +313,11 @@ export default function DiningRoomFloorPage() {
               </h1>
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                Live Floor Matrix (50 Tables)
+                Live Database Telemetry ({totalTables} Tables)
               </span>
             </div>
             <p className="text-xs text-neutral-500 font-medium">
-              Real-time interactive dining floor layout, table allocation, and turnover for{" "}
-              <strong>{restaurantName}</strong>.
+              100% Real PostgreSQL table layout and seat occupancy for <strong>{restaurantName}</strong>.
             </p>
           </div>
 
@@ -501,13 +328,7 @@ export default function DiningRoomFloorPage() {
               type="button"
               onClick={() => {
                 setLoading(true);
-                fetchFloorTelemetry().then(() =>
-                  addToast(
-                    "Floor Synchronized",
-                    "Loaded real-time floor plan tables and seating statuses.",
-                    "info"
-                  )
-                );
+                fetchFloorTelemetry().then(() => addToast("Synchronized", "Fetched live database tables.", "info"));
               }}
               disabled={loading}
               className="px-3.5 py-2 bg-white hover:bg-[#1b3b2b]/5 rounded-xl text-xs font-bold text-[#1b3b2b] border border-[#1b3b2b]/15 shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
@@ -530,14 +351,13 @@ export default function DiningRoomFloorPage() {
           </div>
         </motion.div>
 
-        {/* 2. KPI Metric Cards Strip (100% Live DB State) */}
+        {/* 2. KPI Metric Cards Strip */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
           className="grid grid-cols-2 lg:grid-cols-4 gap-4"
         >
-          {/* Card 1: Floor Occupancy */}
           <div className="p-4 rounded-2xl bg-white border border-[#1b3b2b]/10 shadow-xs space-y-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-xs font-bold uppercase tracking-wider">Floor Occupancy</span>
@@ -545,9 +365,7 @@ export default function DiningRoomFloorPage() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-[#1b3b2b]">{occupancyRate}%</span>
-              <span className="text-xs text-neutral-500 font-medium">
-                ({occupiedTables + reservedTables} / {totalTables} Tables)
-              </span>
+              <span className="text-xs text-neutral-500 font-medium">({occupiedTables + reservedTables} / {totalTables})</span>
             </div>
             <div className="w-full bg-neutral-100 h-1.5 rounded-full overflow-hidden">
               <motion.div
@@ -559,7 +377,6 @@ export default function DiningRoomFloorPage() {
             </div>
           </div>
 
-          {/* Card 2: Seated Diners */}
           <div className="p-4 rounded-2xl bg-white border border-[#1b3b2b]/10 shadow-xs space-y-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-xs font-bold uppercase tracking-wider">Seated Diners</span>
@@ -570,11 +387,10 @@ export default function DiningRoomFloorPage() {
               <span className="text-xs text-neutral-500 font-medium">of {totalSeats} capacity</span>
             </div>
             <p className="text-[11px] text-neutral-500 font-medium">
-              Active across {FLOOR_SECTIONS.length} dining floor sections
+              Across {dynamicSections.length} sections
             </p>
           </div>
 
-          {/* Card 3: Available Tables */}
           <div className="p-4 rounded-2xl bg-white border border-[#1b3b2b]/10 shadow-xs space-y-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-xs font-bold uppercase tracking-wider">Available Tables</span>
@@ -582,14 +398,11 @@ export default function DiningRoomFloorPage() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-emerald-700">{availableTables}</span>
-              <span className="text-xs text-emerald-600 font-bold">Ready to Seat</span>
+              <span className="text-xs text-emerald-600 font-bold">Ready</span>
             </div>
-            <p className="text-[11px] text-neutral-500 font-medium">
-              Sanitized and open for guests
-            </p>
+            <p className="text-[11px] text-neutral-500 font-medium">Sanitized for walk-ins</p>
           </div>
 
-          {/* Card 4: Reserved Tables */}
           <div className="p-4 rounded-2xl bg-white border border-[#1b3b2b]/10 shadow-xs space-y-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between text-neutral-500">
               <span className="text-xs font-bold uppercase tracking-wider">Reserved Tables</span>
@@ -597,22 +410,19 @@ export default function DiningRoomFloorPage() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-amber-700">{reservedTables}</span>
-              <span className="text-xs text-neutral-500 font-medium">Scheduled</span>
+              <span className="text-xs text-neutral-500 font-medium">Booked</span>
             </div>
-            <p className="text-[11px] text-neutral-500 font-medium">
-              Directly booked in database
-            </p>
+            <p className="text-[11px] text-neutral-500 font-medium">In database</p>
           </div>
         </motion.div>
 
-        {/* 3. Filter Toolbar with 4x2 Grid */}
+        {/* 3. Filter Toolbar with Dynamic Sections Derived from DB */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
           className="p-5 sm:p-6 rounded-3xl bg-white border border-[#1b3b2b]/10 shadow-sm space-y-4"
         >
-          {/* Top Controls: Search Icon, VIP Filter, Status Dropdown, and Legend */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
             <div className="flex items-center gap-4 flex-wrap text-xs font-medium">
               <div className="flex items-center gap-1.5">
@@ -634,7 +444,6 @@ export default function DiningRoomFloorPage() {
             </div>
 
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              {/* VIP / Large Party Highlight Toggle */}
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 type="button"
@@ -649,7 +458,6 @@ export default function DiningRoomFloorPage() {
                 <span>VIP &amp; Large Tables</span>
               </motion.button>
 
-              {/* Compact Search Trigger */}
               <div className="relative flex items-center">
                 <AnimatePresence>
                   {isSearchOpen && (
@@ -677,9 +485,7 @@ export default function DiningRoomFloorPage() {
                   type="button"
                   onClick={() => {
                     setIsSearchOpen((prev) => !prev);
-                    if (isSearchOpen && searchQuery) {
-                      setSearchQuery("");
-                    }
+                    if (isSearchOpen && searchQuery) setSearchQuery("");
                   }}
                   className={`w-9 h-9 rounded-xl flex items-center justify-center border cursor-pointer transition-all ${isSearchOpen || searchQuery
                       ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-xs"
@@ -693,7 +499,6 @@ export default function DiningRoomFloorPage() {
                 </motion.button>
               </div>
 
-              {/* Status Dropdown */}
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
@@ -707,11 +512,10 @@ export default function DiningRoomFloorPage() {
             </div>
           </div>
 
-          {/* 4x2 Grid: Line 1 (4 buttons) and Line 2 (4 buttons) */}
+          {/* Dynamic 4x2 Grid Derived From Real Tables */}
           <div className="space-y-2.5">
-            {/* First Line: 4 Buttons */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {firstRowItems.map((item) => {
+              {firstRowSections.map((item) => {
                 const isActive = selectedZone === item.name;
                 return (
                   <motion.button
@@ -729,14 +533,10 @@ export default function DiningRoomFloorPage() {
                       <span className={`material-symbols-outlined text-lg ${isActive ? "text-[#E2B774]" : "text-[#1b3b2b]/70"}`}>
                         {item.icon}
                       </span>
-                      <span className="text-xs font-bold truncate block">
-                        {item.label}
-                      </span>
+                      <span className="text-xs font-bold truncate block">{item.label}</span>
                     </div>
                     <span
-                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 ${isActive
-                          ? "bg-white/15 text-white border border-white/20"
-                          : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 ${isActive ? "bg-white/15 text-white border border-white/20" : "bg-neutral-100 text-neutral-600 border border-neutral-200"
                         }`}
                     >
                       {item.count}
@@ -746,9 +546,8 @@ export default function DiningRoomFloorPage() {
               })}
             </div>
 
-            {/* Second Line: 4 Buttons */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {secondRowItems.map((item) => {
+              {secondRowSections.map((item) => {
                 const isActive = selectedZone === item.name;
                 return (
                   <motion.button
@@ -766,14 +565,10 @@ export default function DiningRoomFloorPage() {
                       <span className={`material-symbols-outlined text-lg ${isActive ? "text-[#E2B774]" : "text-[#1b3b2b]/70"}`}>
                         {item.icon}
                       </span>
-                      <span className="text-xs font-bold truncate block">
-                        {item.label}
-                      </span>
+                      <span className="text-xs font-bold truncate block">{item.label}</span>
                     </div>
                     <span
-                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 ${isActive
-                          ? "bg-white/15 text-white border border-white/20"
-                          : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                      className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg shrink-0 ${isActive ? "bg-white/15 text-white border border-white/20" : "bg-neutral-100 text-neutral-600 border border-neutral-200"
                         }`}
                     >
                       {item.count}
@@ -785,187 +580,183 @@ export default function DiningRoomFloorPage() {
           </div>
         </motion.div>
 
-        {/* 4. Multi-Section Floor Layout */}
+        {/* 4. Dynamic Section Grids Generated From Database */}
         <div className="space-y-6">
           <AnimatePresence>
-            {(selectedZone === "all" ? FLOOR_SECTIONS.map((s) => s.name) : [selectedZone]).map((zoneName) => {
-              const zoneTables = filteredTables.filter((t) => t.zone === zoneName);
-              const sectionMeta = FLOOR_SECTIONS.find((s) => s.name === zoneName);
-              if (zoneTables.length === 0 && selectedZone === "all") return null;
+            {(selectedZone === "all" ? dynamicSections.map((s) => s.name) : [selectedZone]).map((secName) => {
+              // Sort numerically so Table 1 -> Table 2 -> ... -> Table 12
+              const secTables = filteredTables
+                .filter((t) => t.section === secName)
+                .sort((a, b) => {
+                  const numA = parseInt(a.tableNumber.replace(/\D+/g, "") || "0", 10);
+                  const numB = parseInt(b.tableNumber.replace(/\D+/g, "") || "0", 10);
+                  return numA - numB;
+                });
+
+              if (secTables.length === 0) return null;
 
               return (
                 <motion.div
-                  key={zoneName}
+                  key={secName}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
                   className="p-5 sm:p-6 rounded-3xl bg-white border border-[#1b3b2b]/10 shadow-xs hover:shadow-md transition-shadow space-y-4 relative overflow-hidden"
                 >
-                  <div className={`absolute top-0 right-0 w-80 h-32 bg-gradient-to-l ${sectionMeta?.color || "from-emerald-500/5 to-transparent"} pointer-events-none rounded-bl-full`} />
-
                   <div className="flex items-center justify-between pb-3 border-b border-neutral-100 relative z-10">
                     <div className="flex items-center gap-2.5">
                       <span className="material-symbols-outlined text-[#1b3b2b] text-xl">
-                        {sectionMeta?.icon || "table_bar"}
+                        {SECTION_ICONS[secName] || "table_restaurant"}
                       </span>
-                      <h2 className="text-lg font-bold text-[#1b3b2b] tracking-tight">
-                        {zoneName}
-                      </h2>
+                      <h2 className="text-lg font-bold text-[#1b3b2b] tracking-tight">{secName}</h2>
                     </div>
                     <span className="text-xs font-bold text-neutral-500 bg-neutral-100 px-3 py-1 rounded-xl">
-                      {zoneTables.length} Tables Active
+                      {secTables.length} Tables Active
                     </span>
                   </div>
 
-                  {zoneTables.length === 0 ? (
-                    <p className="text-xs text-neutral-400 italic py-4">
-                      No tables in {zoneName} match the current filter criteria.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
-                      {zoneTables.map((table) => {
-                        const isOccupied = table.status === "occupied";
-                        const isReserved =
-                          table.status === "reserved" || (table.status as string) === "assigned";
-                        const isHighCap = table.capacity >= 6;
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 relative z-10">
+                    {secTables.map((table) => {
+                      const isOccupied = table.status === "occupied";
+                      const isReserved = table.status === "reserved";
+                      const isHighCap = table.capacity >= 6;
 
-                        return (
-                          <motion.div
-                            key={table.id}
-                            layout
-                            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                            className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative overflow-hidden group shadow-2xs hover:shadow-md ${isOccupied
-                                ? "bg-rose-50/50 border-rose-200/90"
-                                : isReserved
-                                  ? "bg-amber-50/50 border-amber-200/90"
-                                  : "bg-white border-neutral-200/90 hover:border-[#1b3b2b]/40"
-                              } ${isHighCap ? "ring-1 ring-amber-500/20" : ""}`}
-                          >
-                            {/* Top Bar: Table Label & Status Badge */}
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-bold text-base text-[#1b3b2b]">
-                                    {table.label}
+                      return (
+                        <motion.div
+                          key={table.id}
+                          layout
+                          whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                          className={`p-4 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative overflow-hidden group shadow-2xs hover:shadow-md ${isOccupied
+                              ? "bg-rose-50/50 border-rose-200/90"
+                              : isReserved
+                                ? "bg-amber-50/50 border-amber-200/90"
+                                : "bg-white border-neutral-200/90 hover:border-[#1b3b2b]/40"
+                            } ${isHighCap ? "ring-1 ring-amber-500/20" : ""}`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-base text-[#1b3b2b]">{table.tableNumber}</span>
+                                <span className="text-[11px] font-bold text-neutral-400">• {table.capacity}-Top</span>
+                                {isHighCap && (
+                                  <span className="material-symbols-outlined text-xs text-amber-600" title="High Capacity Table">
+                                    stars
                                   </span>
-                                  <span className="text-[11px] font-bold text-neutral-400">
-                                    • {table.capacity}-Top
-                                  </span>
-                                  {isHighCap && (
-                                    <span className="material-symbols-outlined text-xs text-amber-600" title="High Capacity VIP Table">
-                                      stars
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="text-[11px] text-neutral-400 font-medium block mt-0.5">
-                                  {table.zone}
-                                </span>
+                                )}
                               </div>
-
-                              <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${isOccupied
-                                    ? "bg-rose-100 text-rose-800 border border-rose-200"
-                                    : isReserved
-                                      ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                  }`}
-                              >
-                                {isOccupied ? "Occupied" : isReserved ? "Reserved" : "Available"}
-                              </span>
+                              <span className="text-[11px] text-neutral-400 font-medium block mt-0.5">{table.section}</span>
                             </div>
 
-                            {/* Middle: Occupant & Booking Info */}
-                            <div className="min-h-[44px] flex flex-col justify-center">
-                              {table.currentGuest ? (
-                                <div className="space-y-0.5">
-                                  <span className="text-xs font-bold text-[#1b3b2b] block truncate flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-sm text-neutral-400">person</span>
-                                    <span>{table.currentGuest}</span>
-                                  </span>
-                                  {(table as any).currentReservationId && (
-                                    <span className="text-[10px] text-neutral-400 font-mono block">
-                                      Ref: #{(table as any).currentReservationId.slice(-8)}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-[11px] text-emerald-700 font-semibold italic flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                  Ready for walk-in guests
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${isOccupied
+                                  ? "bg-rose-100 text-rose-800 border border-rose-200"
+                                  : isReserved
+                                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                    : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                }`}
+                            >
+                              {table.status}
+                            </span>
+                          </div>
+
+                          <div className="min-h-[44px] flex flex-col justify-center">
+                            {table.currentGuest ? (
+                              <div className="space-y-0.5">
+                                <span className="text-xs font-bold text-[#1b3b2b] block truncate flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-sm text-neutral-400">person</span>
+                                  <span>{table.currentGuest}</span>
                                 </span>
-                              )}
-                            </div>
+                                {table.currentReservationId && (
+                                  <span className="text-[10px] text-neutral-400 font-mono block">
+                                    Ref: #{table.currentReservationId.slice(-8)}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-emerald-700 font-semibold italic flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Ready for walk-in guests
+                              </span>
+                            )}
+                          </div>
 
-                            {/* Bottom: Quick Operations Button Group */}
-                            <div className="pt-2 border-t border-neutral-100 flex items-center gap-1.5">
-                              {table.status === "available" ? (
-                                <>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleOpenSeatingModal(table)}
-                                    className="flex-1 py-1.5 px-2 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
-                                  >
-                                    Seat Table
-                                  </motion.button>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleSetStatus(table.id, "reserved", "Reserved Guest")}
-                                    className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
-                                    title="Hold table as reserved"
-                                  >
-                                    Hold
-                                  </motion.button>
-                                </>
-                              ) : isOccupied ? (
-                                <>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleSetStatus(table.id, "available")}
-                                    className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
-                                  >
-                                    Clear Table
-                                  </motion.button>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleOpenSeatingModal(table)}
-                                    className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
-                                    title="Edit seated guest details"
-                                  >
-                                    Edit
-                                  </motion.button>
-                                </>
-                              ) : (
-                                <>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleOpenSeatingModal(table)}
-                                    className="flex-1 py-1.5 px-2 bg-[#C05621] hover:bg-[#C05621]/90 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
-                                  >
-                                    Seat Now
-                                  </motion.button>
-                                  <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    type="button"
-                                    onClick={() => handleSetStatus(table.id, "available")}
-                                    className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
-                                    title="Cancel hold / release table"
-                                  >
-                                    Release
-                                  </motion.button>
-                                </>
-                              )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          <div className="pt-2 border-t border-neutral-100 flex items-center gap-1.5">
+                            {table.status === "available" ? (
+                              <>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveTableForModal(table);
+                                    setGuestNameInput(table.currentGuest || "");
+                                    setPartySizeInput(String(table.capacity));
+                                  }}
+                                  className="flex-1 py-1.5 px-2 bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
+                                >
+                                  Seat Table
+                                </motion.button>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => handleSetStatus(table, "reserved", "Reserved Guest")}
+                                  className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                                >
+                                  Hold
+                                </motion.button>
+                              </>
+                            ) : isOccupied ? (
+                              <>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => handleSetStatus(table, "available")}
+                                  className="flex-1 py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
+                                >
+                                  Clear Table
+                                </motion.button>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveTableForModal(table);
+                                    setGuestNameInput(table.currentGuest || "");
+                                    setPartySizeInput(String(table.capacity));
+                                  }}
+                                  className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                                >
+                                  Edit
+                                </motion.button>
+                              </>
+                            ) : (
+                              <>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveTableForModal(table);
+                                    setGuestNameInput(table.currentGuest || "");
+                                    setPartySizeInput(String(table.capacity));
+                                  }}
+                                  className="flex-1 py-1.5 px-2 bg-[#C05621] hover:bg-[#C05621]/90 text-white rounded-xl text-xs font-bold cursor-pointer text-center transition-colors shadow-2xs"
+                                >
+                                  Seat Now
+                                </motion.button>
+                                <motion.button
+                                  whileTap={{ scale: 0.96 }}
+                                  type="button"
+                                  onClick={() => handleSetStatus(table, "available")}
+                                  className="py-1.5 px-3 bg-neutral-100 hover:bg-neutral-200 text-[#1b3b2b] rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                                >
+                                  Release
+                                </motion.button>
+                              </>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </motion.div>
               );
             })}
@@ -990,11 +781,9 @@ export default function DiningRoomFloorPage() {
                     <span className="material-symbols-outlined text-lg">event_seat</span>
                   </span>
                   <div>
-                    <h3 className="text-lg font-bold text-[#1b3b2b]">
-                      Seat {activeTableForModal.label}
-                    </h3>
+                    <h3 className="text-lg font-bold text-[#1b3b2b]">Seat {activeTableForModal.tableNumber}</h3>
                     <span className="text-xs text-neutral-400 font-medium">
-                      {activeTableForModal.zone} • Capacity: {activeTableForModal.capacity} guests
+                      {activeTableForModal.section} • Capacity: {activeTableForModal.capacity} guests
                     </span>
                   </div>
                 </div>
@@ -1009,9 +798,7 @@ export default function DiningRoomFloorPage() {
 
               <form onSubmit={handleConfirmSeating} className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
-                    Guest Name *
-                  </label>
+                  <label className="text-xs font-bold text-[#1b3b2b] block mb-1">Guest Name *</label>
                   <input
                     type="text"
                     required
@@ -1023,28 +810,13 @@ export default function DiningRoomFloorPage() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
-                    Party Size (Guests) *
-                  </label>
+                  <label className="text-xs font-bold text-[#1b3b2b] block mb-1">Party Size *</label>
                   <input
                     type="number"
                     min="1"
                     max={activeTableForModal.capacity + 4}
                     value={partySizeInput}
                     onChange={(e) => setPartySizeInput(e.target.value)}
-                    className="w-full bg-neutral-50 px-3.5 py-2 rounded-xl border border-neutral-200 text-xs font-medium text-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
-                    Host Notes (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. VIP booth request, anniversary dinner"
-                    value={guestNotesInput}
-                    onChange={(e) => setGuestNotesInput(e.target.value)}
                     className="w-full bg-neutral-50 px-3.5 py-2 rounded-xl border border-neutral-200 text-xs font-medium text-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b]"
                   />
                 </div>
@@ -1092,9 +864,7 @@ export default function DiningRoomFloorPage() {
               </span>
               <div className="flex-1">
                 <span className="font-semibold text-xs block">{toast.title}</span>
-                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">
-                  {toast.message}
-                </p>
+                <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">{toast.message}</p>
               </div>
             </motion.div>
           ))}
