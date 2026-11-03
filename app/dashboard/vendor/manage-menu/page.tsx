@@ -185,8 +185,8 @@ export default function ManageMenuPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      addToast("File Too Large", "Max image size is 5MB.", "error");
+    if (file.size > 25 * 1024 * 1024) {
+      addToast("File Too Large", "Max image size is 25MB.", "error");
       return;
     }
 
@@ -965,7 +965,7 @@ export default function ManageMenuPage() {
                         <span>{isUploadingImage ? "Streaming to Cloudinary..." : "Choose Image from Device"}</span>
                       </span>
                       <p className="text-[11px] text-neutral-400">
-                        PNG, JPG or WEBP up to 5MB. Automatically optimized and secured in Cloudinary storage.
+                        PNG, JPG or WEBP up to 25MB. Automatically optimized and secured in Cloudinary storage.
                       </p>
                       {uploadedImageUrl && (
                         <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
