@@ -49,6 +49,11 @@ const API_BASE_URL = (
   .replace(/\/api\/v1\/?$/, "")
   .replace(/\/+$/, "") + "/api/v1";
 
+const CLOUDINARY_CLOUD_NAME =
+  process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "iwnkklnc";
+const CLOUDINARY_UPLOAD_PRESET =
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "dinedesk_menu_uploads";
+
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
   const match = document.cookie.match(
@@ -111,7 +116,7 @@ export default function ManageMenuPage() {
   const [formDeliveryFee, setFormDeliveryFee] = useState("5.00");
   const [formBadge, setFormBadge] = useState("");
 
-  // Cloudinary Image Upload State
+  // Cloudinary Direct Image Upload State
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [imagePreview, setImagePreview] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -175,7 +180,7 @@ export default function ManageMenuPage() {
     fetchMenuFromDB();
   }, [fetchMenuFromDB]);
 
-  // Cloudinary Direct Device Upload Handler pointing to menu routes upload endpoint
+  // Direct-to-Cloudinary Upload: bypasses Vercel's 4.5MB serverless limit for files up to 25MB
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -196,33 +201,34 @@ export default function ManageMenuPage() {
 
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("file", file);
+      formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+      formData.append("folder", "dinedesk/dishes");
 
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
-      // Explicit route matching router.post('/vendor/upload-image') in menu.routes.ts
-      const res = await fetch(`${API_BASE_URL}/menus/vendor/upload-image`, {
-        method: "POST",
-        headers,
-        body: formData,
-        credentials: "include",
-      });
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (res.ok) {
         const data = await res.json();
-        setUploadedImageUrl(data.url);
-        addToast("Image Uploaded", "Dish photo stored in Cloudinary.", "success");
+        const secureUrl = data.secure_url || data.url;
+        setUploadedImageUrl(secureUrl);
+        addToast("Image Uploaded", "Dish photo stored directly in Cloudinary.", "success");
       } else {
         const err = await res.json().catch(() => ({}));
-        addToast("Upload Failed", err.message || "Could not store image in Cloudinary.", "error");
+        addToast(
+          "Upload Failed",
+          err.error?.message || err.message || "Could not store image in Cloudinary.",
+          "error"
+        );
       }
     } catch (error) {
       console.error("Upload error:", error);
-      addToast("Network Error", "Failed to connect to image upload service.", "error");
+      addToast("Network Error", "Failed to connect to Cloudinary upload service.", "error");
     } finally {
       setIsUploadingImage(false);
     }
@@ -792,7 +798,7 @@ export default function ManageMenuPage() {
         </div>
       </main>
 
-      {/* 5. Add / Edit Dish Modal with Cloudinary Direct Upload */}
+      {/* 5. Add / Edit Dish Modal with Direct Cloudinary Upload */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
@@ -814,7 +820,7 @@ export default function ManageMenuPage() {
                       {editingItem ? "Edit Culinary Dish" : "Publish New Menu Dish"}
                     </h3>
                     <p className="text-xs text-neutral-400 font-medium">
-                      Upload photos directly from device to Cloudinary and commit attributes to PostgreSQL.
+                      Upload photos directly from device to Cloudinary (up to 25MB) and commit attributes to PostgreSQL.
                     </p>
                   </div>
                 </div>
@@ -928,7 +934,7 @@ export default function ManageMenuPage() {
                   />
                 </div>
 
-                {/* 4. Device Image Upload to Cloudinary */}
+                {/* 4. Direct Device Image Upload to Cloudinary */}
                 <div>
                   <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
                     Upload Dish Photo (From Device to Cloudinary)
@@ -965,7 +971,7 @@ export default function ManageMenuPage() {
                         <span>{isUploadingImage ? "Streaming to Cloudinary..." : "Choose Image from Device"}</span>
                       </span>
                       <p className="text-[11px] text-neutral-400">
-                        PNG, JPG or WEBP up to 25MB. Automatically optimized and secured in Cloudinary storage.
+                        PNG, JPG or WEBP up to 25MB. Uploads directly to Cloudinary without Vercel payload limits.
                       </p>
                       {uploadedImageUrl && (
                         <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
