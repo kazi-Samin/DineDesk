@@ -7,7 +7,7 @@ interface MediaSectionProps {
   coverImage: string;
   coverImageAlt: string;
   coverSubtitle: string;
-  coverCropY: number; // 0 to 100 vertical alignment %
+  coverCropY: number;
   logoImage: string;
   logoImageAlt: string;
   galleryImages: GalleryPhoto[];
@@ -23,9 +23,11 @@ interface MediaSectionProps {
 
 export default function MediaSection({
   coverImage,
+  coverImageAlt,
   coverSubtitle,
   coverCropY,
   logoImage,
+  logoImageAlt,
   galleryImages,
   onRepositionClick,
   onAddGalleryMediaClick,
@@ -34,204 +36,170 @@ export default function MediaSection({
   onCoverFileSelected,
   onLogoFileSelected,
 }: MediaSectionProps) {
-  const coverFileInputRef = useRef<HTMLInputElement>(null);
-  const logoFileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onCoverFileSelected(file);
-      e.target.value = "";
-    }
-  };
-
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      onLogoFileSelected(file);
-      e.target.value = "";
-    }
-  };
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <section className="bg-surface-container-lowest p-space-lg rounded-xl border border-outline-variant/60 shadow-xs space-y-space-lg">
-      {/* Hidden file inputs */}
-      <input
-        ref={coverFileInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="hidden"
-        onChange={handleCoverChange}
-      />
-      <input
-        ref={logoFileInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="hidden"
-        onChange={handleLogoChange}
-      />
-
-      {/* Section Header */}
-      <div className="flex items-center justify-between border-b border-outline-variant/30 pb-space-sm">
-        <div className="flex items-center gap-space-xs">
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary font-label-sm font-bold">
-            02
-          </span>
+    <div className="bg-white rounded-3xl p-6 sm:p-7 border border-[#1b3b2b]/10 shadow-xs space-y-6">
+      {/* Polished Section Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b]/5 text-[#1b3b2b] flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-xl">photo_library</span>
+          </div>
           <div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">
-              Imagery &amp; Storefront Media
-            </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
+            <h2 className="text-lg font-bold text-[#1b3b2b]">Imagery &amp; Storefront Media</h2>
+            <p className="text-xs text-neutral-400 font-medium">
               Rich dining room atmosphere, branded assets, and visual menu highlights.
             </p>
           </div>
         </div>
-        <span className="font-label-sm text-label-sm text-on-surface-variant">
-          Recommended 1920×600 px
+        <span className="text-[11px] font-medium text-neutral-400">
+          Recommended: 1920×800 px
         </span>
       </div>
 
-      {/* Cover Banner Showcase */}
-      <div className="space-y-space-xs">
-        <div className="relative w-full h-64 rounded-xl overflow-hidden group border border-outline-variant/60 bg-surface-container">
-          <div
-            className="w-full h-full bg-cover transition-all duration-300"
-            style={{
-              backgroundImage: `url('${coverImage}')`,
-              backgroundPosition: `center ${coverCropY}%`,
+      {/* Hidden File Inputs */}
+      <input
+        type="file"
+        ref={coverInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onCoverFileSelected(file);
+        }}
+      />
+      <input
+        type="file"
+        ref={logoInputRef}
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) onLogoFileSelected(file);
+        }}
+      />
+
+      {/* Cover Banner with Actions */}
+      <div className="space-y-3">
+        <div className="relative w-full h-52 sm:h-64 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 group">
+          <img
+            src={coverImage}
+            alt={coverImageAlt}
+            style={{ objectPosition: `center ${coverCropY}%` }}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src =
+                "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80";
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent pointer-events-none" />
 
-          {/* Cover Controls Overlay */}
-          <div className="absolute bottom-space-md left-space-md right-space-md flex flex-col sm:flex-row sm:items-end justify-between gap-3 text-on-primary">
-            <div>
-              <span className="px-2 py-0.5 rounded bg-surface/20 backdrop-blur-md text-on-primary font-label-sm text-xs tracking-wide">
-                Main Storefront Banner
-              </span>
-              <p className="font-label-md text-label-md font-semibold mt-1 drop-shadow-sm text-white">
-                {coverSubtitle || "Evening Dining Room Setting (Main Dining Room)"}
-              </p>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-between p-4 sm:p-5">
+            <div className="text-white space-y-0.5">
+              <span className="text-xs font-bold block">Main Storefront Banner</span>
+              <p className="text-[11px] text-white/80">{coverSubtitle}</p>
             </div>
+
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onRepositionClick}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface/90 text-primary hover:bg-surface font-label-sm text-label-sm font-semibold backdrop-blur-md shadow-xs transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-white/90 hover:bg-white text-[#1b3b2b] text-xs font-bold backdrop-blur-md shadow-xs flex items-center gap-1 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">crop</span>
                 <span>Reposition</span>
               </button>
               <button
                 type="button"
-                onClick={() => coverFileInputRef.current?.click()}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface/90 text-primary hover:bg-surface font-label-sm text-label-sm font-semibold backdrop-blur-md shadow-xs transition-colors cursor-pointer"
+                onClick={() => coverInputRef.current?.click()}
+                className="px-3 py-1.5 rounded-xl bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white text-xs font-bold shadow-xs flex items-center gap-1 transition-all cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm">photo_camera</span>
+                <span className="material-symbols-outlined text-sm text-[#E2B774]">photo_camera</span>
                 <span>Change Cover</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Brand Logo & Atmosphere Gallery Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-12 gap-space-md pt-space-xs">
-        {/* Brand Logo Tile */}
-        <div className="sm:col-span-4 p-space-md rounded-xl bg-surface-container-low border border-outline-variant/60 flex flex-col items-center text-center justify-between gap-space-sm">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
-            Marketplace Avatar
-          </span>
-          <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-outline-variant shadow-2xs bg-surface-container-lowest">
-            {logoImage ? (
+        {/* Brand Avatar and Atmosphere Gallery */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start pt-2">
+          {/* Brand Avatar */}
+          <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 flex flex-col items-center text-center space-y-3">
+            <span className="text-xs font-bold text-[#1b3b2b]">Marketplace Avatar</span>
+            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white border border-neutral-200 relative shadow-2xs">
               <img
-                className="w-full h-full object-cover"
                 src={logoImage}
-                alt="Marketplace Avatar Logo"
+                alt={logoImageAlt}
+                className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = "/avatars/default-avatar.svg";
+                  (e.target as HTMLImageElement).src =
+                    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80";
                 }}
               />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary">
-                <span className="material-symbols-outlined text-4xl">storefront</span>
-              </div>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => logoFileInputRef.current?.click()}
-            className="w-full py-1.5 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container font-label-sm text-label-sm font-semibold transition-colors cursor-pointer"
-          >
-            Upload New Logo
-          </button>
-        </div>
-
-        {/* Gallery Media Strip */}
-        <div className="sm:col-span-8 flex flex-col justify-between gap-space-sm">
-          <div className="flex items-center justify-between">
-            <span className="font-label-md text-label-md text-on-surface font-semibold">
-              Atmosphere Gallery ({galleryImages.length}/12 Active)
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">
-              JPG, WEBP up to 5MB
-            </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="w-full py-1.5 rounded-xl bg-white hover:bg-neutral-100 text-[#1b3b2b] text-[11px] font-bold border border-neutral-200 transition-colors cursor-pointer"
+            >
+              Upload Logo
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-xs">
-            {galleryImages.map((photo) => (
-              <div
-                key={photo.id}
-                className="relative h-24 rounded-lg overflow-hidden border border-outline-variant group bg-surface-container"
-              >
-                <img
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  src={photo.url}
-                  alt={photo.alt}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src =
-                      "/images/food-placeholder.svg";
-                  }}
-                />
-                <div className="absolute inset-0 bg-primary/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1.5 text-on-primary transition-opacity">
-                  <button
-                    type="button"
-                    onClick={() => onViewPhotoLightbox(photo)}
-                    className="p-1 rounded-md hover:bg-white/20 text-white cursor-pointer"
-                    title="View Photo"
-                  >
-                    <span className="material-symbols-outlined text-base">visibility</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRemoveGalleryPhoto(photo.id)}
-                    className="p-1 rounded-md hover:bg-error/30 text-rose-200 cursor-pointer"
-                    title="Remove Photo"
-                  >
-                    <span className="material-symbols-outlined text-base">delete</span>
-                  </button>
+          {/* Atmosphere Gallery Grid */}
+          <div className="md:col-span-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#1b3b2b]">
+                Atmosphere Gallery ({galleryImages.length}/12 Active)
+              </span>
+              <span className="text-[11px] text-neutral-400 font-medium">
+                JPG, WEBP up to 5MB
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {galleryImages.map((photo) => (
+                <div
+                  key={photo.id}
+                  className="relative group rounded-xl overflow-hidden aspect-square bg-neutral-100 border border-neutral-200 shadow-2xs"
+                >
+                  <img src={photo.url} alt={photo.alt} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onViewPhotoLightbox(photo)}
+                      className="p-1 rounded-lg bg-white/90 text-[#1b3b2b] hover:bg-white cursor-pointer"
+                      title="Enlarge"
+                    >
+                      <span className="material-symbols-outlined text-sm">zoom_in</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveGalleryPhoto(photo.id)}
+                      className="p-1 rounded-lg bg-rose-600 text-white hover:bg-rose-700 cursor-pointer"
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* Add Media Slot */}
-            {galleryImages.length < 12 && (
-              <button
-                type="button"
-                onClick={onAddGalleryMediaClick}
-                className="h-24 rounded-lg border-2 border-dashed border-outline-variant/80 hover:border-primary flex flex-col items-center justify-center gap-1 text-on-surface-variant hover:text-primary transition-colors bg-surface-container-low/50 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-xl">add_photo_alternate</span>
-                <span className="font-label-sm text-label-sm font-semibold">+ Add Media</span>
-              </button>
-            )}
+              {galleryImages.length < 12 && (
+                <button
+                  type="button"
+                  onClick={onAddGalleryMediaClick}
+                  className="border-2 border-dashed border-neutral-200 hover:border-[#1b3b2b]/50 rounded-xl aspect-square flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-[#1b3b2b] transition-colors cursor-pointer bg-neutral-50"
+                >
+                  <span className="material-symbols-outlined text-xl">add_photo_alternate</span>
+                  <span className="text-[10px] font-bold">Add Photo</span>
+                </button>
+              )}
+            </div>
           </div>
-
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            Images are presented in public reservation previews and courier pickup instructions.
-          </p>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
