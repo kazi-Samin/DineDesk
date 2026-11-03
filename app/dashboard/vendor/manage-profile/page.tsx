@@ -109,6 +109,14 @@ function buildFallbackProfile(raw: any = {}): RestaurantProfile {
     parsedTags = raw.cuisine.split(",").map((s: string) => s.trim()).filter(Boolean);
   }
 
+  // Check all possible locations where the logo/avatar may exist on the owner or restaurant model
+  const resolvedLogo =
+    raw.logoImage ||
+    raw.owner?.avatarUrl ||
+    raw.owner?.image ||
+    raw.avatarUrl ||
+    "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80";
+
   return {
     id: raw.id || "rest-1",
     name: raw.name || "DineDesk Flagship Central Kitchen",
@@ -120,7 +128,7 @@ function buildFallbackProfile(raw: any = {}): RestaurantProfile {
     coverImage: raw.coverUrl || raw.coverImage || raw.image || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1600&q=80",
     coverImageAlt: raw.name || "Restaurant Cover",
     coverSubtitle: "Dine-In • Delivery • Catering",
-    logoImage: raw.logoImage || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80",
+    logoImage: resolvedLogo,
     logoImageAlt: raw.name || "Brand Logo",
     galleryImages: parsedGallery,
     operatingHours: parsedHours,
@@ -299,8 +307,24 @@ export default function RestaurantProfilePage() {
     showToast("Uploading Avatar...", "Uploading logo to Cloudinary CDN.", "info");
     try {
       const url = await uploadToCloudinary(file);
+
+      // 1. Immediately update in UI state
       setProfile((prev) => (prev ? { ...prev, logoImage: url } : prev));
-      showToast("Avatar Updated", "Brand avatar updated.", "success");
+      setSavedProfile((prev) => (prev ? { ...prev, logoImage: url } : prev));
+
+      // 2. Persist to PostgreSQL backend immediately
+      const headers = getRequestHeaders();
+      await fetch(`${API_BASE_URL}/restaurants/vendor/profile`, {
+        method: "PUT",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({
+          logoImage: url,
+          name: profile?.name,
+        }),
+      });
+
+      showToast("Avatar Updated", "Brand avatar saved and synced with PostgreSQL.", "success");
     } catch (err: any) {
       showToast("Upload Error", err.message || "Failed to upload brand avatar.", "error");
     }
