@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { PriceTier } from "@/types/profile";
 
 interface GeneralInfoSectionProps {
@@ -18,6 +19,13 @@ interface GeneralInfoSectionProps {
   nameError?: string;
 }
 
+const PRICE_TIERS: { label: string; sub: string; value: PriceTier }[] = [
+  { label: "$", sub: "Economy", value: "budget" as PriceTier },
+  { label: "$$", sub: "Moderate", value: "moderate" as PriceTier },
+  { label: "$$$", sub: "Fine Dining", value: "upscale" as PriceTier },
+  { label: "$$$$", sub: "Luxury", value: "luxury" as PriceTier },
+];
+
 export default function GeneralInfoSection({
   name,
   tagline,
@@ -34,180 +42,158 @@ export default function GeneralInfoSection({
   nameError,
 }: GeneralInfoSectionProps) {
   return (
-    <section className="bg-surface-container-lowest p-space-lg rounded-xl border border-outline-variant/60 shadow-xs space-y-space-lg">
-      {/* Section Header */}
-      <div className="flex items-center justify-between border-b border-outline-variant/30 pb-space-sm">
-        <div className="flex items-center gap-space-xs">
-          <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary font-label-sm font-bold">
-            01
-          </span>
+    <div className="bg-white rounded-3xl p-6 sm:p-7 border border-[#1b3b2b]/10 shadow-xs space-y-6">
+      {/* Polished Icon Section Header */}
+      <div className="flex items-center justify-between pb-4 border-b border-neutral-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#1b3b2b]/5 text-[#1b3b2b] flex items-center justify-center font-bold">
+            <span className="material-symbols-outlined text-xl">badge</span>
+          </div>
           <div>
-            <h2 className="font-headline-sm text-headline-sm text-on-surface">
-              General Information &amp; Identity
-            </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant">
+            <h2 className="text-lg font-bold text-[#1b3b2b]">General Information &amp; Identity</h2>
+            <p className="text-xs text-neutral-400 font-medium">
               Core restaurant nomenclature, culinary badges, and licensing records.
             </p>
           </div>
         </div>
-        <span className="px-2 py-0.5 rounded-md bg-surface-container text-primary font-label-sm text-label-sm font-medium">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
           Live on Search
         </span>
       </div>
 
-      <div className="space-y-space-md">
+      <div className="space-y-4">
         {/* Restaurant Name */}
         <div>
-          <label className="block font-label-md text-label-md text-on-surface mb-1.5 font-semibold">
-            Restaurant Name <span className="text-error">*</span>
+          <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
+            Restaurant Name *
           </label>
           <input
-            className={`w-full px-3.5 py-2.5 rounded-lg bg-surface-container-low border ${
-              nameError
-                ? "border-error focus:border-error"
-                : "border-outline-variant/70 focus:border-primary"
-            } text-on-surface font-body-md focus:outline-none focus:bg-surface-container-lowest transition-colors`}
             type="text"
+            required
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
-            placeholder="e.g. The Maple & Vine"
-            maxLength={60}
+            placeholder="e.g. DineDesk Flagship Central Kitchen"
+            className="w-full bg-neutral-50 px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-semibold text-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b]"
           />
           {nameError ? (
-            <p className="mt-1 font-body-sm text-xs text-error flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs">error</span>
-              {nameError}
-            </p>
+            <p className="text-[11px] text-rose-600 font-medium mt-1">{nameError}</p>
           ) : (
-            <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+            <span className="text-[11px] text-neutral-400 block mt-1">
               Official brand moniker displayed on digital guest invoices and aggregator feeds.
-            </p>
+            </span>
           )}
         </div>
 
-        {/* Tagline / Pitch */}
+        {/* Tagline */}
         <div>
-          <label className="block font-label-md text-label-md text-on-surface mb-1.5 font-semibold">
+          <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
             Tagline / Heritage Pitch
           </label>
           <input
-            className="w-full px-3.5 py-2.5 rounded-lg bg-surface-container-low border border-outline-variant/70 text-on-surface font-body-md focus:outline-none focus:border-primary focus:bg-surface-container-lowest transition-colors"
             type="text"
             value={tagline}
             onChange={(e) => onTaglineChange(e.target.value)}
-            placeholder="e.g. Contemporary Michigan dining, wood-fired hearth & artisanal spirits"
-            maxLength={120}
+            placeholder="e.g. Authentic culinary excellence crafted with passion"
+            className="w-full bg-neutral-50 px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium text-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b]"
           />
-          <p className="mt-1 font-body-sm text-body-sm text-on-surface-variant">
+          <span className="text-[11px] text-neutral-400 block mt-1">
             Appears beneath your outlet headline across user-facing search results.
-          </p>
+          </span>
         </div>
 
-        {/* Cuisine Multi-Pills */}
+        {/* Primary Cuisine Badges */}
         <div>
-          <label className="block font-label-md text-label-md text-on-surface mb-2 font-semibold">
+          <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
             Primary Cuisine Badges
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {cuisineTags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary-fixed/60 border border-primary-fixed-dim text-on-primary-fixed font-label-sm text-label-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-semibold text-[#1b3b2b] transition-colors"
               >
                 <span>{tag}</span>
                 <button
                   type="button"
                   onClick={() => onRemoveTag(tag)}
-                  className="material-symbols-outlined text-xs hover:text-error transition-colors cursor-pointer"
-                  title={`Remove ${tag}`}
+                  className="hover:text-rose-600 cursor-pointer"
                 >
-                  close
+                  <span className="material-symbols-outlined text-xs">close</span>
                 </button>
               </span>
             ))}
             <button
               type="button"
               onClick={onAddTagClick}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dashed border-outline-variant hover:border-primary hover:text-primary text-on-surface-variant font-label-sm text-label-sm transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-xl border border-dashed border-[#1b3b2b]/30 hover:border-[#1b3b2b] text-xs font-bold text-[#1b3b2b] cursor-pointer transition-colors"
             >
               <span className="material-symbols-outlined text-sm">add</span>
               <span>Add Cuisine Tag</span>
             </button>
           </div>
-          {cuisineTags.length === 0 && (
-            <p className="mt-1.5 font-body-sm text-xs text-secondary">
-              Please add at least 1 cuisine badge to help guests discover your specialty dishes.
-            </p>
-          )}
         </div>
 
-        {/* Price Tier & Licensing row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md pt-space-xs">
+        {/* Price Tier & Health Dept Food License Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          {/* Price Tier Selectors */}
           <div>
-            <label className="block font-label-md text-label-md text-on-surface mb-1.5 font-semibold">
+            <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
               Price Tier Bracket
             </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => onPriceTierChange("economy")}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm transition-all cursor-pointer ${
-                  priceTier === "economy"
-                    ? "bg-primary-container text-on-primary border border-primary font-semibold shadow-xs"
-                    : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
-                }`}
-              >
-                $ Economy
-              </button>
-              <button
-                type="button"
-                onClick={() => onPriceTierChange("moderate")}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm transition-all cursor-pointer ${
-                  priceTier === "moderate"
-                    ? "bg-primary-container text-on-primary border border-primary font-semibold shadow-xs"
-                    : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
-                }`}
-              >
-                $$ Moderate
-              </button>
-              <button
-                type="button"
-                onClick={() => onPriceTierChange("fine-dining")}
-                className={`py-2 text-center rounded-lg font-label-sm text-label-sm transition-all cursor-pointer ${
-                  priceTier === "fine-dining"
-                    ? "bg-primary-container text-on-primary border border-primary font-semibold shadow-xs"
-                    : "border border-outline-variant/60 text-on-surface hover:bg-surface-container"
-                }`}
-              >
-                $$$ Fine Dining
-              </button>
+            <div className="grid grid-cols-4 gap-2">
+              {PRICE_TIERS.map((tier) => (
+                <button
+                  key={tier.value}
+                  type="button"
+                  onClick={() => onPriceTierChange(tier.value)}
+                  className={`p-2 rounded-xl text-center cursor-pointer transition-all ${priceTier === tier.value
+                    ? "bg-[#1b3b2b] text-white shadow-2xs font-bold"
+                    : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border border-neutral-200"
+                    }`}
+                >
+                  <span className="text-xs block font-bold">{tier.label}</span>
+                  <span className="text-[10px] block opacity-80">{tier.sub}</span>
+                </button>
+              ))}
             </div>
           </div>
 
+          
+          {/* Clean Non-Overlapping License & Hygiene Section */}
           <div>
-            <label className="block font-label-md text-label-md text-on-surface mb-1.5 font-semibold">
-              Michigan Health Dept &amp; Food License
+            <label className="text-xs font-bold text-[#1b3b2b] block mb-1">
+              Trade License &amp; Food Safety Audit
             </label>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+            <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+              {/* Input Box with Integrated End Adornment */}
+              <div className="relative flex-1 flex items-center">
                 <input
-                  className="w-full px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/70 text-on-surface font-body-sm focus:outline-none focus:border-primary pr-8"
                   type="text"
                   value={licenseReference}
                   onChange={(e) => onLicenseChange(e.target.value)}
-                  placeholder="e.g. MI-DET-2024-98421"
+                  placeholder="TRAD/DSCC/019284/2026"
+                  className="w-full h-11 bg-neutral-50 pl-3.5 pr-11 rounded-xl border border-neutral-200 text-xs font-mono font-semibold text-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] transition-all"
                 />
-                <span className="material-symbols-outlined absolute right-2.5 top-2.5 text-base text-emerald-700 pointer-events-none">
-                  verified
-                </span>
+                <div
+                  title="Official Trade Verification"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center justify-center pointer-events-none text-emerald-600"
+                >
+                  <span className="material-symbols-outlined text-[20px] leading-none">verified</span>
+                </div>
               </div>
-              <span className="px-2 py-1.5 rounded-md bg-surface-container text-on-surface-variant font-label-sm text-label-sm whitespace-nowrap">
-                {hygieneGrade || "Grade A+"}
-              </span>
+
+              {/* Matching Height Badge */}
+              <div className="shrink-0 h-11 px-3.5 rounded-xl bg-neutral-100 border border-neutral-200 flex items-center justify-center gap-1.5 text-neutral-700 text-xs font-semibold select-none">
+                <span className="material-symbols-outlined text-base text-emerald-600 leading-none">
+                  health_and_safety
+                </span>
+                <span>{hygieneGrade || "Grade A (98/100)"}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
