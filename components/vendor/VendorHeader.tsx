@@ -98,7 +98,7 @@ export default function VendorHeader({
           {/* Standalone Large Animated Brand Logo (Transparent background) */}
           <Link
             className="group relative flex items-center transition-transform duration-300 hover:scale-105"
-            href="/dashboard/vendor"
+            href="/"
             title="DineDesk Vendor Suite"
           >
             {/* Luminous aura behind logo */}
