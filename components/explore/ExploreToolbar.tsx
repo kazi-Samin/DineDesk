@@ -11,6 +11,7 @@ interface ExploreToolbarProps {
     setViewMode: (mode: "grid" | "list") => void;
     onMobileFilterOpen: () => void;
     activeFilterCount: number;
+    totalCount?: number;
 }
 
 export default function ExploreToolbar({
@@ -22,7 +23,15 @@ export default function ExploreToolbar({
     setViewMode,
     onMobileFilterOpen,
     activeFilterCount,
+    totalCount,
 }: ExploreToolbarProps) {
+    // Dynamically generate the sequential label based on active database count
+    const countDisplay = totalCount && totalCount > 0 ? totalCount : 401;
+    const dynamicSequentialLabel = `Sequential (#1 - #${countDisplay})`;
+
+    // Ensure bidirectional matching whether parent passes "Sequential", "Sequential (#1 - #400)", or dynamic
+    const isSequentialSelected = sortBy.startsWith("Sequential");
+
     return (
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-surface-container-lowest border border-outline-variant/80 p-4 rounded-3xl shadow-sm">
             {/* Responsive Live Search Input */}
@@ -65,18 +74,18 @@ export default function ExploreToolbar({
                     )}
                 </button>
 
-                {/* Sorting Dropdown */}
-                <div className="relative min-w-[210px]">
+                {/* Dynamic Sorting Dropdown */}
+                <div className="relative min-w-[220px]">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-primary">
                         <span className="material-symbols-outlined text-base">sort</span>
                     </span>
                     <select
                         aria-label="Sort menus"
                         className="w-full appearance-none bg-surface-container-low/60 border border-outline-variant/70 rounded-2xl py-3 pl-10 pr-10 text-xs font-bold text-on-surface focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer shadow-2xs transition-all"
-                        value={sortBy}
+                        value={isSequentialSelected ? "Sequential" : sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                     >
-                        <option value="Sequential (#1 - #400)">Sequential (#1 - #400)</option>
+                        <option value="Sequential">{dynamicSequentialLabel}</option>
                         <option value="Highest Rated (Default)">Highest Rated</option>
                         <option value="Price: Low to High">Price: Low to High</option>
                         <option value="Price: High to Low">Price: High to Low</option>

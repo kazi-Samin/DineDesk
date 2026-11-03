@@ -9,8 +9,6 @@ import ExploreToolbar from "@/components/explore/ExploreToolbar";
 import ExploreSidebar from "@/components/explore/ExploreSidebar";
 import ExplorePagination from "@/components/explore/ExplorePagination";
 
-
-
 function ExploreContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
@@ -35,7 +33,7 @@ function ExploreContent() {
     kidFriendly: false,
   });
 
-  const [sortBy, setSortBy] = useState<string>("Sequential (#1 - #400)");
+  const [sortBy, setSortBy] = useState<string>("Sequential");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
@@ -59,6 +57,8 @@ function ExploreContent() {
       .then((data) => {
         if (Array.isArray(data)) {
           setMenus(data);
+        } else if (data && Array.isArray(data.data)) {
+          setMenus(data.data);
         }
         setLoading(false);
       })
@@ -131,9 +131,9 @@ function ExploreContent() {
       result = result.filter((m) => m.isKidFriendly);
     }
 
-    // Sorting Logic
-    if (sortBy === "Sequential (#1 - #400)") {
-      // Database order
+    // Dynamic Sorting Logic
+    if (sortBy === "Sequential" || sortBy.startsWith("Sequential")) {
+      // Database sequential order
     } else if (sortBy === "Highest Rated (Default)") {
       result.sort((a, b) => b.rating - a.rating);
     } else if (sortBy === "Price: Low to High") {
@@ -238,6 +238,7 @@ function ExploreContent() {
               setViewMode={setViewMode}
               onMobileFilterOpen={() => setMobileFilterOpen(true)}
               activeFilterCount={activeFilterCount}
+              totalCount={menus.length || filteredMenus.length || 401}
             />
 
             {/* Active Filters Bar */}
@@ -340,7 +341,7 @@ function ExploreContent() {
         </div>
       </div>
 
-      {/* Instant Click Menu Preview Modal (Fixed Cross Overlap, Separated Serial Tag, Image Fallback) */}
+      {/* Instant Click Menu Preview Modal */}
       {selectedMenuPreview && (() => {
         const rawName = selectedMenuPreview.menuName || "Gourmet Dish";
         const serialMatch = rawName.match(/#(\d+)/);
@@ -372,7 +373,7 @@ function ExploreContent() {
                 />
               </div>
 
-              {/* Modal Info & Separated Smaller Serial Tag */}
+              {/* Modal Info */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-secondary uppercase tracking-widest">
@@ -408,7 +409,7 @@ function ExploreContent() {
                   </span>
                 </div>
 
-                {/* Full-Width Premium Action Button */}
+                {/* Full-Width Action Button */}
                 <Link
                   href={`/menus/${selectedMenuPreview.id}`}
                   className="w-full py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
