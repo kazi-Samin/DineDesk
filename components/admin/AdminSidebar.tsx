@@ -1,6 +1,7 @@
 // components/admin/AdminSidebar.tsx
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +12,10 @@ interface AdminSidebarProps {
   onClose?: () => void;
   onToggle?: () => void;
   pendingApprovalsCount?: number;
+  adminProfile?: {
+    name: string;
+    avatar: string;
+  };
 }
 
 export default function AdminSidebar({
@@ -18,9 +23,11 @@ export default function AdminSidebar({
   onClose,
   onToggle,
   pendingApprovalsCount = 8,
+  adminProfile,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const [imgError, setImgError] = useState(false);
 
   const isOverview = pathname === "/dashboard/admin";
   const isAnalytics = pathname === "/dashboard/admin/analytics";
@@ -31,23 +38,23 @@ export default function AdminSidebar({
   const isSettings = pathname?.startsWith("/dashboard/admin/settings");
   const isAuditLogs = pathname?.startsWith("/dashboard/admin/audit-logs");
 
-  const userAvatarUrl =
+  const displayName = adminProfile?.name || (user as any)?.name || "Fourkan Bin Ilias";
+  const avatarUrl =
+    adminProfile?.avatar ||
     (user as any)?.image ||
     (user as any)?.avatar ||
     (user as any)?.picture ||
     (user as any)?.photoURL ||
     (user as any)?.profileImage ||
-    "/assets/logo.png";
+    "";
 
-  const userInitials =
-    typeof (user as any)?.name === "string"
-      ? ((user as any).name as string)
-        .split(" ")
-        .map((n: string) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-      : "SA";
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((n: string) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "SA";
 
   const handleNavClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024 && onClose) {
@@ -155,25 +162,27 @@ export default function AdminSidebar({
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#E2B774]/15 rounded-full blur-2xl pointer-events-none group-hover:bg-[#E2B774]/25 transition-colors duration-500" />
 
               <div className="relative z-10 flex items-center gap-3">
+                {/* Avatar with Mutual Exclusion */}
                 <div className="relative w-10 h-10 rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/50 shadow-inner flex items-center justify-center shrink-0 overflow-hidden">
-                  <img
-                    src={userAvatarUrl}
-                    alt={user?.name || "Admin"}
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLElement).style.display = "none";
-                    }}
-                  />
-                  <span className="text-xs font-bold text-[#E2B774]">
-                    {userInitials}
-                  </span>
+                  {avatarUrl && !imgError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="w-full h-full object-cover rounded-lg"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : (
+                    <span className="text-xs font-bold text-[#E2B774]">
+                      {userInitials}
+                    </span>
+                  )}
                   <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#1b3b2b]" />
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-0.5">
                     <span className="text-xs font-bold text-white truncate block max-w-[130px]">
-                      {user?.name || "Fourkan Bin Ilias"}
+                      {displayName}
                     </span>
                     <span
                       className="material-symbols-outlined text-[13px] text-[#E2B774] shrink-0"
@@ -188,7 +197,7 @@ export default function AdminSidebar({
                       Super Admin
                     </span>
                     <span className="text-[10px] text-neutral-300 font-mono truncate">
-                      {user?.email ? user.email.split("@")[0] : "admin"}
+                      {(user as any)?.email ? (user as any).email.split("@")[0] : "admin"}
                     </span>
                   </div>
                 </div>
@@ -197,13 +206,20 @@ export default function AdminSidebar({
           ) : (
             <div
               className="w-11 h-11 mx-auto rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/40 shadow-sm flex items-center justify-center relative cursor-pointer group shrink-0"
-              title={`${user?.name || "Fourkan Bin Ilias"} • Super Admin`}
+              title={`${displayName} • Super Admin`}
             >
-              <img
-                src={userAvatarUrl}
-                alt="Profile"
-                className="w-full h-full object-cover rounded-lg"
-              />
+              {avatarUrl && !imgError ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <span className="text-xs font-bold text-[#E2B774]">
+                  {userInitials}
+                </span>
+              )}
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
             </div>
           )}
@@ -218,7 +234,6 @@ export default function AdminSidebar({
               <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
-            {/* Overview */}
             <Link
               href="/dashboard/admin"
               onClick={handleNavClick}
@@ -236,7 +251,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* System Analytics */}
             <Link
               href="/dashboard/admin/analytics"
               onClick={handleNavClick}
@@ -249,7 +263,6 @@ export default function AdminSidebar({
                 </span>
                 {isOpen && <span className="truncate">System Analytics</span>}
               </div>
-
               {isOpen && (
                 <span
                   className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-colors shrink-0 ${isAnalytics
@@ -260,13 +273,11 @@ export default function AdminSidebar({
                   Trends
                 </span>
               )}
-
               {!isOpen && isAnalytics && (
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
-            {/* Manage Users */}
             <Link
               href="/dashboard/admin/users"
               onClick={handleNavClick}
@@ -289,7 +300,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Venue & Floor Stations */}
             <Link
               href="/dashboard/admin/restaurants"
               onClick={handleNavClick}
@@ -317,7 +327,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Financial Ledger */}
             <Link
               href="/dashboard/admin/transactions"
               onClick={handleNavClick}
@@ -346,7 +355,6 @@ export default function AdminSidebar({
               <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
-            {/* Staff & Leadership */}
             <Link
               href="/dashboard/admin/admins"
               onClick={handleNavClick}
@@ -369,7 +377,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Venue Settings */}
             <Link
               href="/dashboard/admin/settings"
               onClick={handleNavClick}
@@ -398,7 +405,6 @@ export default function AdminSidebar({
               <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
-            {/* GM Live Floor Console */}
             <Link
               href="/dashboard/vendor"
               onClick={handleNavClick}
@@ -421,7 +427,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Audit Logs */}
             <Link
               href="/dashboard/admin/audit-logs"
               onClick={handleNavClick}
@@ -439,7 +444,6 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Live Guest View */}
             <Link
               href="/"
               onClick={handleNavClick}
