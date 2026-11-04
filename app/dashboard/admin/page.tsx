@@ -75,6 +75,7 @@ export default function AdminOverviewPage() {
   const [selectedRange, setSelectedRange] = useState("30d");
   const [data, setData] = useState<OverviewState | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -112,8 +113,12 @@ export default function AdminOverviewPage() {
   };
 
   // Fetch live PostgreSQL aggregated data from Express Backend
-  const fetchOverviewData = useCallback(async (rangeKey: string) => {
-    setIsLoading(true);
+  const fetchOverviewData = useCallback(async (rangeKey: string, isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
     try {
       const rawBackendUrl =
@@ -157,11 +162,15 @@ export default function AdminOverviewPage() {
       }
 
       setData(json);
+      if (isManualRefresh) {
+        showToast("Executive telemetry synchronized from PostgreSQL.");
+      }
     } catch (err: any) {
       console.error("Overview Fetch Error:", err);
       setError(err?.message || "Failed to synchronize operational metrics.");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
@@ -280,6 +289,26 @@ export default function AdminOverviewPage() {
 
           {/* Action Tools */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Custom Premium Sync / Refresh Button */}
+            <button
+              type="button"
+              disabled={isRefreshing || isLoading}
+              onClick={() => fetchOverviewData(selectedRange, true)}
+              className="relative inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1b3b2b] to-[#12281d] text-white hover:from-[#152e22] hover:to-[#0d1d15] text-xs font-semibold shadow-xs border border-[#E2B774]/30 hover:border-[#E2B774]/60 transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50 select-none group"
+              title="Sync latest live executive telemetry from database"
+            >
+              <span
+                className={`material-symbols-outlined text-[17px] text-[#E2B774] transition-transform duration-700 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180"
+                  }`}
+              >
+                sync
+              </span>
+              <span className="tracking-tight">
+                {isRefreshing ? "Syncing..." : "Sync Telemetry"}
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 hidden sm:block" />
+            </button>
+
             {/* Dynamic Period Selector */}
             <div className="flex items-center bg-white p-1 rounded-xl border border-[#1b3b2b]/15 shadow-xs">
               {RANGES.map((r) => (
@@ -327,7 +356,7 @@ export default function AdminOverviewPage() {
             </div>
             <button
               type="button"
-              onClick={() => fetchOverviewData(selectedRange)}
+              onClick={() => fetchOverviewData(selectedRange, true)}
               className="font-bold underline hover:no-underline cursor-pointer"
             >
               Retry Handshake
