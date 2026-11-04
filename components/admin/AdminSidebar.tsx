@@ -78,7 +78,7 @@ export default function AdminSidebar({
   const isSettings = pathname?.startsWith("/dashboard/admin/settings");
   const isAuditLogs = pathname?.startsWith("/dashboard/admin/audit-logs");
 
-  const displayName = liveProfile.name || (user as any)?.name || "Fourkan Bin Ilias";
+  const displayName = liveProfile.name || (user as any)?.name || (user as any)?.fullName || "Fourkan Bin Ilias";
   const avatarUrl =
     liveProfile.avatar ||
     (user as any)?.avatarUrl ||
@@ -93,7 +93,10 @@ export default function AdminSidebar({
       .map((n: string) => n[0])
       .slice(0, 2)
       .join("")
-      .toUpperCase() || "SA";
+      .toUpperCase() || "AD";
+
+  const userEmail = (user as any)?.email ? (user as any).email.split("@")[0] : "admin";
+  const userRole = ((user as any)?.role || "Super Admin").replace(/_/g, " ");
 
   const handleNavClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024 && onClose) {
@@ -136,11 +139,11 @@ export default function AdminSidebar({
 
       <aside
         className={`fixed left-0 top-20 bottom-0 bg-[#fbfdfc] z-50 flex flex-col justify-between border-r border-[#1b3b2b]/10 shadow-[4px_0_24px_rgba(27,59,43,0.04)] transition-all duration-300 ease-in-out ${isOpen
-            ? "translate-x-0 w-72"
+            ? "translate-x-0 w-72 sm:w-72"
             : "-translate-x-full lg:translate-x-0 lg:w-20"
           }`}
       >
-        {/* Toggle Button */}
+        {/* Responsive Toggle Button */}
         <button
           type="button"
           onClick={handleToggleClick}
@@ -163,8 +166,8 @@ export default function AdminSidebar({
         >
           {/* Governance Hub Card */}
           {isOpen ? (
-            <div className="bg-white p-3 rounded-2xl border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between whitespace-nowrap">
-              <div className="flex items-center gap-2.5">
+            <div className="bg-white p-3 rounded-2xl border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 rounded-xl bg-[#1b3b2b]/5 text-[#1b3b2b] flex items-center justify-center shrink-0">
                   <span className="material-symbols-outlined text-lg">shield_person</span>
                 </div>
@@ -177,7 +180,7 @@ export default function AdminSidebar({
                   </span>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[10px] font-bold shrink-0">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[10px] font-bold shrink-0 ml-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                 Live
               </span>
@@ -192,12 +195,13 @@ export default function AdminSidebar({
             </div>
           )}
 
-          {/* Profile Card: Strictly image OR text initials */}
+          {/* Profile Card: Responsive, Flexible, No Clipping */}
           {isOpen ? (
-            <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#1b3b2b] to-[#12281d] text-white shadow-md shadow-[#1b3b2b]/20 border border-[#E2B774]/20 group whitespace-nowrap">
+            <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#1b3b2b] to-[#12281d] text-white shadow-md shadow-[#1b3b2b]/20 border border-[#E2B774]/20 group min-h-[72px]">
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#E2B774]/15 rounded-full blur-2xl pointer-events-none group-hover:bg-[#E2B774]/25 transition-colors duration-500" />
 
-              <div className="relative z-10 flex items-center gap-3">
+              <div className="relative z-10 flex items-center gap-3 w-full">
+                {/* Avatar / Initials */}
                 <div className="relative w-10 h-10 rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/50 shadow-inner flex items-center justify-center shrink-0 overflow-hidden">
                   {avatarUrl && !imgError ? (
                     <img
@@ -207,32 +211,39 @@ export default function AdminSidebar({
                       onError={() => setImgError(true)}
                     />
                   ) : (
-                    <span className="text-xs font-bold text-[#E2B774]">
+                    <span className="text-xs font-bold text-[#E2B774] select-none">
                       {userInitials}
                     </span>
                   )}
                   <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#1b3b2b]" />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-xs font-bold text-white truncate block max-w-[130px]">
+                {/* Name, Role Badge & Email Details */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <div className="flex items-center gap-1.5 mb-1 w-full">
+                    <span
+                      className="text-xs font-bold text-white truncate block flex-1"
+                      title={displayName}
+                    >
                       {displayName}
                     </span>
                     <span
                       className="material-symbols-outlined text-[13px] text-[#E2B774] shrink-0"
-                      title="Verified Super Admin"
+                      title="Verified Platform Administrator"
                     >
                       verified
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded bg-[#E2B774] text-[#1b3b2b] shrink-0">
-                      Super Admin
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-[#E2B774] text-[#1b3b2b] shrink-0 leading-none">
+                      {userRole}
                     </span>
-                    <span className="text-[10px] text-neutral-300 font-mono truncate">
-                      {(user as any)?.email ? (user as any).email.split("@")[0] : "admin"}
+                    <span
+                      className="text-[10px] text-neutral-300 font-mono truncate max-w-[90px]"
+                      title={(user as any)?.email || `${userEmail}@dinedesk.com`}
+                    >
+                      {userEmail}
                     </span>
                   </div>
                 </div>
@@ -241,7 +252,7 @@ export default function AdminSidebar({
           ) : (
             <div
               className="w-11 h-11 mx-auto rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/40 shadow-sm flex items-center justify-center relative cursor-pointer group shrink-0"
-              title={`${displayName} • Super Admin`}
+              title={`${displayName} • ${userRole}`}
             >
               {avatarUrl && !imgError ? (
                 <img
@@ -251,7 +262,7 @@ export default function AdminSidebar({
                   onError={() => setImgError(true)}
                 />
               ) : (
-                <span className="text-xs font-bold text-[#E2B774]">
+                <span className="text-xs font-bold text-[#E2B774] select-none">
                   {userInitials}
                 </span>
               )}
@@ -262,7 +273,7 @@ export default function AdminSidebar({
           {/* 1. ADMINISTRATION SECTION */}
           <div className="space-y-1">
             {isOpen ? (
-              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5">
                 Administration
               </span>
             ) : (
@@ -383,7 +394,7 @@ export default function AdminSidebar({
           {/* 2. EXECUTIVE GOVERNANCE SECTION */}
           <div className="space-y-1 pt-2 border-t border-[#1b3b2b]/10">
             {isOpen ? (
-              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5">
                 Executive Governance
               </span>
             ) : (
@@ -433,7 +444,7 @@ export default function AdminSidebar({
           {/* 3. OPERATIONS & FLOOR SECTION */}
           <div className="space-y-1 pt-2 border-t border-[#1b3b2b]/10">
             {isOpen ? (
-              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5">
                 Operations &amp; Floor
               </span>
             ) : (
@@ -499,14 +510,14 @@ export default function AdminSidebar({
         {/* Bottom Status Bar */}
         <div className="p-3 border-t border-[#1b3b2b]/10 bg-white/60">
           {isOpen ? (
-            <div className="bg-[#f4f7f5] p-2.5 rounded-xl border border-[#1b3b2b]/10 flex items-center justify-between whitespace-nowrap">
+            <div className="bg-[#f4f7f5] p-2.5 rounded-xl border border-[#1b3b2b]/10 flex items-center justify-between min-w-0">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0" />
                 <span className="text-[11px] text-[#1b3b2b] font-bold truncate">
                   Cluster DET-1
                 </span>
               </div>
-              <span className="font-mono text-[10px] text-neutral-500 font-medium shrink-0">
+              <span className="font-mono text-[10px] text-neutral-500 font-medium shrink-0 ml-2">
                 v2.14.0
               </span>
             </div>
