@@ -1,9 +1,7 @@
+// app/dashboard/admin/transactions/page.tsx
 "use client";
 
 import { useState } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
-import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { downloadAdminCsv } from "@/services/mockAdminService";
 
 interface TransactionRecord {
@@ -119,7 +117,6 @@ const INITIAL_TRANSACTIONS: TransactionRecord[] = [
 ];
 
 export default function AdminTransactionsPage() {
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_admin_sidebar");
   const [transactions] = useState<TransactionRecord[]>(INITIAL_TRANSACTIONS);
   const [filter, setFilter] = useState<string>("all");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -130,7 +127,18 @@ export default function AdminTransactionsPage() {
   };
 
   const handleExportCsv = () => {
-    const headers = ["Check ID", "Table / Channel", "Station", "Guest", "Gross ($)", "Gratuity ($)", "Method", "Type", "Timestamp", "Status"];
+    const headers = [
+      "Check ID",
+      "Table / Channel",
+      "Station",
+      "Guest",
+      "Gross ($)",
+      "Gratuity ($)",
+      "Method",
+      "Type",
+      "Timestamp",
+      "Status",
+    ];
     const rows = transactions.map((t) => [
       t.id,
       t.tableOrChannel,
@@ -160,154 +168,162 @@ export default function AdminTransactionsPage() {
   const avgCheck = (totalGross / transactions.length).toFixed(2);
 
   return (
-    <div className="bg-background min-h-screen text-on-surface font-body-md antialiased flex flex-col">
-      <AdminSidebar isOpen={isSidebarOpen} onClose={closeSidebar} onToggle={toggleSidebar} />
-      <AdminHeader isSidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar} />
-
-      <div className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"}`}>
-        <main className="relative flex-1 bg-background">
-          <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-7xl mx-auto w-full">
-            {/* Header with Title & Action */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-outline-variant/40">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">
-                    Financial Ledger &amp; Cashier Reconciliation
-                  </span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-secondary" />
-                  <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-                    The Maple &amp; Vine (Detroit, MI)
-                  </span>
-                </div>
-                <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  Guest Checks &amp; Settlements
-                </h1>
-                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                  Real-time guest checks, dining station revenues, gratuity distribution, and merchant ACH disbursements.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleExportCsv}
-                  className="flex items-center gap-1.5 bg-surface-container-low hover:bg-surface-container text-on-surface px-3.5 py-2 rounded-xl text-xs font-semibold border border-outline-variant/70 shadow-2xs transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-base">file_download</span>
-                  <span>Export CSV</span>
-                </button>
-              </div>
+    <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+        {/* Header with Title & Action */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] uppercase tracking-wider text-amber-800 font-bold">
+                Financial Ledger &amp; Cashier Reconciliation
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E2B774]" />
+              <span className="text-[11px] text-neutral-500 font-medium">
+                The Maple &amp; Vine (Detroit, MI)
+              </span>
             </div>
-
-            {/* Financial Summary Stat Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-2xs flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Total Shift Gross
-                </span>
-                <span className="text-2xl font-bold text-primary mt-1">${totalGross.toFixed(2)}</span>
-                <span className="text-[11px] text-emerald-600 font-semibold mt-1">Across {transactions.length} Guest Checks</span>
-              </div>
-
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-2xs flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Average Table Check
-                </span>
-                <span className="text-2xl font-bold text-primary mt-1">${avgCheck}</span>
-                <span className="text-[11px] text-primary font-semibold mt-1">+14.2% vs target benchmark</span>
-              </div>
-
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-2xs flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Staff Gratuities (FOH)
-                </span>
-                <span className="text-2xl font-bold text-secondary mt-1">${totalTips.toFixed(2)}</span>
-                <span className="text-[11px] text-on-surface-variant mt-1">Pooled distribution tonight</span>
-              </div>
-
-              <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-2xs flex flex-col justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
-                  Bank Settlement (ACH)
-                </span>
-                <span className="text-2xl font-bold text-emerald-700 mt-1">Fifth Third</span>
-                <span className="text-[11px] text-emerald-600 font-semibold mt-1">Next payout: Midnight EST</span>
-              </div>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant text-xs self-start">
-              {[
-                { key: "all", label: "All Checks" },
-                { key: "floor", label: "Main Floor" },
-                { key: "vip", label: "Wine Cellar" },
-                { key: "chef", label: "Chef Counter" },
-                { key: "curbside", label: "Takeaway" },
-              ].map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setFilter(t.key)}
-                  className={`px-3 py-1.5 rounded-lg capitalize font-semibold transition-all cursor-pointer ${
-                    filter === t.key
-                      ? "bg-primary-container text-on-primary font-bold shadow-2xs"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Transactions Ledger Table */}
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-2xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-surface-container-low font-label-sm text-[11px] uppercase text-on-surface-variant tracking-wider border-b border-outline-variant/50">
-                      <th className="py-3 px-5">Check ID</th>
-                      <th className="py-3 px-5">Table &amp; Station</th>
-                      <th className="py-3 px-5">Guest Name</th>
-                      <th className="py-3 px-5">Payment Method</th>
-                      <th className="py-3 px-5">Gross Amount</th>
-                      <th className="py-3 px-5">Gratuity</th>
-                      <th className="py-3 px-5">Time</th>
-                      <th className="py-3 px-5 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-outline-variant/30 text-xs">
-                    {filtered.map((t) => (
-                      <tr key={t.id} className="hover:bg-surface-container-low transition-colors">
-                        <td className="py-3.5 px-5 font-mono font-bold text-primary">{t.id}</td>
-                        <td className="py-3.5 px-5">
-                          <div>
-                            <span className="font-bold text-on-surface block">{t.tableOrChannel}</span>
-                            <span className="text-[11px] text-on-surface-variant">{t.station}</span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-5 font-medium text-on-surface">{t.guestName}</td>
-                        <td className="py-3.5 px-5 text-on-surface-variant">{t.method}</td>
-                        <td className="py-3.5 px-5 font-mono font-bold text-on-surface">${t.grossAmount.toFixed(2)}</td>
-                        <td className="py-3.5 px-5 font-mono text-secondary font-semibold">${t.tipAmount.toFixed(2)}</td>
-                        <td className="py-3.5 px-5 text-on-surface-variant">{t.timestamp}</td>
-                        <td className="py-3.5 px-5 text-right">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-[11px] font-bold">
-                            <span className="material-symbols-outlined text-xs">check</span>
-                            {t.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
+              Guest Checks &amp; Settlements
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Real-time guest checks, dining station revenues, gratuity distribution, and merchant ACH disbursements.
+            </p>
           </div>
-        </main>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-[#1b3b2b] px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#1b3b2b]/15 shadow-xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">file_download</span>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Financial Summary Stat Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-[#1b3b2b]/10 shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+              Total Shift Gross
+            </span>
+            <span className="text-2xl font-bold text-[#1b3b2b] mt-1">
+              ${totalGross.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-emerald-700 font-semibold mt-1">
+              Across {transactions.length} Guest Checks
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-[#1b3b2b]/10 shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+              Average Table Check
+            </span>
+            <span className="text-2xl font-bold text-[#1b3b2b] mt-1">${avgCheck}</span>
+            <span className="text-[11px] text-amber-800 font-semibold mt-1">
+              +14.2% vs target benchmark
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-[#1b3b2b]/10 shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+              Staff Gratuities (FOH)
+            </span>
+            <span className="text-2xl font-bold text-amber-800 mt-1">
+              ${totalTips.toFixed(2)}
+            </span>
+            <span className="text-[11px] text-neutral-500 mt-1">
+              Pooled distribution tonight
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-[#1b3b2b]/10 shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+              Bank Settlement (ACH)
+            </span>
+            <span className="text-2xl font-bold text-emerald-800 mt-1">Fifth Third</span>
+            <span className="text-[11px] text-emerald-700 font-semibold mt-1">
+              Next payout: Midnight EST
+            </span>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1 bg-[#f4f7f5] p-1 rounded-xl border border-[#1b3b2b]/10 text-xs self-start">
+          {[
+            { key: "all", label: "All Checks" },
+            { key: "floor", label: "Main Floor" },
+            { key: "vip", label: "Wine Cellar" },
+            { key: "chef", label: "Chef Counter" },
+            { key: "curbside", label: "Takeaway" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilter(t.key)}
+              className={`px-3 py-1.5 rounded-lg capitalize font-semibold transition-all cursor-pointer ${filter === t.key
+                  ? "bg-[#1b3b2b] text-white font-bold shadow-xs"
+                  : "text-neutral-600 hover:text-[#1b3b2b]"
+                }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Transactions Ledger Table */}
+        <div className="bg-white rounded-xl border border-[#1b3b2b]/10 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#f4f7f5] text-[11px] uppercase text-neutral-500 font-bold tracking-wider border-b border-[#1b3b2b]/10">
+                  <th className="py-3 px-5">Check ID</th>
+                  <th className="py-3 px-5">Table &amp; Station</th>
+                  <th className="py-3 px-5">Guest Name</th>
+                  <th className="py-3 px-5">Payment Method</th>
+                  <th className="py-3 px-5">Gross Amount</th>
+                  <th className="py-3 px-5">Gratuity</th>
+                  <th className="py-3 px-5">Time</th>
+                  <th className="py-3 px-5 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1b3b2b]/10 text-xs">
+                {filtered.map((t) => (
+                  <tr key={t.id} className="hover:bg-neutral-50/70 transition-colors">
+                    <td className="py-3.5 px-5 font-mono font-bold text-[#1b3b2b]">{t.id}</td>
+                    <td className="py-3.5 px-5">
+                      <div>
+                        <span className="font-bold text-[#1b3b2b] block">{t.tableOrChannel}</span>
+                        <span className="text-[11px] text-neutral-500">{t.station}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-5 font-medium text-[#1b3b2b]">{t.guestName}</td>
+                    <td className="py-3.5 px-5 text-neutral-500">{t.method}</td>
+                    <td className="py-3.5 px-5 font-mono font-bold text-[#1b3b2b]">
+                      ${t.grossAmount.toFixed(2)}
+                    </td>
+                    <td className="py-3.5 px-5 font-mono text-amber-800 font-semibold">
+                      ${t.tipAmount.toFixed(2)}
+                    </td>
+                    <td className="py-3.5 px-5 text-neutral-500">{t.timestamp}</td>
+                    <td className="py-3.5 px-5 text-right">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[11px] font-bold">
+                        <span className="material-symbols-outlined text-xs">check</span>
+                        {t.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-primary text-on-primary px-4 py-3 rounded-xl shadow-lg border border-outline-variant/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-base">check_circle</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[#E2B774] text-base">check_circle</span>
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}

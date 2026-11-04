@@ -1,7 +1,10 @@
+// components/admin/AdminSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
 
 interface AdminSidebarProps {
   isOpen?: boolean;
@@ -17,6 +20,7 @@ export default function AdminSidebar({
   pendingApprovalsCount = 8,
 }: AdminSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   const isOverview = pathname === "/dashboard/admin";
   const isAnalytics = pathname === "/dashboard/admin/analytics";
@@ -27,8 +31,25 @@ export default function AdminSidebar({
   const isSettings = pathname?.startsWith("/dashboard/admin/settings");
   const isAuditLogs = pathname?.startsWith("/dashboard/admin/audit-logs");
 
+  const userAvatarUrl =
+    (user as any)?.image ||
+    (user as any)?.avatar ||
+    (user as any)?.picture ||
+    (user as any)?.photoURL ||
+    (user as any)?.profileImage ||
+    "/assets/logo.png";
+
+  const userInitials =
+    typeof (user as any)?.name === "string"
+      ? ((user as any).name as string)
+        .split(" ")
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+      : "SA";
+
   const handleNavClick = () => {
-    // Only auto-close on mobile screens
     if (typeof window !== "undefined" && window.innerWidth < 1024 && onClose) {
       onClose();
     }
@@ -43,85 +64,158 @@ export default function AdminSidebar({
   };
 
   const linkClass = (active: boolean) =>
-    `flex items-center ${
-      isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
-    } rounded-xl text-xs font-medium transition-all ${
-      active
-        ? "bg-primary-container text-on-primary font-bold shadow-2xs"
-        : "text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+    `relative flex items-center transition-all duration-200 cursor-pointer group select-none ${isOpen
+      ? "justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold"
+      : "justify-center w-11 h-11 mx-auto rounded-xl text-sm"
+    } ${active
+      ? "bg-[#1b3b2b] text-white shadow-md shadow-[#1b3b2b]/25 font-bold"
+      : "text-[#1b3b2b]/70 hover:bg-[#1b3b2b]/8 hover:text-[#1b3b2b]"
     }`;
 
   return (
     <>
       {/* Mobile Backdrop Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-primary/25 backdrop-blur-xs z-30 lg:hidden"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-[#1b3b2b]/40 backdrop-blur-xs z-40 lg:hidden"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
 
       {/* Main Sidebar Container */}
       <aside
-        className={`fixed left-0 top-16 bottom-0 bg-surface-container-low z-30 flex flex-col justify-between border-r border-outline-variant shadow-[1px_0_8px_rgba(0,0,0,0.02)] transition-all duration-300 ease-in-out ${
-          isOpen
+        className={`fixed left-0 top-20 bottom-0 bg-[#fbfdfc] z-50 flex flex-col justify-between border-r border-[#1b3b2b]/10 shadow-[4px_0_24px_rgba(27,59,43,0.04)] transition-all duration-300 ease-in-out ${isOpen
             ? "translate-x-0 w-72"
             : "-translate-x-full lg:translate-x-0 lg:w-20"
-        }`}
+          }`}
       >
-        {/* Floating Collapse / Expand Arrow docked on sidebar's right border */}
+        {/* Floating Collapse / Expand Dock Button */}
         <button
           type="button"
           onClick={handleToggleClick}
-          className="absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-surface-container-lowest border border-outline-variant shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary transition-all cursor-pointer group"
+          className="hidden lg:flex absolute -right-3.5 top-5 z-50 w-7 h-7 rounded-full bg-white border border-[#1b3b2b]/20 shadow-md shadow-[#1b3b2b]/15 items-center justify-center text-[#1b3b2b] hover:bg-[#1b3b2b] hover:text-[#E2B774] hover:border-[#1b3b2b] active:scale-95 transition-all cursor-pointer group"
           title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         >
-          <span className="material-symbols-outlined text-base transition-transform group-hover:scale-110">
-            {isOpen ? "chevron_left" : "chevron_right"}
-          </span>
+          <motion.span
+            animate={{ rotate: isOpen ? 0 : 180 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="material-symbols-outlined text-[17px] leading-none select-none"
+          >
+            chevron_left
+          </motion.span>
         </button>
 
-        {/* Scrollable Navigation Sections */}
-        <div className={`flex flex-col flex-1 overflow-y-auto ${isOpen ? "px-4 py-4 space-y-5" : "px-2 py-4 space-y-4"}`}>
-          {/* Brand Sub-header in Sidebar */}
+        {/* Scrollable Navigation Area */}
+        <div
+          className={`flex flex-col flex-1 overflow-y-auto no-scrollbar overflow-x-hidden ${isOpen ? "px-4 py-4 space-y-4" : "px-2 py-4 space-y-3"
+            }`}
+        >
+          {/* Sub-Header Hub Card */}
           {isOpen ? (
-            <div className="bg-surface-container-lowest p-3 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">shield_person</span>
-                <div className="flex flex-col">
-                  <span className="font-headline-sm text-xs font-bold text-primary leading-tight">
+            <div className="bg-white p-3 rounded-2xl border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between whitespace-nowrap">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#1b3b2b]/5 text-[#1b3b2b] flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-lg">shield_person</span>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-[#1b3b2b] leading-tight truncate">
                     Governance Hub
                   </span>
-                  <span className="font-label-sm text-[10px] text-on-surface-variant">
+                  <span className="text-[10px] text-neutral-500 font-medium truncate">
                     Platform Telemetry
                   </span>
                 </div>
               </div>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-label-sm text-[10px] font-semibold">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-[10px] font-bold shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                 Live
               </span>
             </div>
           ) : (
             <div
-              className="bg-surface-container-lowest p-2 rounded-xl border border-outline-variant shadow-2xs flex items-center justify-center relative"
-              title="Governance Hub • Live"
+              className="w-11 h-11 mx-auto bg-white rounded-xl border border-[#1b3b2b]/10 shadow-xs flex items-center justify-center relative group shrink-0"
+              title="Governance Hub • Operational"
             >
-              <span className="material-symbols-outlined text-primary text-xl">shield_person</span>
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+              <span className="material-symbols-outlined text-[#1b3b2b] text-xl">shield_person</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
             </div>
           )}
 
-          {/* 1. Administration Section */}
+          {/* Premium User Profile Card */}
+          {isOpen ? (
+            <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#1b3b2b] to-[#12281d] text-white shadow-md shadow-[#1b3b2b]/20 border border-[#E2B774]/20 group whitespace-nowrap">
+              <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#E2B774]/15 rounded-full blur-2xl pointer-events-none group-hover:bg-[#E2B774]/25 transition-colors duration-500" />
+
+              <div className="relative z-10 flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/50 shadow-inner flex items-center justify-center shrink-0 overflow-hidden">
+                  <img
+                    src={userAvatarUrl}
+                    alt={user?.name || "Admin"}
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                  <span className="text-xs font-bold text-[#E2B774]">
+                    {userInitials}
+                  </span>
+                  <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#1b3b2b]" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-xs font-bold text-white truncate block max-w-[130px]">
+                      {user?.name || "Fourkan Bin Ilias"}
+                    </span>
+                    <span
+                      className="material-symbols-outlined text-[13px] text-[#E2B774] shrink-0"
+                      title="Verified Super Admin"
+                    >
+                      verified
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded bg-[#E2B774] text-[#1b3b2b] shrink-0">
+                      Super Admin
+                    </span>
+                    <span className="text-[10px] text-neutral-300 font-mono truncate">
+                      {user?.email ? user.email.split("@")[0] : "admin"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-11 h-11 mx-auto rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/40 shadow-sm flex items-center justify-center relative cursor-pointer group shrink-0"
+              title={`${user?.name || "Fourkan Bin Ilias"} • Super Admin`}
+            >
+              <img
+                src={userAvatarUrl}
+                alt="Profile"
+                className="w-full h-full object-cover rounded-lg"
+              />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+            </div>
+          )}
+
+          {/* 1. ADMINISTRATION SECTION */}
           <div className="space-y-1">
             {isOpen ? (
-              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
                 Administration
               </span>
             ) : (
-              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+              <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
             {/* Overview */}
@@ -129,12 +223,17 @@ export default function AdminSidebar({
               href="/dashboard/admin"
               onClick={handleNavClick}
               className={linkClass(isOverview)}
-              title="Overview"
+              title="Overview & Floor Analytics"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">dashboard</span>
-                {isOpen && <span>Overview</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isOverview ? "text-[#E2B774]" : ""}`}>
+                  dashboard
+                </span>
+                {isOpen && <span className="truncate">Overview</span>}
               </div>
+              {!isOpen && isOverview && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
+              )}
             </Link>
 
             {/* System Analytics */}
@@ -144,14 +243,26 @@ export default function AdminSidebar({
               className={linkClass(isAnalytics)}
               title="System Analytics"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">monitoring</span>
-                {isOpen && <span>System Analytics</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isAnalytics ? "text-[#E2B774]" : ""}`}>
+                  monitoring
+                </span>
+                {isOpen && <span className="truncate">System Analytics</span>}
               </div>
+
               {isOpen && (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-secondary-fixed text-on-secondary-fixed">
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-colors shrink-0 ${isAnalytics
+                      ? "bg-[#E2B774] text-[#1b3b2b] shadow-xs"
+                      : "bg-[#E2B774]/20 text-[#1b3b2b] border border-[#E2B774]/40"
+                    }`}
+                >
                   Trends
                 </span>
+              )}
+
+              {!isOpen && isAnalytics && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
@@ -162,12 +273,19 @@ export default function AdminSidebar({
               className={linkClass(isUsers)}
               title="Manage Users"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">group</span>
-                {isOpen && <span>Manage Users</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isUsers ? "text-[#E2B774]" : ""}`}>
+                  group
+                </span>
+                {isOpen && <span className="truncate">Manage Users</span>}
               </div>
               {isOpen && (
-                <span className="text-[11px] text-on-surface-variant font-mono">48.2k</span>
+                <span className={`text-[11px] font-mono font-medium shrink-0 ${isUsers ? "text-white/80" : "text-neutral-400"}`}>
+                  48.2k
+                </span>
+              )}
+              {!isOpen && isUsers && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
@@ -178,96 +296,126 @@ export default function AdminSidebar({
               className={linkClass(isRestaurants)}
               title="Venue & Floor Stations"
             >
-              <div className="flex items-center gap-2.5 relative">
-                <span className="material-symbols-outlined text-xl">storefront</span>
-                {isOpen && <span>Venue &amp; Stations</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isRestaurants ? "text-[#E2B774]" : ""}`}>
+                  storefront
+                </span>
+                {isOpen && <span className="truncate">Venue &amp; Stations</span>}
               </div>
               {isOpen && (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-primary-fixed text-on-primary-fixed">
-                  4 Zones
+                <span
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${isRestaurants
+                      ? "bg-[#E2B774] text-[#1b3b2b]"
+                      : "bg-[#1b3b2b]/10 text-[#1b3b2b]"
+                    }`}
+                >
+                  {pendingApprovalsCount ? `${pendingApprovalsCount} Pending` : "4 Zones"}
                 </span>
+              )}
+              {!isOpen && isRestaurants && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
-            {/* All Transactions */}
+            {/* Financial Ledger */}
             <Link
               href="/dashboard/admin/transactions"
               onClick={handleNavClick}
               className={linkClass(isTransactions)}
               title="Financial Ledger"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">receipt_long</span>
-                {isOpen && <span>Financial Ledger</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isTransactions ? "text-[#E2B774]" : ""}`}>
+                  receipt_long
+                </span>
+                {isOpen && <span className="truncate">Financial Ledger</span>}
               </div>
+              {!isOpen && isTransactions && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
+              )}
             </Link>
           </div>
 
-          {/* 2. Super Admin Governance Section */}
-          <div className="space-y-1 pt-2 border-t border-outline-variant/60">
+          {/* 2. EXECUTIVE GOVERNANCE SECTION */}
+          <div className="space-y-1 pt-2 border-t border-[#1b3b2b]/10">
             {isOpen ? (
-              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
                 Executive Governance
               </span>
             ) : (
-              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+              <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
-            {/* Manage Admins */}
+            {/* Staff & Leadership */}
             <Link
               href="/dashboard/admin/admins"
               onClick={handleNavClick}
               className={linkClass(isAdmins)}
               title="Staff & Leadership"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">admin_panel_settings</span>
-                {isOpen && <span>Staff &amp; Leadership</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isAdmins ? "text-[#E2B774]" : ""}`}>
+                  admin_panel_settings
+                </span>
+                {isOpen && <span className="truncate">Staff &amp; Leadership</span>}
               </div>
               {isOpen && (
-                <span className="text-[11px] text-on-surface-variant font-mono">8 Staff</span>
+                <span className={`text-[11px] font-mono font-medium shrink-0 ${isAdmins ? "text-white/80" : "text-neutral-400"}`}>
+                  8 Staff
+                </span>
+              )}
+              {!isOpen && isAdmins && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
-            {/* Platform Settings */}
+            {/* Venue Settings */}
             <Link
               href="/dashboard/admin/settings"
               onClick={handleNavClick}
               className={linkClass(isSettings)}
               title="Venue Settings"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">tune</span>
-                {isOpen && <span>Venue Settings</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isSettings ? "text-[#E2B774]" : ""}`}>
+                  tune
+                </span>
+                {isOpen && <span className="truncate">Venue Settings</span>}
               </div>
+              {!isOpen && isSettings && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
+              )}
             </Link>
           </div>
 
-          {/* 3. System & Operations Section */}
-          <div className="space-y-1 pt-2 border-t border-outline-variant/60">
+          {/* 3. OPERATIONS & FLOOR SECTION */}
+          <div className="space-y-1 pt-2 border-t border-[#1b3b2b]/10">
             {isOpen ? (
-              <span className="px-3 text-[11px] font-semibold tracking-wider uppercase text-on-surface-variant/70 block mb-1">
+              <span className="px-3 text-[10px] font-bold tracking-wider uppercase text-neutral-400 block mb-1.5 whitespace-nowrap">
                 Operations &amp; Floor
               </span>
             ) : (
-              <div className="h-px bg-outline-variant/60 mx-1 my-2" />
+              <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
             {/* GM Live Floor Console */}
             <Link
               href="/dashboard/vendor"
               onClick={handleNavClick}
-              className={`flex items-center ${
-                isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
-              } rounded-xl text-xs font-semibold text-secondary hover:bg-secondary-fixed/30 transition-all`}
+              className={`relative flex items-center transition-all ${isOpen
+                  ? "justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70"
+                  : "justify-center w-11 h-11 mx-auto rounded-xl text-amber-900 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/70"
+                }`}
               title="GM Live Floor Console"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl text-secondary">room_service</span>
-                {isOpen && <span>GM Floor Console</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="material-symbols-outlined text-lg text-amber-800 shrink-0">
+                  room_service
+                </span>
+                {isOpen && <span className="truncate">GM Floor Console</span>}
               </div>
               {isOpen && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary text-on-secondary font-label-sm text-[10px] font-bold">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-bold uppercase tracking-wider shrink-0">
                   Live
                 </span>
               )}
@@ -278,46 +426,54 @@ export default function AdminSidebar({
               href="/dashboard/admin/audit-logs"
               onClick={handleNavClick}
               className={linkClass(isAuditLogs)}
-              title="Audit Logs"
+              title="Audit & Telemetry"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">history</span>
-                {isOpen && <span>Audit &amp; Telemetry</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className={`material-symbols-outlined text-lg shrink-0 ${isAuditLogs ? "text-[#E2B774]" : ""}`}>
+                  history
+                </span>
+                {isOpen && <span className="truncate">Audit &amp; Telemetry</span>}
               </div>
+              {!isOpen && isAuditLogs && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
+              )}
             </Link>
 
-            {/* Live Guest Experience */}
+            {/* Live Guest View */}
             <Link
               href="/"
               onClick={handleNavClick}
-              className={`flex items-center ${
-                isOpen ? "justify-between px-3 py-2" : "justify-center px-2 py-2.5"
-              } rounded-xl text-xs font-medium text-on-surface-variant hover:bg-surface-container hover:text-primary transition-all`}
+              className={`relative flex items-center transition-all ${isOpen
+                  ? "justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold text-neutral-500 hover:bg-[#1b3b2b]/5 hover:text-[#1b3b2b]"
+                  : "justify-center w-11 h-11 mx-auto rounded-xl text-neutral-500 hover:bg-[#1b3b2b]/5 hover:text-[#1b3b2b]"
+                }`}
               title="Live Guest View"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="material-symbols-outlined text-xl">open_in_new</span>
-                {isOpen && <span>Guest View</span>}
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="material-symbols-outlined text-lg shrink-0">open_in_new</span>
+                {isOpen && <span className="truncate">Guest View</span>}
               </div>
             </Link>
           </div>
         </div>
 
         {/* Bottom Cluster Status Bar */}
-        <div className="p-3 border-t border-outline-variant bg-surface-container-low">
+        <div className="p-3 border-t border-[#1b3b2b]/10 bg-white/60">
           {isOpen ? (
-            <div className="bg-surface-container p-2.5 rounded-lg flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                <span className="font-label-sm text-[11px] text-on-surface font-semibold">
+            <div className="bg-[#f4f7f5] p-2.5 rounded-xl border border-[#1b3b2b]/10 flex items-center justify-between whitespace-nowrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse shrink-0" />
+                <span className="text-[11px] text-[#1b3b2b] font-bold truncate">
                   Cluster DET-1
                 </span>
               </div>
-              <span className="font-mono text-[11px] text-on-surface-variant">v2.14.0</span>
+              <span className="font-mono text-[10px] text-neutral-500 font-medium shrink-0">
+                v2.14.0
+              </span>
             </div>
           ) : (
             <div
-              className="bg-surface-container p-2 rounded-lg flex items-center justify-center"
+              className="w-11 h-11 mx-auto bg-[#f4f7f5] rounded-xl border border-[#1b3b2b]/10 flex items-center justify-center shrink-0"
               title="Cluster DET-1 • v2.14.0"
             >
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse" />

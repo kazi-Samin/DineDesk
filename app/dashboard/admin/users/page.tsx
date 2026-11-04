@@ -1,9 +1,7 @@
+// app/dashboard/admin/users/page.tsx
 "use client";
 
 import React, { useState, useMemo } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
-import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import UserSummaryCards from "@/components/admin/users/UserSummaryCards";
 import UserFiltersBar, { RoleFilterTab } from "@/components/admin/users/UserFiltersBar";
 import UserTable from "@/components/admin/users/UserTable";
@@ -24,9 +22,6 @@ import {
 import { Download, UserPlus, CheckCircle2, X } from "lucide-react";
 
 export default function AdminUsersPage() {
-  const { isSidebarOpen, toggleSidebar, closeSidebar } =
-    useSidebarToggle("dinedesk_admin_sidebar");
-
   // Users state initialized with realistic mock directory
   const [users, setUsers] = useState<AdminUser[]>(INITIAL_ADMIN_USERS);
 
@@ -191,100 +186,74 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="bg-background min-h-screen text-on-surface font-body-md antialiased flex flex-col">
-      <AdminSidebar
-        isOpen={isSidebarOpen}
-        onClose={closeSidebar}
-        onToggle={toggleSidebar}
-      />
-      <AdminHeader
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-      />
-
-      <div
-        className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${
-          isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
-        }`}
-      >
-        <main className="relative flex-1 bg-background">
-          <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-7xl mx-auto w-full">
-            {/* Toast Notification */}
-            {toastMessage && (
-              <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-primary text-on-primary px-4 py-3 rounded-xl shadow-lg border border-primary/20 animate-in slide-in-from-bottom-5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-xs sm:text-sm font-medium">{toastMessage}</span>
-                <button
-                  onClick={() => setToastMessage(null)}
-                  className="text-white/80 hover:text-white ml-2 p-0.5"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-outline-variant/40">
-              <div>
-                <span className="font-label-sm text-[11px] uppercase tracking-wider text-secondary font-bold">
-                  Platform Directory
-                </span>
-                <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  User Management
-                </h1>
-                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                  Administrative directory of registered diners, venue operators, and platform personnel.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={handleExportCsv}
-                  className="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium border border-outline-variant/70 bg-surface-container-lowest hover:bg-surface-container text-on-surface shadow-2xs transition-all flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4 text-on-surface-variant" />
-                  <span>Export CSV</span>
-                </button>
-
-                <button
-                  onClick={() => setIsAddUserModalOpen(true)}
-                  className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-primary-container text-on-primary hover:opacity-95 shadow-2xs transition-all flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Add User</span>
-                </button>
-              </div>
+    <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6 max-w-7xl mx-auto w-full">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                Platform Directory
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E2B774]" />
+              <span className="text-[11px] text-neutral-500 font-medium">
+                Identity &amp; RBAC Index
+              </span>
             </div>
-
-            {/* Summary Stat Cards */}
-            <UserSummaryCards stats={summaryStats} />
-
-            {/* Filters Bar: Role Tabs, Search, and Status Dropdown */}
-            <UserFiltersBar
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              searchQuery={searchQuery}
-              onSearchChange={handleSearchChange}
-              statusFilter={statusFilter}
-              onStatusFilterChange={handleStatusFilterChange}
-              onResetFilters={handleResetFilters}
-              tabCounts={tabCounts}
-            />
-
-            {/* User Directory Table */}
-            <UserTable
-              users={filteredUsers}
-              totalRecords={filteredUsers.length}
-              currentPage={currentPage}
-              pageSize={pageSize}
-              onPageChange={(p) => setCurrentPage(p)}
-              onChangeRoleClick={(user) => setChangeRoleUser(user)}
-              onDeleteClick={(user) => setDeleteModalUser(user)}
-              onClearFilters={handleResetFilters}
-            />
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
+              User Management
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+              Administrative directory of registered diners, venue operators, and platform personnel.
+            </p>
           </div>
-        </main>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={handleExportCsv}
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-[#1b3b2b]/15 bg-white hover:bg-neutral-50 text-[#1b3b2b] shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4 text-neutral-500" />
+              <span>Export CSV</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddUserModalOpen(true)}
+              className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-[#1b3b2b] text-white hover:bg-[#152e22] shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4 text-[#E2B774]" />
+              <span>Add User</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Summary Stat Cards */}
+        <UserSummaryCards stats={summaryStats} />
+
+        {/* Filters Bar: Role Tabs, Search, and Status Dropdown */}
+        <UserFiltersBar
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          onResetFilters={handleResetFilters}
+          tabCounts={tabCounts}
+        />
+
+        {/* User Directory Table */}
+        <UserTable
+          users={filteredUsers}
+          totalRecords={filteredUsers.length}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={(p) => setCurrentPage(p)}
+          onChangeRoleClick={(user) => setChangeRoleUser(user)}
+          onDeleteClick={(user) => setDeleteModalUser(user)}
+          onClearFilters={handleResetFilters}
+        />
       </div>
 
       {/* Delete User Modal */}
@@ -309,6 +278,20 @@ export default function AdminUsersPage() {
         onClose={() => setIsAddUserModalOpen(false)}
         onAddUser={handleAddUser}
       />
+
+      {/* Floating Feedback Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-[#E2B774] shrink-0" />
+          <span className="text-xs sm:text-sm font-medium">{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-white/70 hover:text-white ml-2 p-0.5 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import RoleGuard from "@/components/auth/RoleGuard";
+import AdminLayoutClient from "@/components/admin/AdminLayoutClient";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Super Admin Portal — DineDesk",
-  description: "Platform-wide analytics, restaurant moderation, admin user management, and system settings.",
+  description:
+    "Platform-wide analytics, restaurant moderation, admin user management, and system settings.",
 };
 
 export default function AdminDashboardLayout({
@@ -10,5 +13,9 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleGuard allowedRoles={["ADMIN", "SUPERADMIN"]}>{children}</RoleGuard>;
+  return (
+    <RoleGuard allowedRoles={["ADMIN", "SUPERADMIN"]}>
+      <AdminLayoutClient>{children}</AdminLayoutClient>
+    </RoleGuard>
+  );
 }
