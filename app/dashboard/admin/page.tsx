@@ -84,6 +84,33 @@ export default function AdminOverviewPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  // Safe helper to extract auth tokens across cross-origin deployments
+  const getAuthToken = (): string | null => {
+    if (typeof window === "undefined") return null;
+
+    // 1. Check document.cookie
+    const cookieMatches = document.cookie.match(
+      /(?:^|;\s*)(?:token|accessToken|auth_token|session)=([^;]+)/
+    );
+    if (cookieMatches && cookieMatches[1]) {
+      return decodeURIComponent(cookieMatches[1]);
+    }
+
+    // 2. Check storage fallbacks
+    try {
+      const stored =
+        sessionStorage.getItem("token") ||
+        sessionStorage.getItem("accessToken") ||
+        localStorage.getItem("token") ||
+        localStorage.getItem("accessToken");
+      if (stored) return stored.replace(/^Bearer\s+/i, "");
+    } catch {
+      // Storage access blocked or restricted
+    }
+
+    return null;
+  };
+
   // Fetch live PostgreSQL aggregated data from Express Backend
   const fetchOverviewData = useCallback(async (rangeKey: string) => {
     setIsLoading(true);
@@ -95,16 +122,24 @@ export default function AdminOverviewPage() {
         .replace(/\/+$/, "")
         .replace(/\/api\/v1$/, "");
 
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch(
         `${cleanBaseUrl}/api/v1/admin/overview?range=${rangeKey}`,
         {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
+          headers,
+          credentials: "include", // Dispatches cross-origin HttpOnly cookies
         }
       );
 
-      // Safe JSON parsing with fallback error message extraction
       const contentType = res.headers.get("content-type");
       let json: any = null;
 
