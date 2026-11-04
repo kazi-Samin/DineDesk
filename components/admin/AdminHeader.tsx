@@ -13,12 +13,19 @@ interface AdminHeaderProps {
   isSidebarOpen?: boolean;
   onToggleSidebar?: () => void;
   onSearch?: (query: string) => void;
+  adminProfile?: {
+    name: string;
+    avatar: string;
+  };
+  onUpdateProfile?: (updated: { name: string; avatar: string }) => void;
 }
 
 export default function AdminHeader({
   isSidebarOpen,
   onToggleSidebar,
   onSearch,
+  adminProfile,
+  onUpdateProfile,
 }: AdminHeaderProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -29,6 +36,14 @@ export default function AdminHeader({
   const [searchQuery, setSearchQuery] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+
+  // Edit Profile Modal
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [inputName, setInputName] = useState<string>("");
+  const [inputAvatar, setInputAvatar] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSuccessToast, setProfileSuccessToast] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const roleMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
@@ -42,13 +57,25 @@ export default function AdminHeader({
   const isAnalytics = pathname === "/dashboard/admin/analytics";
   const isUsers = pathname?.startsWith("/dashboard/admin/users") || false;
 
+  const currentDisplayName =
+    adminProfile?.name || (user as any)?.name || "Fourkan Bin Ilias";
   const userAvatarUrl =
+    adminProfile?.avatar ||
     (user as any)?.image ||
     (user as any)?.avatar ||
     (user as any)?.picture ||
     (user as any)?.photoURL ||
     (user as any)?.profileImage ||
-    "/assets/logo.png";
+    "";
+
+  const userInitials =
+    currentDisplayName
+      .split(" ")
+      .filter(Boolean)
+      .map((n: string) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "SA";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -92,21 +119,50 @@ export default function AdminHeader({
     }
   };
 
+  const handleOpenEditProfile = () => {
+    setInputName(currentDisplayName);
+    setInputAvatar(userAvatarUrl);
+    setRoleMenuOpen(false);
+    setIsEditProfileOpen(true);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === "string") {
+          setInputAvatar(reader.result);
+          setAvatarError(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingProfile(true);
+
+    setTimeout(() => {
+      if (onUpdateProfile) {
+        onUpdateProfile({
+          name: inputName.trim() || currentDisplayName,
+          avatar: inputAvatar,
+        });
+      }
+      setIsSavingProfile(false);
+      setIsEditProfileOpen(false);
+      setProfileSuccessToast(true);
+      setTimeout(() => setProfileSuccessToast(false), 3500);
+    }, 400);
+  };
+
   const navLinkClass = (active: boolean) =>
     `relative px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${active
       ? "bg-[#1b3b2b] text-white shadow-xs"
       : "text-neutral-600 hover:text-[#1b3b2b] hover:bg-neutral-100/70"
     }`;
-
-  const userInitials =
-    typeof (user as any)?.name === "string"
-      ? ((user as any).name as string)
-        .split(" ")
-        .map((n: string) => n[0])
-        .slice(0, 2)
-        .join("")
-        .toUpperCase()
-      : "SA";
 
   return (
     <>
@@ -117,7 +173,7 @@ export default function AdminHeader({
           }`}
       >
         <div className="h-full w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-          {/* LEFT: Mobile Sidebar Hamburger Toggle + Moving DineDesk Monogram + Buffered Governance Hub Badge */}
+          {/* LEFT: Mobile Sidebar Trigger + Monogram + Badges */}
           <div className="flex items-center shrink-0">
             {onToggleSidebar && (
               <button
@@ -205,9 +261,9 @@ export default function AdminHeader({
             </Link>
           </nav>
 
-          {/* RIGHT: Expandable Search Icon, Alerts & Super Admin Profile */}
+          {/* RIGHT: Search, Alerts, & Admin Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Expandable Search Trigger & Bar */}
+            {/* Search Input */}
             <div className="relative" ref={searchContainerRef}>
               <div className="flex items-center">
                 <AnimatePresence>
@@ -259,7 +315,7 @@ export default function AdminHeader({
               </div>
             </div>
 
-            {/* Notifications Trigger & Menu */}
+            {/* Notifications */}
             <div className="relative" ref={notifMenuRef}>
               <button
                 type="button"
@@ -344,7 +400,7 @@ export default function AdminHeader({
 
             <div className="h-6 w-px bg-neutral-200" />
 
-            {/* Admin Profile Dropdown with Real Avatar / Golden Monogram Emblem */}
+            {/* Profile Dropdown */}
             <div className="relative" ref={roleMenuRef}>
               <button
                 type="button"
@@ -357,11 +413,12 @@ export default function AdminHeader({
                     : "bg-neutral-50/80 hover:bg-neutral-100 text-[#1b3b2b] border-neutral-200/80"
                   }`}
               >
+                {/* Header Avatar: strictly shows either image or text */}
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/30 shadow-xs shrink-0 flex items-center justify-center p-0.5">
                   {userAvatarUrl && !avatarError ? (
                     <img
                       src={userAvatarUrl}
-                      alt={user?.name || "Admin"}
+                      alt={currentDisplayName}
                       className="w-full h-full object-cover rounded-lg"
                       onError={() => setAvatarError(true)}
                     />
@@ -375,7 +432,7 @@ export default function AdminHeader({
                     className={`text-xs font-bold leading-tight truncate max-w-[130px] ${roleMenuOpen ? "text-white" : "text-[#1b3b2b]"
                       }`}
                   >
-                    {user?.name || "Fourkan Bin Ilias"}
+                    {currentDisplayName}
                   </span>
                   <span
                     className={`text-[10px] font-semibold leading-tight uppercase tracking-wider ${roleMenuOpen ? "text-[#E2B774]" : "text-amber-800"
@@ -399,36 +456,57 @@ export default function AdminHeader({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute right-0 top-full mt-3 w-64 bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-2 z-50"
+                    className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-2.5 z-50"
                   >
-                    <div className="px-3 py-2.5 rounded-xl bg-neutral-50/90 border border-neutral-100 mb-1 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/40 flex items-center justify-center shrink-0 p-0.5">
+                    {/* Header Card with Edit Trigger */}
+                    <div className="relative px-3 py-3 rounded-xl bg-neutral-50/90 border border-neutral-100 mb-1 flex items-center gap-3 group/profile">
+                      <div
+                        onClick={handleOpenEditProfile}
+                        className="relative w-11 h-11 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/40 flex items-center justify-center shrink-0 p-0.5 cursor-pointer shadow-xs group/avatar"
+                        title="Edit profile & avatar"
+                      >
                         {userAvatarUrl && !avatarError ? (
                           <img
                             src={userAvatarUrl}
-                            alt={user?.name || "Admin"}
-                            className="w-full h-full object-cover rounded-lg"
+                            alt={currentDisplayName}
+                            className="w-full h-full object-cover rounded-lg group-hover/avatar:opacity-60 transition-opacity"
+                            onError={() => setAvatarError(true)}
                           />
                         ) : (
                           <span className="text-xs font-bold text-[#E2B774]">{userInitials}</span>
                         )}
+
+                        <div className="absolute inset-0 bg-[#1b3b2b]/70 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity text-[#E2B774]">
+                          <span className="material-symbols-outlined text-sm">edit</span>
+                        </div>
                       </div>
+
                       <div className="min-w-0 flex-1">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          Authority Level
-                        </span>
-                        <span className="text-xs font-bold text-[#1b3b2b] block truncate">
-                          {user?.name || "Fourkan Bin Ilias"}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                            Authority Level
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleOpenEditProfile}
+                            className="text-[#1b3b2b] hover:text-amber-800 p-0.5 rounded transition-colors cursor-pointer"
+                            title="Edit profile details"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">edit_square</span>
+                          </button>
+                        </div>
+                        <span className="text-xs font-bold text-[#1b3b2b] block truncate mt-0.5">
+                          {currentDisplayName}
                         </span>
                         <span className="text-[11px] text-neutral-500 block truncate font-medium">
-                          {user?.email || "admin@dinedesk.com"}
+                          {(user as any)?.email || "pinonfurkan1@gmail.com"}
                         </span>
                       </div>
                     </div>
 
                     <div className="py-1 space-y-0.5">
                       <Link
-                        href="/dashboard/admin/manage-admins"
+                        href="/dashboard/admin/admins"
                         onClick={() => setRoleMenuOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-[#1b3b2b] hover:bg-neutral-100 font-semibold transition-colors"
                       >
@@ -493,8 +571,178 @@ export default function AdminHeader({
         </div>
       </header>
 
-      {/* 80px layout spacer (h-20) matches the navbar height */}
+      {/* 80px layout spacer (h-20) */}
       <div className="h-20 w-full" />
+
+      {/* Profile Edit Modal */}
+      <AnimatePresence>
+        {isEditProfileOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1b3b2b]/40 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="bg-white max-w-md w-full rounded-3xl border border-[#1b3b2b]/15 shadow-2xl p-6 flex flex-col gap-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-[#1b3b2b]/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-[#1b3b2b] text-[#E2B774] flex items-center justify-center shadow-xs">
+                    <span className="material-symbols-outlined text-lg">badge</span>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-[#1b3b2b]">
+                      Edit Admin Identity
+                    </h3>
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      Update your administrator avatar and display name
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditProfileOpen(false)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                {/* Avatar Preview & Upload Area */}
+                <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-[#f4f7f5] border border-[#1b3b2b]/10">
+                  <div className="relative group">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#1b3b2b] border-2 border-[#E2B774] shadow-md flex items-center justify-center p-1">
+                      {inputAvatar ? (
+                        <img
+                          src={inputAvatar}
+                          alt="Avatar Preview"
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                      ) : (
+                        <span className="text-xl font-bold text-[#E2B774]">
+                          {userInitials}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Aligned Camera Corner Badge */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 translate-x-1.5 translate-y-1.5 w-8 h-8 rounded-full bg-[#1b3b2b] text-[#E2B774] border-2 border-white shadow-md flex items-center justify-center hover:scale-110 active:scale-95 transition-all cursor-pointer group/btn"
+                      title="Upload photo"
+                      aria-label="Upload photo"
+                    >
+                      <span className="material-symbols-outlined text-[15px] leading-none select-none flex items-center justify-center">
+                        add_a_photo
+                      </span>
+                    </button>
+                  </div>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                  />
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs font-bold text-[#1b3b2b] hover:text-amber-800 transition-colors cursor-pointer"
+                    >
+                      Upload New Photo
+                    </button>
+                    {inputAvatar && (
+                      <>
+                        <span className="text-neutral-300">•</span>
+                        <button
+                          type="button"
+                          onClick={() => setInputAvatar("")}
+                          className="text-xs font-semibold text-rose-600 hover:underline cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Display Name Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1b3b2b] block">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={inputName}
+                    onChange={(e) => setInputName(e.target.value)}
+                    placeholder="e.g. Fourkan Bin Ilias"
+                    className="w-full bg-white text-[#1b3b2b] text-xs px-3.5 py-2.5 rounded-xl border border-[#1b3b2b]/20 focus:border-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] font-medium"
+                  />
+                </div>
+
+                {/* Image URL Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[#1b3b2b] block">
+                    Or Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={inputAvatar.startsWith("data:") ? "" : inputAvatar}
+                    onChange={(e) => setInputAvatar(e.target.value)}
+                    placeholder="https://example.com/avatar.jpg"
+                    className="w-full bg-white text-[#1b3b2b] text-xs px-3.5 py-2.5 rounded-xl border border-[#1b3b2b]/20 focus:border-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] font-medium"
+                  />
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1b3b2b]/10">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(false)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile || !inputName.trim()}
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-[#1b3b2b] text-white hover:bg-[#152e22] shadow-xs transition-all cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+                  >
+                    {isSavingProfile ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[16px] text-[#E2B774]">
+                          save
+                        </span>
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Success Feedback Toast */}
+      {profileSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[#E2B774] text-base">check_circle</span>
+          <span className="text-xs font-semibold">Admin identity updated successfully</span>
+        </div>
+      )}
     </>
   );
 }
