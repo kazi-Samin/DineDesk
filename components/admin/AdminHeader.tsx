@@ -40,9 +40,12 @@ export default function AdminHeader({
   // Edit Profile Modal
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [inputName, setInputName] = useState<string>("");
-  const [inputAvatar, setInputAvatar] = useState<string>("");
+  const [previewAvatar, setPreviewAvatar] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [inputAvatarUrl, setInputAvatarUrl] = useState<string>("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileSuccessToast, setProfileSuccessToast] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const roleMenuRef = useRef<HTMLDivElement>(null);
@@ -58,14 +61,15 @@ export default function AdminHeader({
   const isUsers = pathname?.startsWith("/dashboard/admin/users") || false;
 
   const currentDisplayName =
-    adminProfile?.name || (user as any)?.name || "Fourkan Bin Ilias";
+    adminProfile?.name || (user as any)?.name || (user as any)?.fullName || "Fourkan Bin Ilias";
+
   const userAvatarUrl =
     adminProfile?.avatar ||
+    (user as any)?.avatarUrl ||
     (user as any)?.image ||
     (user as any)?.avatar ||
     (user as any)?.picture ||
     (user as any)?.photoURL ||
-    (user as any)?.profileImage ||
     "";
 
   const userInitials =
@@ -121,7 +125,10 @@ export default function AdminHeader({
 
   const handleOpenEditProfile = () => {
     setInputName(currentDisplayName);
-    setInputAvatar(userAvatarUrl);
+    setPreviewAvatar(userAvatarUrl);
+    setInputAvatarUrl(userAvatarUrl.startsWith("http") ? userAvatarUrl : "");
+    setSelectedFile(null);
+    setUploadError(null);
     setRoleMenuOpen(false);
     setIsEditProfileOpen(true);
   };
@@ -129,33 +136,96 @@ export default function AdminHeader({
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setInputAvatar(reader.result);
-          setAvatarError(false);
-        }
-      };
-      reader.readAsDataURL(file);
+      setSelectedFile(file);
+      const objUrl = URL.createObjectURL(file);
+      setPreviewAvatar(objUrl);
+      setAvatarError(false);
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingProfile(true);
+    setUploadError(null);
 
-    setTimeout(() => {
-      if (onUpdateProfile) {
-        onUpdateProfile({
-          name: inputName.trim() || currentDisplayName,
-          avatar: inputAvatar,
+    try {
+      let finalUploadedUrl = inputAvatarUrl;
+
+      // 1. If a new file was chosen, upload it through Next.js Cloudinary Route
+      if (selectedFile) {
+        const fileForm = new FormData();
+        fileForm.append("file", selectedFile);
+
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: fileForm,
         });
+
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok || !uploadData.success) {
+          throw new Error(uploadData.message || "Cloudinary image upload failed");
+        }
+        finalUploadedUrl = uploadData.url;
       }
+
+      // 2. Normalize Express Backend URL (prevent duplicate /api/v1)
+      const rawBackendUrl =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const cleanBaseUrl = rawBackendUrl
+        .replace(/\/+$/, "")
+        .replace(/\/api\/v1$/, "");
+
+      // 3. Send standard PUT JSON matching router.put("/profile", updateUserProfile)
+      const res = await fetch(`${cleanBaseUrl}/api/v1/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: inputName.trim() || currentDisplayName,
+          avatarUrl: finalUploadedUrl || undefined,
+        }),
+      });
+
+      const contentType = res.headers.get("content-type");
+      let data: any = null;
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text.slice(0, 120) || `HTTP Error ${res.status}`);
+      }
+
+      if (res.ok && data?.success) {
+        const updatedName = data.user.name || inputName.trim();
+        const updatedAvatar = data.user.avatarUrl || data.user.image || finalUploadedUrl;
+
+        if (onUpdateProfile) {
+          onUpdateProfile({
+            name: updatedName,
+            avatar: updatedAvatar,
+          });
+        }
+
+        // Broadcast to sidebar and all other components
+        window.dispatchEvent(
+          new CustomEvent("dinedesk_admin_profile_updated", {
+            detail: { name: updatedName, avatar: updatedAvatar },
+          })
+        );
+
+        setIsEditProfileOpen(false);
+        setProfileSuccessToast(true);
+        setTimeout(() => setProfileSuccessToast(false), 3500);
+      } else {
+        setUploadError(data?.message || "Failed to update profile in database.");
+      }
+    } catch (err: any) {
+      setUploadError(err?.message || "Network error while saving profile.");
+    } finally {
       setIsSavingProfile(false);
-      setIsEditProfileOpen(false);
-      setProfileSuccessToast(true);
-      setTimeout(() => setProfileSuccessToast(false), 3500);
-    }, 400);
+    }
   };
 
   const navLinkClass = (active: boolean) =>
@@ -223,7 +293,6 @@ export default function AdminHeader({
               </motion.div>
             </Link>
 
-            {/* Governance Hub Status Pill */}
             <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1b3b2b]/5 border border-[#1b3b2b]/10">
               <span className="w-2 h-2 rounded-full bg-[#E2B774]" />
               <span className="text-[11px] font-bold text-[#1b3b2b] uppercase tracking-wider">
@@ -233,7 +302,6 @@ export default function AdminHeader({
 
             <div className="h-6 w-px bg-neutral-200 hidden lg:block mx-4" />
 
-            {/* Live Telemetry Pill */}
             <div className="hidden xl:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/80">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -263,7 +331,6 @@ export default function AdminHeader({
 
           {/* RIGHT: Search, Alerts, & Admin Profile */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Search Input */}
             <div className="relative" ref={searchContainerRef}>
               <div className="flex items-center">
                 <AnimatePresence>
@@ -413,7 +480,7 @@ export default function AdminHeader({
                     : "bg-neutral-50/80 hover:bg-neutral-100 text-[#1b3b2b] border-neutral-200/80"
                   }`}
               >
-                {/* Header Avatar: strictly shows either image or text */}
+                {/* Navbar Avatar: strictly either image OR initials */}
                 <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/30 shadow-xs shrink-0 flex items-center justify-center p-0.5">
                   {userAvatarUrl && !avatarError ? (
                     <img
@@ -458,7 +525,6 @@ export default function AdminHeader({
                     transition={{ duration: 0.18, ease: "easeOut" }}
                     className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-2.5 z-50"
                   >
-                    {/* Header Card with Edit Trigger */}
                     <div className="relative px-3 py-3 rounded-xl bg-neutral-50/90 border border-neutral-100 mb-1 flex items-center gap-3 group/profile">
                       <div
                         onClick={handleOpenEditProfile}
@@ -571,7 +637,6 @@ export default function AdminHeader({
         </div>
       </header>
 
-      {/* 80px layout spacer (h-20) */}
       <div className="h-20 w-full" />
 
       {/* Profile Edit Modal */}
@@ -609,14 +674,20 @@ export default function AdminHeader({
                 </button>
               </div>
 
+              {uploadError && (
+                <div className="px-3.5 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                  {uploadError}
+                </div>
+              )}
+
               <form onSubmit={handleSaveProfile} className="space-y-4">
-                {/* Avatar Preview & Upload Area */}
+                {/* Avatar Preview & Centered Camera Icon Badge */}
                 <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-[#f4f7f5] border border-[#1b3b2b]/10">
                   <div className="relative group">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#1b3b2b] border-2 border-[#E2B774] shadow-md flex items-center justify-center p-1">
-                      {inputAvatar ? (
+                      {previewAvatar ? (
                         <img
-                          src={inputAvatar}
+                          src={previewAvatar}
                           alt="Avatar Preview"
                           className="w-full h-full object-cover rounded-xl"
                         />
@@ -627,7 +698,6 @@ export default function AdminHeader({
                       )}
                     </div>
 
-                    {/* Aligned Camera Corner Badge */}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
@@ -657,12 +727,16 @@ export default function AdminHeader({
                     >
                       Upload New Photo
                     </button>
-                    {inputAvatar && (
+                    {previewAvatar && (
                       <>
                         <span className="text-neutral-300">•</span>
                         <button
                           type="button"
-                          onClick={() => setInputAvatar("")}
+                          onClick={() => {
+                            setPreviewAvatar("");
+                            setSelectedFile(null);
+                            setInputAvatarUrl("");
+                          }}
                           className="text-xs font-semibold text-rose-600 hover:underline cursor-pointer"
                         >
                           Reset
@@ -694,14 +768,17 @@ export default function AdminHeader({
                   </label>
                   <input
                     type="url"
-                    value={inputAvatar.startsWith("data:") ? "" : inputAvatar}
-                    onChange={(e) => setInputAvatar(e.target.value)}
+                    value={inputAvatarUrl}
+                    onChange={(e) => {
+                      setInputAvatarUrl(e.target.value);
+                      if (e.target.value) setPreviewAvatar(e.target.value);
+                    }}
                     placeholder="https://example.com/avatar.jpg"
                     className="w-full bg-white text-[#1b3b2b] text-xs px-3.5 py-2.5 rounded-xl border border-[#1b3b2b]/20 focus:border-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] font-medium"
                   />
                 </div>
 
-                {/* Footer Buttons */}
+                {/* Modal Footer Buttons */}
                 <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#1b3b2b]/10">
                   <button
                     type="button"
@@ -718,7 +795,7 @@ export default function AdminHeader({
                     {isSavingProfile ? (
                       <>
                         <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Saving...</span>
+                        <span>Saving to Cloudinary...</span>
                       </>
                     ) : (
                       <>
@@ -740,7 +817,7 @@ export default function AdminHeader({
       {profileSuccessToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
           <span className="material-symbols-outlined text-[#E2B774] text-base">check_circle</span>
-          <span className="text-xs font-semibold">Admin identity updated successfully</span>
+          <span className="text-xs font-semibold">Admin identity updated &amp; saved</span>
         </div>
       )}
     </>

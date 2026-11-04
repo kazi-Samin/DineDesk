@@ -1,3 +1,4 @@
+// app/api/upload/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
@@ -76,8 +77,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       url: cloudinaryData.secure_url,
+      secure_url: cloudinaryData.secure_url,
       publicId: cloudinaryData.public_id,
-      provider: "cloudinary",
       bytes: cloudinaryData.bytes,
       format: cloudinaryData.format,
     });

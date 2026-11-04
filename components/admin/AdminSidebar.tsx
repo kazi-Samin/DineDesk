@@ -1,7 +1,7 @@
 // components/admin/AdminSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,6 +29,46 @@ export default function AdminSidebar({
   const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
 
+  // Synchronized profile state
+  const [liveProfile, setLiveProfile] = useState<{ name: string; avatar: string }>({
+    name: adminProfile?.name || (user as any)?.name || (user as any)?.fullName || "Fourkan Bin Ilias",
+    avatar:
+      adminProfile?.avatar ||
+      (user as any)?.avatarUrl ||
+      (user as any)?.image ||
+      (user as any)?.avatar ||
+      "",
+  });
+
+  // Listen for custom profile update events dispatched from AdminHeader
+  useEffect(() => {
+    const handleProfileUpdate = (e: any) => {
+      if (e?.detail) {
+        setLiveProfile({
+          name: e.detail.name,
+          avatar: e.detail.avatar,
+        });
+        setImgError(false);
+      }
+    };
+
+    window.addEventListener("dinedesk_admin_profile_updated", handleProfileUpdate);
+    return () => {
+      window.removeEventListener("dinedesk_admin_profile_updated", handleProfileUpdate);
+    };
+  }, []);
+
+  // Update whenever props or user context change
+  useEffect(() => {
+    if (adminProfile?.name || adminProfile?.avatar) {
+      setLiveProfile({
+        name: adminProfile.name || liveProfile.name,
+        avatar: adminProfile.avatar || liveProfile.avatar,
+      });
+      setImgError(false);
+    }
+  }, [adminProfile]);
+
   const isOverview = pathname === "/dashboard/admin";
   const isAnalytics = pathname === "/dashboard/admin/analytics";
   const isUsers = pathname?.startsWith("/dashboard/admin/users");
@@ -38,23 +78,22 @@ export default function AdminSidebar({
   const isSettings = pathname?.startsWith("/dashboard/admin/settings");
   const isAuditLogs = pathname?.startsWith("/dashboard/admin/audit-logs");
 
-  const displayName = adminProfile?.name || (user as any)?.name || "Fourkan Bin Ilias";
+  const displayName = liveProfile.name || (user as any)?.name || "Fourkan Bin Ilias";
   const avatarUrl =
-    adminProfile?.avatar ||
+    liveProfile.avatar ||
+    (user as any)?.avatarUrl ||
     (user as any)?.image ||
     (user as any)?.avatar ||
-    (user as any)?.picture ||
-    (user as any)?.photoURL ||
-    (user as any)?.profileImage ||
     "";
 
-  const userInitials = displayName
-    .split(" ")
-    .filter(Boolean)
-    .map((n: string) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "SA";
+  const userInitials =
+    displayName
+      .split(" ")
+      .filter(Boolean)
+      .map((n: string) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "SA";
 
   const handleNavClick = () => {
     if (typeof window !== "undefined" && window.innerWidth < 1024 && onClose) {
@@ -81,7 +120,6 @@ export default function AdminSidebar({
 
   return (
     <>
-      {/* Mobile Backdrop Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -96,14 +134,13 @@ export default function AdminSidebar({
         )}
       </AnimatePresence>
 
-      {/* Main Sidebar Container */}
       <aside
         className={`fixed left-0 top-20 bottom-0 bg-[#fbfdfc] z-50 flex flex-col justify-between border-r border-[#1b3b2b]/10 shadow-[4px_0_24px_rgba(27,59,43,0.04)] transition-all duration-300 ease-in-out ${isOpen
             ? "translate-x-0 w-72"
             : "-translate-x-full lg:translate-x-0 lg:w-20"
           }`}
       >
-        {/* Floating Collapse / Expand Dock Button */}
+        {/* Toggle Button */}
         <button
           type="button"
           onClick={handleToggleClick}
@@ -120,12 +157,11 @@ export default function AdminSidebar({
           </motion.span>
         </button>
 
-        {/* Scrollable Navigation Area */}
         <div
           className={`flex flex-col flex-1 overflow-y-auto no-scrollbar overflow-x-hidden ${isOpen ? "px-4 py-4 space-y-4" : "px-2 py-4 space-y-3"
             }`}
         >
-          {/* Sub-Header Hub Card */}
+          {/* Governance Hub Card */}
           {isOpen ? (
             <div className="bg-white p-3 rounded-2xl border border-[#1b3b2b]/10 shadow-xs flex items-center justify-between whitespace-nowrap">
               <div className="flex items-center gap-2.5">
@@ -156,13 +192,12 @@ export default function AdminSidebar({
             </div>
           )}
 
-          {/* Premium User Profile Card */}
+          {/* Profile Card: Strictly image OR text initials */}
           {isOpen ? (
             <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#1b3b2b] to-[#12281d] text-white shadow-md shadow-[#1b3b2b]/20 border border-[#E2B774]/20 group whitespace-nowrap">
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#E2B774]/15 rounded-full blur-2xl pointer-events-none group-hover:bg-[#E2B774]/25 transition-colors duration-500" />
 
               <div className="relative z-10 flex items-center gap-3">
-                {/* Avatar with Mutual Exclusion */}
                 <div className="relative w-10 h-10 rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/50 shadow-inner flex items-center justify-center shrink-0 overflow-hidden">
                   {avatarUrl && !imgError ? (
                     <img
@@ -461,7 +496,7 @@ export default function AdminSidebar({
           </div>
         </div>
 
-        {/* Bottom Cluster Status Bar */}
+        {/* Bottom Status Bar */}
         <div className="p-3 border-t border-[#1b3b2b]/10 bg-white/60">
           {isOpen ? (
             <div className="bg-[#f4f7f5] p-2.5 rounded-xl border border-[#1b3b2b]/10 flex items-center justify-between whitespace-nowrap">
