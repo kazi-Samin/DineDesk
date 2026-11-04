@@ -1,8 +1,7 @@
+// app/dashboard/admin/settings/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
 import MonetizationSection from "@/components/admin/settings/MonetizationSection";
 import FeaturedCurationSection from "@/components/admin/settings/FeaturedCurationSection";
 import EmergencyMaintenanceSection from "@/components/admin/settings/EmergencyMaintenanceSection";
@@ -14,7 +13,6 @@ import {
   MaintenanceConfirmDialog,
   DiscardConfirmDialog,
 } from "@/components/admin/settings/SettingsDialogs";
-import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { FeaturedRestaurantItem, PlatformGlobalSettings } from "@/types/admin";
 import {
   getPlatformGlobalSettings,
@@ -22,8 +20,6 @@ import {
 } from "@/services/mockAdminService";
 
 export default function AdminSettingsPage() {
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_admin_sidebar");
-
   // Initial and baseline saved settings
   const [savedSettings, setSavedSettings] = useState<PlatformGlobalSettings>(() =>
     getPlatformGlobalSettings()
@@ -149,10 +145,8 @@ export default function AdminSettingsPage() {
   // Maintenance Toggle Confirmation
   const handleRequestMaintenanceToggle = (desiredState: boolean) => {
     if (desiredState) {
-      // Opening maintenance mode is critical - ask for confirmation
       setPendingMaintenanceToggle(true);
     } else {
-      // Disabling maintenance mode
       setPendingMaintenanceToggle(false);
     }
   };
@@ -214,7 +208,7 @@ export default function AdminSettingsPage() {
         includeHeroVideo,
         maintenanceMode,
         maintenanceMessage,
-        lastModifiedBy: "Tahmid Rahman (Super Admin)",
+        lastModifiedBy: "Fourkan Bin Ilias (Super Admin)",
         lastModifiedAt: formattedDate,
       };
 
@@ -227,126 +221,102 @@ export default function AdminSettingsPage() {
   const eligiblePool = getEligibleFeaturedRestaurants();
 
   return (
-    <div className="bg-background min-h-screen text-on-surface font-body-md antialiased flex flex-col">
-      {/* 1. Admin Shared Navigation Sidebar */}
-      <AdminSidebar
-        isOpen={isSidebarOpen}
-        onClose={closeSidebar}
-        onToggle={toggleSidebar}
-      />
+    <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased pb-24">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-[#1b3b2b]/10">
+          <div className="flex flex-col gap-1.5 max-w-3xl">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#E2B774] rounded-full" />
+              <span className="text-[11px] font-bold uppercase tracking-widest text-amber-800">
+                Governance &amp; Operations
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
+              Platform Global Settings &amp; Controls
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500">
+              Adjust core marketplace parameters, monetization rates, featured listings, and emergency operational states.
+            </p>
+          </div>
 
-      {/* 2. Admin Top Header */}
-      <AdminHeader
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-      />
-
-      {/* 3. Main Settings Workspace */}
-      <div
-        className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${
-          isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
-        }`}
-      >
-        <main className="relative flex-1 bg-background">
-          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-outline-variant/50">
-              <div className="flex flex-col gap-1.5 max-w-3xl">
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 bg-secondary rounded-full" />
-                  <span className="font-label-sm text-[11px] font-bold uppercase tracking-widest text-secondary">
-                    Governance &amp; Operations
-                  </span>
-                </div>
-                <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  Platform Global Settings &amp; Controls
-                </h1>
-                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant">
-                  Adjust core marketplace parameters, monetization rates, featured listings, and
-                  emergency operational states.
-                </p>
-              </div>
-
-              {/* Deployment Status Pill */}
-              <div className="flex items-center gap-3">
-                <div className="bg-surface-container-low px-4 py-2 rounded-xl border border-outline-variant shadow-2xs flex items-center gap-3">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      maintenanceMode ? "bg-rose-600 animate-pulse" : "bg-emerald-600 animate-pulse"
-                    }`}
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
-                      Deployment Status
-                    </span>
-                    <span className="font-label-md text-xs font-bold text-on-surface">
-                      {maintenanceMode ? "Maintenance Mode Active" : "Production Node: Active (Live)"}
-                    </span>
-                  </div>
-                </div>
+          {/* Deployment Status Pill */}
+          <div className="flex items-center gap-3">
+            <div className="bg-white px-4 py-2 rounded-xl border border-[#1b3b2b]/10 shadow-xs flex items-center gap-3">
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${maintenanceMode ? "bg-rose-600 animate-pulse" : "bg-emerald-600 animate-pulse"
+                  }`}
+              />
+              <div className="flex flex-col">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">
+                  Deployment Status
+                </span>
+                <span className="text-xs font-bold text-[#1b3b2b]">
+                  {maintenanceMode ? "Maintenance Mode Active" : "Production Node: Active (Live)"}
+                </span>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Main 12-Column Responsive Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Column (8 cols): Core Settings */}
-              <div className="lg:col-span-8 flex flex-col gap-8">
-                {/* Section 01: Monetization & Commission */}
-                <MonetizationSection
-                  commissionRate={commissionRate}
-                  reservationDepositFee={reservationDepositFee}
-                  enforcePartyRule={enforcePartyRule}
-                  payoutSchedule={payoutSchedule}
-                  commissionError={commissionError}
-                  depositError={depositError}
-                  onCommissionChange={setCommissionRate}
-                  onDepositFeeChange={setReservationDepositFee}
-                  onTogglePartyRule={setEnforcePartyRule}
-                  onPayoutScheduleChange={setPayoutSchedule}
-                />
+        {/* Main 12-Column Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left Column (8 cols): Core Settings */}
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            {/* Section 01: Monetization & Commission */}
+            <MonetizationSection
+              commissionRate={commissionRate}
+              reservationDepositFee={reservationDepositFee}
+              enforcePartyRule={enforcePartyRule}
+              payoutSchedule={payoutSchedule}
+              commissionError={commissionError}
+              depositError={depositError}
+              onCommissionChange={setCommissionRate}
+              onDepositFeeChange={setReservationDepositFee}
+              onTogglePartyRule={setEnforcePartyRule}
+              onPayoutScheduleChange={setPayoutSchedule}
+            />
 
-                {/* Section 02: Featured Curation */}
-                <FeaturedCurationSection
-                  featuredRestaurants={featuredRestaurants}
-                  rotationInterval={rotationInterval}
-                  includeHeroVideo={includeHeroVideo}
-                  onOpenAddModal={() => setIsAddModalOpen(true)}
-                  onRequestRemove={(item) => setRestaurantToRemove(item)}
-                  onMoveUp={handleMoveUp}
-                  onMoveDown={handleMoveDown}
-                  onRotationIntervalChange={setRotationInterval}
-                  onToggleHeroVideo={setIncludeHeroVideo}
-                />
+            {/* Section 02: Featured Curation */}
+            <FeaturedCurationSection
+              featuredRestaurants={featuredRestaurants}
+              rotationInterval={rotationInterval}
+              includeHeroVideo={includeHeroVideo}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+              onRequestRemove={(item) => setRestaurantToRemove(item)}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
+              onRotationIntervalChange={setRotationInterval}
+              onToggleHeroVideo={setIncludeHeroVideo}
+            />
 
-                {/* Section 03: Emergency Maintenance Mode */}
-                <EmergencyMaintenanceSection
-                  maintenanceMode={maintenanceMode}
-                  maintenanceMessage={maintenanceMessage}
-                  onRequestToggleMaintenance={handleRequestMaintenanceToggle}
-                  onMaintenanceMessageChange={setMaintenanceMessage}
-                />
-              </div>
-
-              {/* Right Column (4 cols): Atmosphere, Telemetry, and Hotline */}
-              <div className="lg:col-span-4 flex flex-col gap-8">
-                <SettingsSidebarPanels
-                  featuredCount={featuredRestaurants.length}
-                  maxSlots={8}
-                />
-              </div>
-            </div>
-
-            {/* Bottom Sticky Action Bar */}
-            <SettingsBottomBar
-              lastModifiedBy={savedSettings.lastModifiedBy}
-              lastModifiedAt={savedSettings.lastModifiedAt}
-              isDirty={isDirty}
-              isSaving={isSaving}
-              onDiscard={() => setIsDiscardModalOpen(true)}
-              onSave={handleSaveSettings}
+            {/* Section 03: Emergency Maintenance Mode */}
+            <EmergencyMaintenanceSection
+              maintenanceMode={maintenanceMode}
+              maintenanceMessage={maintenanceMessage}
+              onRequestToggleMaintenance={handleRequestMaintenanceToggle}
+              onMaintenanceMessageChange={setMaintenanceMessage}
             />
           </div>
-        </main>
+
+          {/* Right Column (4 cols): Atmosphere, Telemetry, and Hotline */}
+          <div className="lg:col-span-4 flex flex-col gap-8">
+            <SettingsSidebarPanels
+              featuredCount={featuredRestaurants.length}
+              maxSlots={8}
+            />
+          </div>
+        </div>
+
+        {/* Bottom Sticky Action Bar */}
+        <SettingsBottomBar
+          lastModifiedBy={savedSettings.lastModifiedBy}
+          lastModifiedAt={savedSettings.lastModifiedAt}
+          isDirty={isDirty}
+          isSaving={isSaving}
+          onDiscard={() => setIsDiscardModalOpen(true)}
+          onSave={handleSaveSettings}
+        />
       </div>
 
       {/* Modals & Dialogs */}
@@ -380,8 +350,8 @@ export default function AdminSettingsPage() {
 
       {/* Floating Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-20 right-6 z-50 bg-primary text-on-primary px-4 py-3 rounded-xl shadow-lg border border-outline-variant/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-base">check_circle</span>
+        <div className="fixed bottom-24 right-6 z-50 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[#E2B774] text-base">check_circle</span>
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}

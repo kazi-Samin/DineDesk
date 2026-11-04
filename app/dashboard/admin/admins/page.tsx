@@ -1,8 +1,7 @@
+// app/dashboard/admin/admins/page.tsx
 "use client";
 
 import { useState, useMemo } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminHeader from "@/components/admin/AdminHeader";
 import AdminMetricsRibbon from "@/components/admin/admins/AdminMetricsRibbon";
 import AdminFilterBar from "@/components/admin/admins/AdminFilterBar";
 import AdminDirectoryTable from "@/components/admin/admins/AdminDirectoryTable";
@@ -14,7 +13,6 @@ import {
   ConfirmRemoveModal,
   AdminDetailModal,
 } from "@/components/admin/admins/AdminActionModals";
-import { useSidebarToggle } from "@/hooks/useSidebarToggle";
 import { PlatformAdminUser } from "@/types/admin";
 import {
   getPlatformAdmins,
@@ -23,10 +21,10 @@ import {
 } from "@/services/mockAdminService";
 
 export default function AdminAdminsPage() {
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarToggle("dinedesk_admin_sidebar");
-
   // State for administrators list
-  const [adminsList, setAdminsList] = useState<PlatformAdminUser[]>(() => getPlatformAdmins());
+  const [adminsList, setAdminsList] = useState<PlatformAdminUser[]>(() =>
+    getPlatformAdmins()
+  );
   const metrics = getAdminGovernanceMetrics();
 
   // Filters & Pagination State
@@ -99,10 +97,10 @@ export default function AdminAdminsPage() {
       prev.map((a) =>
         a.id === admin.id
           ? {
-              ...a,
-              role: "Super Admin",
-              permissions: [...a.permissions, "system:all", "rbac:manage"],
-            }
+            ...a,
+            role: "Super Admin",
+            permissions: [...a.permissions, "system:all", "rbac:manage"],
+          }
           : a
       )
     );
@@ -119,10 +117,10 @@ export default function AdminAdminsPage() {
       prev.map((a) =>
         a.id === admin.id
           ? {
-              ...a,
-              role: "Operations Admin",
-              permissions: a.permissions.filter((p) => p !== "system:all"),
-            }
+            ...a,
+            role: "Operations Admin",
+            permissions: a.permissions.filter((p) => p !== "system:all"),
+          }
           : a
       )
     );
@@ -140,10 +138,10 @@ export default function AdminAdminsPage() {
       prev.map((a) =>
         a.id === admin.id
           ? {
-              ...a,
-              status: newStatus,
-              isActiveNow: newStatus === "Active" ? a.isActiveNow : false,
-            }
+            ...a,
+            status: newStatus,
+            isActiveNow: newStatus === "Active" ? a.isActiveNow : false,
+          }
           : a
       )
     );
@@ -205,119 +203,97 @@ export default function AdminAdminsPage() {
   };
 
   return (
-    <div className="bg-background min-h-screen text-on-surface font-body-md antialiased flex flex-col">
-      {/* 1. Admin Shared Navigation Sidebar */}
-      <AdminSidebar
-        isOpen={isSidebarOpen}
-        onClose={closeSidebar}
-        onToggle={toggleSidebar}
-      />
-
-      {/* 2. Admin Top Header */}
-      <AdminHeader
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={toggleSidebar}
-      />
-
-      {/* 3. Main Workspace */}
-      <div
-        className={`flex-1 flex flex-col pt-16 transition-all duration-300 ${
-          isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
-        }`}
-      >
-        <main className="relative flex-1 bg-background">
-          <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 max-w-7xl mx-auto w-full">
-            {/* Page Header */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-outline-variant/50">
-              <div className="flex flex-col gap-1.5 max-w-3xl">
-                <div className="flex items-center gap-2">
-                  <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider text-secondary">
-                    Governance &amp; RBAC Layer
-                  </span>
-                  <span className="text-outline-variant">•</span>
-                  <span className="font-label-sm text-[11px] text-on-surface-variant font-medium">
-                    The Maple &amp; Vine Operations Node
-                  </span>
-                </div>
-                <h1 className="font-headline-lg text-2xl sm:text-3xl font-bold text-primary tracking-tight">
-                  Super Admin: Manage Admins &amp; Staff Roles
-                </h1>
-                <p className="font-body-md text-xs sm:text-sm text-on-surface-variant">
-                  Configure access controls, designate system administrators, and manage managerial permissions across restaurant operations.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAccessMatrixOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface font-semibold text-xs border border-outline-variant shadow-2xs transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-primary">
-                    verified_user
-                  </span>
-                  <span>Access Matrix</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsPromoteModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary font-bold text-xs shadow-2xs hover:opacity-95 transition-all cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">person_add</span>
-                  <span>+ Promote User to Admin</span>
-                </button>
-              </div>
+    <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8 max-w-7xl mx-auto w-full">
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-[#1b3b2b]/10">
+          <div className="flex flex-col gap-1.5 max-w-3xl">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                Governance &amp; RBAC Layer
+              </span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#E2B774]" />
+              <span className="text-[11px] text-neutral-500 font-medium">
+                The Maple &amp; Vine Operations Node
+              </span>
             </div>
-
-            {/* Governance Metrics Ribbon (4 Cards) */}
-            <AdminMetricsRibbon metrics={metrics} />
-
-            {/* Filter Bar with Search, Role, Status, and Export */}
-            <AdminFilterBar
-              searchQuery={searchQuery}
-              onSearchChange={(q) => {
-                setSearchQuery(q);
-                setCurrentPage(1);
-              }}
-              selectedRole={selectedRole}
-              onRoleChange={(r) => {
-                setSelectedRole(r);
-                setCurrentPage(1);
-              }}
-              selectedStatus={selectedStatus}
-              onStatusChange={(s) => {
-                setSelectedStatus(s);
-                setCurrentPage(1);
-              }}
-              filteredCount={filteredAdmins.length}
-              totalCount={adminsList.length}
-              onExportCsv={handleExportCsv}
-              onResetFilters={handleResetFilters}
-            />
-
-            {/* Admins Data Table */}
-            <AdminDirectoryTable
-              admins={paginatedAdmins}
-              onManagePrivileges={(admin) => setPrivilegeAdmin(admin)}
-              onPromoteAdmin={handlePromoteAdmin}
-              onDemoteAdmin={handleDemoteAdmin}
-              onToggleStatus={handleToggleStatus}
-              onRemoveAdmin={(admin) => setRemoveTargetAdmin(admin)}
-              onViewDetails={(admin) => setDetailAdmin(admin)}
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalFiltered={filteredAdmins.length}
-              pageSize={pageSize}
-              onPageChange={setCurrentPage}
-              onResetFilters={handleResetFilters}
-            />
-
-            {/* Security Policy Notice Container */}
-            <GovernancePolicyNotice />
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
+              Manage Admins &amp; Staff Roles
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-500">
+              Configure access controls, designate system administrators, and manage managerial permissions across restaurant operations.
+            </p>
           </div>
-        </main>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAccessMatrixOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-neutral-50 text-[#1b3b2b] font-semibold text-xs border border-[#1b3b2b]/15 shadow-xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px] text-[#1b3b2b]">
+                verified_user
+              </span>
+              <span>Access Matrix</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsPromoteModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1b3b2b] text-white hover:bg-[#152e22] font-bold text-xs shadow-xs transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px] text-[#E2B774]">person_add</span>
+              <span>+ Promote User to Admin</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Governance Metrics Ribbon (4 Cards) */}
+        <AdminMetricsRibbon metrics={metrics} />
+
+        {/* Filter Bar with Search, Role, Status, and Export */}
+        <AdminFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={(q) => {
+            setSearchQuery(q);
+            setCurrentPage(1);
+          }}
+          selectedRole={selectedRole}
+          onRoleChange={(r) => {
+            setSelectedRole(r);
+            setCurrentPage(1);
+          }}
+          selectedStatus={selectedStatus}
+          onStatusChange={(s) => {
+            setSelectedStatus(s);
+            setCurrentPage(1);
+          }}
+          filteredCount={filteredAdmins.length}
+          totalCount={adminsList.length}
+          onExportCsv={handleExportCsv}
+          onResetFilters={handleResetFilters}
+        />
+
+        {/* Admins Data Table */}
+        <AdminDirectoryTable
+          admins={paginatedAdmins}
+          onManagePrivileges={(admin) => setPrivilegeAdmin(admin)}
+          onPromoteAdmin={handlePromoteAdmin}
+          onDemoteAdmin={handleDemoteAdmin}
+          onToggleStatus={handleToggleStatus}
+          onRemoveAdmin={(admin) => setRemoveTargetAdmin(admin)}
+          onViewDetails={(admin) => setDetailAdmin(admin)}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalFiltered={filteredAdmins.length}
+          pageSize={pageSize}
+          onPageChange={setCurrentPage}
+          onResetFilters={handleResetFilters}
+        />
+
+        {/* Security Policy Notice Container */}
+        <GovernancePolicyNotice />
       </div>
 
       {/* Modals & Dialogs */}
@@ -355,8 +331,8 @@ export default function AdminAdminsPage() {
 
       {/* Floating Feedback Toast */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-primary text-on-primary px-4 py-3 rounded-xl shadow-lg border border-outline-variant/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <span className="material-symbols-outlined text-base">check_circle</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-[#1b3b2b] text-white px-4 py-3 rounded-2xl shadow-xl border border-[#E2B774]/30 flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
+          <span className="material-symbols-outlined text-[#E2B774] text-base">check_circle</span>
           <span className="text-xs font-semibold">{toastMessage}</span>
         </div>
       )}
