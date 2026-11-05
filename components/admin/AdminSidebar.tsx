@@ -22,13 +22,16 @@ export default function AdminSidebar({
   isOpen = true,
   onClose,
   onToggle,
-  pendingApprovalsCount = 8,
+  pendingApprovalsCount,
   adminProfile,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [liveUserCount, setLiveUserCount] = useState<number | null>(null);
+  const [livePendingReservationsCount, setLivePendingReservationsCount] = useState<number | null>(
+    typeof pendingApprovalsCount === "number" ? pendingApprovalsCount : null
+  );
 
   // Synchronized profile state
   const [liveProfile, setLiveProfile] = useState<{ name: string; avatar: string }>({
@@ -64,8 +67,8 @@ export default function AdminSidebar({
     return null;
   }, []);
 
-  // Fetch live count of active users from PostgreSQL
-  const fetchActiveUserCount = useCallback(async () => {
+  // Fetch live count of active users & pending floor reservations from PostgreSQL
+  const fetchLiveCounts = useCallback(async () => {
     try {
       const rawBackendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
       const cleanBaseUrl = rawBackendUrl.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
@@ -74,34 +77,55 @@ export default function AdminSidebar({
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(`${cleanBaseUrl}/api/v1/admin/users`, {
-        method: "GET",
-        headers,
-        credentials: "include",
-      });
+      // Concurrent fetch for live directory count & reservations badge
+      const [usersRes, reservationsRes] = await Promise.all([
+        fetch(`${cleanBaseUrl}/api/v1/admin/users`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+        fetch(`${cleanBaseUrl}/api/v1/admin/reservations`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+      ]);
 
-      const json = await res.json().catch(() => null);
-      if (res.ok && json?.success && typeof json.totalUsers === "number") {
-        setLiveUserCount(json.totalUsers);
+      if (usersRes && usersRes.ok) {
+        const usersJson = await usersRes.json().catch(() => null);
+        if (usersJson?.success && typeof usersJson.totalUsers === "number") {
+          setLiveUserCount(usersJson.totalUsers);
+        }
+      }
+
+      if (reservationsRes && reservationsRes.ok) {
+        const resJson = await reservationsRes.json().catch(() => null);
+        if (resJson?.success && resJson.stats) {
+          const pending = resJson.stats.pendingCount ?? 0;
+          setLivePendingReservationsCount(pending);
+        }
       }
     } catch (err) {
-      console.error("Failed to fetch live user directory count:", err);
+      console.error("Failed to fetch live admin sidebar telemetry:", err);
     }
   }, [getAuthToken]);
 
-  // Initial fetch on mount & listen to directory changes
+  // Initial fetch on mount & listen to directory/reservation changes
   useEffect(() => {
-    fetchActiveUserCount();
+    fetchLiveCounts();
 
-    const handleDirectoryUpdated = () => {
-      fetchActiveUserCount();
+    const handleSync = () => {
+      fetchLiveCounts();
     };
 
-    window.addEventListener("dinedesk_directory_updated", handleDirectoryUpdated);
+    window.addEventListener("dinedesk_directory_updated", handleSync);
+    window.addEventListener("dinedesk_reservations_updated", handleSync);
+
     return () => {
-      window.removeEventListener("dinedesk_directory_updated", handleDirectoryUpdated);
+      window.removeEventListener("dinedesk_directory_updated", handleSync);
+      window.removeEventListener("dinedesk_reservations_updated", handleSync);
     };
-  }, [fetchActiveUserCount]);
+  }, [fetchLiveCounts]);
 
   // Format count into compact clean badges (e.g. 72, 1.2k, 48.2k)
   const formatCount = (count: number | null): string => {
@@ -396,7 +420,7 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Dynamically Populated Manage Users Counter */}
+            {/* Dynamic PostgreSQL User Directory Counter */}
             <Link
               href="/dashboard/admin/users"
               onClick={handleNavClick}
@@ -424,26 +448,29 @@ export default function AdminSidebar({
               )}
             </Link>
 
+            {/* Repurposed Single-Restaurant Reservations & Floor Operations */}
             <Link
               href="/dashboard/admin/restaurants"
               onClick={handleNavClick}
               className={linkClass(isRestaurants)}
-              title="Venue & Floor Stations"
+              title="Table Reservations & Floor Plan"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span className={`material-symbols-outlined text-lg shrink-0 ${isRestaurants ? "text-[#E2B774]" : ""}`}>
-                  storefront
+                  table_restaurant
                 </span>
-                {isOpen && <span className="truncate">Venue &amp; Stations</span>}
+                {isOpen && <span className="truncate">Reservations &amp; Floor</span>}
               </div>
               {isOpen && (
                 <span
-                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${isRestaurants
+                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${isRestaurants
                       ? "bg-[#E2B774] text-[#1b3b2b]"
                       : "bg-[#1b3b2b]/10 text-[#1b3b2b]"
                     }`}
                 >
-                  {pendingApprovalsCount ? `${pendingApprovalsCount} Pending` : "4 Zones"}
+                  {livePendingReservationsCount !== null && livePendingReservationsCount > 0
+                    ? `${livePendingReservationsCount} Pending`
+                    : "Live Floor"}
                 </span>
               )}
               {!isOpen && isRestaurants && (
