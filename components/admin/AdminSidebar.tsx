@@ -193,7 +193,6 @@ export default function AdminSidebar({
   const isTransactions = pathname?.startsWith("/dashboard/admin/transactions");
   const isAdmins = pathname?.startsWith("/dashboard/admin/admins");
   const isSettings = pathname?.startsWith("/dashboard/admin/settings");
-  const isAuditLogs = pathname?.startsWith("/dashboard/admin/audit-logs");
 
   const displayName = liveProfile.name || (user as any)?.name || (user as any)?.fullName || "Fourkan Bin Ilias";
   const avatarUrl =
@@ -602,23 +601,6 @@ export default function AdminSidebar({
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[9px] font-bold uppercase tracking-wider shrink-0">
                   Live
                 </span>
-              )}
-            </Link>
-
-            <Link
-              href="/dashboard/admin/audit-logs"
-              onClick={handleNavClick}
-              className={linkClass(isAuditLogs)}
-              title="Audit & Telemetry"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className={`material-symbols-outlined text-lg shrink-0 ${isAuditLogs ? "text-[#E2B774]" : ""}`}>
-                  history
-                </span>
-                {isOpen && <span className="truncate">Audit &amp; Telemetry</span>}
-              </div>
-              {!isOpen && isAuditLogs && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#E2B774] rounded-r-full" />
               )}
             </Link>
 
