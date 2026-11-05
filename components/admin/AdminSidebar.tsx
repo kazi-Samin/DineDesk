@@ -29,6 +29,7 @@ export default function AdminSidebar({
   const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
   const [liveUserCount, setLiveUserCount] = useState<number | null>(null);
+  const [liveStaffCount, setLiveStaffCount] = useState<number | null>(null);
   const [livePendingReservationsCount, setLivePendingReservationsCount] = useState<number | null>(
     typeof pendingApprovalsCount === "number" ? pendingApprovalsCount : null
   );
@@ -67,7 +68,7 @@ export default function AdminSidebar({
     return null;
   }, []);
 
-  // Fetch live count of active users & pending floor reservations from PostgreSQL
+  // Fetch live count of active users, staff, & pending floor reservations from PostgreSQL
   const fetchLiveCounts = useCallback(async () => {
     try {
       const rawBackendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -77,9 +78,14 @@ export default function AdminSidebar({
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      // Concurrent fetch for live directory count & reservations badge
-      const [usersRes, reservationsRes] = await Promise.all([
+      // Concurrent fetch for live directory count, staff roster, and reservations badge
+      const [usersRes, staffRes, reservationsRes] = await Promise.all([
         fetch(`${cleanBaseUrl}/api/v1/admin/users`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        }).catch(() => null),
+        fetch(`${cleanBaseUrl}/api/v1/admin/staff`, {
           method: "GET",
           headers,
           credentials: "include",
@@ -98,6 +104,19 @@ export default function AdminSidebar({
         }
       }
 
+      if (staffRes && staffRes.ok) {
+        const staffJson = await staffRes.json().catch(() => null);
+        if (staffJson?.success) {
+          const totalStaff =
+            typeof staffJson.metrics?.totalStaff === "number"
+              ? staffJson.metrics.totalStaff
+              : Array.isArray(staffJson.staff)
+                ? staffJson.staff.length
+                : null;
+          setLiveStaffCount(totalStaff);
+        }
+      }
+
       if (reservationsRes && reservationsRes.ok) {
         const resJson = await reservationsRes.json().catch(() => null);
         if (resJson?.success && resJson.stats) {
@@ -110,7 +129,7 @@ export default function AdminSidebar({
     }
   }, [getAuthToken]);
 
-  // Initial fetch on mount & listen to directory/reservation changes
+  // Initial fetch on mount & listen to directory/staff/reservation changes
   useEffect(() => {
     fetchLiveCounts();
 
@@ -119,10 +138,12 @@ export default function AdminSidebar({
     };
 
     window.addEventListener("dinedesk_directory_updated", handleSync);
+    window.addEventListener("dinedesk_staff_updated", handleSync);
     window.addEventListener("dinedesk_reservations_updated", handleSync);
 
     return () => {
       window.removeEventListener("dinedesk_directory_updated", handleSync);
+      window.removeEventListener("dinedesk_staff_updated", handleSync);
       window.removeEventListener("dinedesk_reservations_updated", handleSync);
     };
   }, [fetchLiveCounts]);
@@ -347,7 +368,7 @@ export default function AdminSidebar({
           ) : (
             <div
               className="w-11 h-11 mx-auto rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/40 shadow-sm flex items-center justify-center relative cursor-pointer group shrink-0"
-              title={`${displayName} • ${userRole}`}
+              title={`${displayName}\n${userRole}`}
             >
               {avatarUrl && !imgError ? (
                 <img
@@ -448,7 +469,7 @@ export default function AdminSidebar({
               )}
             </Link>
 
-            {/* Repurposed Single-Restaurant Reservations & Floor Operations */}
+            {/* Dynamic Reservations Counter */}
             <Link
               href="/dashboard/admin/restaurants"
               onClick={handleNavClick}
@@ -506,6 +527,7 @@ export default function AdminSidebar({
               <div className="h-px bg-[#1b3b2b]/10 mx-2 my-2" />
             )}
 
+            {/* Dynamic Staff & Leadership Badge */}
             <Link
               href="/dashboard/admin/admins"
               onClick={handleNavClick}
@@ -519,8 +541,13 @@ export default function AdminSidebar({
                 {isOpen && <span className="truncate">Staff &amp; Leadership</span>}
               </div>
               {isOpen && (
-                <span className={`text-[11px] font-mono font-medium shrink-0 ${isAdmins ? "text-white/80" : "text-neutral-400"}`}>
-                  8 Staff
+                <span
+                  className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-md shrink-0 transition-colors ${isAdmins
+                      ? "bg-white/20 text-[#E2B774]"
+                      : "bg-[#1b3b2b]/5 text-[#1b3b2b] border border-[#1b3b2b]/10"
+                    }`}
+                >
+                  {liveStaffCount !== null ? `${liveStaffCount} Staff` : "... Staff"}
                 </span>
               )}
               {!isOpen && isAdmins && (
