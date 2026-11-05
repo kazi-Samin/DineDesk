@@ -1,7 +1,7 @@
 // components/admin/AdminSidebar.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,7 @@ export default function AdminSidebar({
   const pathname = usePathname();
   const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
+  const [liveUserCount, setLiveUserCount] = useState<number | null>(null);
 
   // Synchronized profile state
   const [liveProfile, setLiveProfile] = useState<{ name: string; avatar: string }>({
@@ -39,6 +40,77 @@ export default function AdminSidebar({
       (user as any)?.avatar ||
       "",
   });
+
+  // Safe helper to extract auth tokens across cross-origin deployments
+  const getAuthToken = useCallback((): string | null => {
+    if (typeof window === "undefined") return null;
+
+    const cookieMatches = document.cookie.match(
+      /(?:^|;\s*)(?:token|accessToken|auth_token|session)=([^;]+)/
+    );
+    if (cookieMatches && cookieMatches[1]) {
+      return decodeURIComponent(cookieMatches[1]);
+    }
+
+    try {
+      const stored =
+        sessionStorage.getItem("token") ||
+        sessionStorage.getItem("accessToken");
+      if (stored) return stored.replace(/^Bearer\s+/i, "");
+    } catch {
+      // Storage access blocked or restricted
+    }
+
+    return null;
+  }, []);
+
+  // Fetch live count of active users from PostgreSQL
+  const fetchActiveUserCount = useCallback(async () => {
+    try {
+      const rawBackendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const cleanBaseUrl = rawBackendUrl.replace(/\/+$/, "").replace(/\/api\/v1$/, "");
+
+      const token = getAuthToken();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
+      const res = await fetch(`${cleanBaseUrl}/api/v1/admin/users`, {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.success && typeof json.totalUsers === "number") {
+        setLiveUserCount(json.totalUsers);
+      }
+    } catch (err) {
+      console.error("Failed to fetch live user directory count:", err);
+    }
+  }, [getAuthToken]);
+
+  // Initial fetch on mount & listen to directory changes
+  useEffect(() => {
+    fetchActiveUserCount();
+
+    const handleDirectoryUpdated = () => {
+      fetchActiveUserCount();
+    };
+
+    window.addEventListener("dinedesk_directory_updated", handleDirectoryUpdated);
+    return () => {
+      window.removeEventListener("dinedesk_directory_updated", handleDirectoryUpdated);
+    };
+  }, [fetchActiveUserCount]);
+
+  // Format count into compact clean badges (e.g. 72, 1.2k, 48.2k)
+  const formatCount = (count: number | null): string => {
+    if (count === null) return "...";
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}k`;
+    }
+    return count.toLocaleString();
+  };
 
   // Listen for custom profile update events dispatched from AdminHeader
   useEffect(() => {
@@ -58,7 +130,7 @@ export default function AdminSidebar({
     };
   }, []);
 
-  // Update whenever props or user context change
+  // Update whenever props change
   useEffect(() => {
     if (adminProfile?.name || adminProfile?.avatar) {
       setLiveProfile({
@@ -195,18 +267,18 @@ export default function AdminSidebar({
             </div>
           )}
 
-          {/* Profile Card: Responsive, Flexible, No Clipping */}
+          {/* Profile Card */}
           {isOpen ? (
             <div className="relative overflow-hidden rounded-2xl p-3.5 bg-gradient-to-br from-[#1b3b2b] to-[#12281d] text-white shadow-md shadow-[#1b3b2b]/20 border border-[#E2B774]/20 group min-h-[72px]">
               <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#E2B774]/15 rounded-full blur-2xl pointer-events-none group-hover:bg-[#E2B774]/25 transition-colors duration-500" />
 
               <div className="relative z-10 flex items-center gap-3 w-full">
-                {/* Avatar / Initials */}
                 <div className="relative w-10 h-10 rounded-xl p-0.5 bg-[#1b3b2b] border border-[#E2B774]/50 shadow-inner flex items-center justify-center shrink-0 overflow-hidden">
                   {avatarUrl && !imgError ? (
                     <img
                       src={avatarUrl}
                       alt={displayName}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover rounded-lg"
                       onError={() => setImgError(true)}
                     />
@@ -218,7 +290,6 @@ export default function AdminSidebar({
                   <span className="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#1b3b2b]" />
                 </div>
 
-                {/* Name, Role Badge & Email Details */}
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="flex items-center gap-1.5 mb-1 w-full">
                     <span
@@ -258,6 +329,7 @@ export default function AdminSidebar({
                 <img
                   src={avatarUrl}
                   alt={displayName}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover rounded-lg"
                   onError={() => setImgError(true)}
                 />
@@ -324,6 +396,7 @@ export default function AdminSidebar({
               )}
             </Link>
 
+            {/* Dynamically Populated Manage Users Counter */}
             <Link
               href="/dashboard/admin/users"
               onClick={handleNavClick}
@@ -337,8 +410,13 @@ export default function AdminSidebar({
                 {isOpen && <span className="truncate">Manage Users</span>}
               </div>
               {isOpen && (
-                <span className={`text-[11px] font-mono font-medium shrink-0 ${isUsers ? "text-white/80" : "text-neutral-400"}`}>
-                  48.2k
+                <span
+                  className={`text-[11px] font-mono font-bold px-1.5 py-0.5 rounded-md shrink-0 transition-colors ${isUsers
+                      ? "bg-white/20 text-[#E2B774]"
+                      : "bg-[#1b3b2b]/5 text-[#1b3b2b] border border-[#1b3b2b]/10"
+                    }`}
+                >
+                  {formatCount(liveUserCount)}
                 </span>
               )}
               {!isOpen && isUsers && (
