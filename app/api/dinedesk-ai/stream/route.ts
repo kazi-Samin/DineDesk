@@ -3,6 +3,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { searchCatalog, detectIntent, QueryFilters } from "@/lib/dinedeskAIEngine";
+import {
+  matchDishIntelligently,
+  parseOrderCommand,
+  parseDietaryConstraints,
+  cleanDishName,
+} from "@/lib/aiFuzzyMatcher";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -25,6 +31,13 @@ export async function POST(req: NextRequest) {
       ? searchCatalog(cleanPrompt, filters as QueryFilters)
       : { restaurants: [], dishes: [], appliedConstraints: {} };
 
+    // Intelligent Typo Detection, Natural Language & Order Command Understanding
+    const orderCommand = parseOrderCommand(cleanPrompt);
+    const dietary = parseDietaryConstraints(cleanPrompt);
+    const intelligentMatch = intent.isFoodQuery
+      ? matchDishIntelligently(cleanPrompt, catalogResults.dishes, dietary)
+      : null;
+
     // Build context summary for Gemini
     const restaurantSummary = catalogResults.restaurants
       .map((r) => `• ${r.name} (${r.neighborhood}) - ${r.cuisine}, Price: ${r.priceRangeStr}, Rating: ${r.rating}★`)
@@ -39,21 +52,23 @@ export async function POST(req: NextRequest) {
 The user is asking a general conversation question or platform inquiry (not ordering food).
 Answer their question directly and warmly in the language they used (English, Bengali, or Banglish) in 1-2 short paragraphs.
 Do NOT force food recommendations or suggest specific dishes unless they ask for food.`
-      : `You are DineDesk AI, an expert culinary concierge for DineDesk restaurant platform.
+      : `You are DineDesk AI, the official culinary concierge exclusively for DineDesk Flagship Premium Kitchen.
 Every price you reference must strictly be in US Dollars ($).
-Only recommend real restaurants and dishes from the verified catalog below.
 
-VERIFIED RESTAURANTS:
-${restaurantSummary || "None matched strictly"}
+CRITICAL ACCURACY & RESTAURANT RULES:
+1. All dishes belong exclusively to the verified restaurant: "DineDesk Flagship Premium Kitchen". NEVER mention or invent any other restaurant.
+2. ONLY recommend real dishes present in the VERIFIED DISHES catalog below.
+3. If the user asks for an item that is NOT in the verified catalog (e.g. tacos, sushi burrito, etc.), explicitly tell them:
+   "That item is not currently available at DineDesk Flagship Premium Kitchen. However, here are delicious options from our active menu that you might enjoy:"
+   and recommend relevant items from the verified dishes below.
+4. If the user asks for desserts or a category, showcase the matching items from the verified menu.
+5. Provide a warm, concise, professional recommendation in the language user used (English or Bengali).
+
+VERIFIED RESTAURANT:
+${restaurantSummary || "• DineDesk Flagship Premium Kitchen (Gulshan Avenue, Dhaka) - Continental, Italian, Gourmet Mains, Desi & Handcrafted Desserts, Price: $10 - $45, Rating: 4.95★"}
 
 VERIFIED DISHES:
-${dishSummary || "None matched strictly"}
-
-INSTRUCTIONS:
-1. Provide a warm, concise, professional recommendation in the language user used (English or Bengali).
-2. Highlight why the recommended kitchen or dish matches their craving, budget in $, or dining occasion.
-3. Keep descriptions mouth-watering, elegant, and directly tied to the verified prices and locations.
-4. End with a helpful follow-up suggestion.`;
+${dishSummary || "None matched strictly"}`;
 
     const apiKey =
       geminiApiKey ||
@@ -83,13 +98,35 @@ INSTRUCTIONS:
           constraints: catalogResults.appliedConstraints,
         });
 
+        // 1b. If user gave an active order command with high/medium confidence, trigger immediate cart action
+        if (orderCommand.isOrderCommand && intelligentMatch?.topMatch) {
+          const top = intelligentMatch.topMatch;
+          const qty = intelligentMatch.requestedQuantity || 1;
+          sendEvent({
+            type: "cart_action",
+            action: "add",
+            items: [
+              {
+                id: top.id,
+                dishId: top.id,
+                name: cleanDishName(top.name),
+                price: top.price,
+                priceFormatted: top.priceFormatted,
+                restaurantName: top.restaurantName,
+                image: top.image,
+                quantity: qty,
+              },
+            ],
+          });
+        }
+
         let geminiStreamSucceeded = false;
 
         if (apiKey) {
           const timeoutMs = 15000;
-          const primaryModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
+          const primaryModel = process.env.GEMINI_MODEL || "gemini-1.5-flash";
           const candidateModels = Array.from(
-            new Set([primaryModel, "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"])
+            new Set([primaryModel, "gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"])
           );
 
           // Prepare conversation history
@@ -197,12 +234,31 @@ INSTRUCTIONS:
 
           if (!intent.isFoodQuery) {
             fallbackText = intent.response;
+          } else if (intelligentMatch?.isUnavailable) {
+            const dishName = cleanDishName(intelligentMatch.requestedDishName || cleanPrompt);
+            fallbackText = `**${dishName}** is not currently available at **DineDesk Flagship Premium Kitchen**.\n\nHowever, here are delicious chef-recommended signature options from our active kitchen menu that you might enjoy:`;
+          } else if ((intelligentMatch?.isCategory || cleanPrompt.toLowerCase().includes("dessert") || cleanPrompt.toLowerCase().includes("sweet") || cleanPrompt.toLowerCase().includes("cake") || cleanPrompt.toLowerCase().includes("burger") || cleanPrompt.toLowerCase().includes("pizza") || cleanPrompt.toLowerCase().includes("biryani")) && catalogResults.dishes.length > 0) {
+            const catName = cleanPrompt.toLowerCase().includes("dessert") || cleanPrompt.toLowerCase().includes("sweet") || cleanPrompt.toLowerCase().includes("cake") ? "dessert & handcrafted sweet" : (intelligentMatch?.categoryLabel || "chef-crafted");
+            fallbackText = `Here are our exquisite **${catName}** selections freshly prepared at **DineDesk Flagship Premium Kitchen**:\n\nEvery dish is prepared fresh using authentic, premium ingredients. You can add any item directly to your cart or explore our verified options below.`;
+          } else if (orderCommand.isOrderCommand && intelligentMatch?.topMatch) {
+            const top = intelligentMatch.topMatch;
+            const qty = intelligentMatch.requestedQuantity || 1;
+            fallbackText = `🛒 I've added **${qty > 1 ? `${qty}x ` : ""}${cleanDishName(top.name)}** to your cart (${(top.price * qty).toFixed(2)}).\n\nIt's freshly prepared by **${top.restaurantName}** in about ${top.prepTime}. Would you like to add any drinks, desserts, or explore more from this kitchen?`;
+          } else if (intelligentMatch?.confidence === "HIGH" && intelligentMatch?.topMatch) {
+            const top = intelligentMatch.topMatch;
+            fallbackText = `I found **${cleanDishName(top.name)}** at **${top.restaurantName}** (${top.priceFormatted})!\n\n${top.description} It's prepared fresh in about ${top.prepTime}. You can add it directly to your cart or explore the options below.`;
+          } else if (intelligentMatch?.confidence === "MEDIUM" && intelligentMatch?.topMatch) {
+            const top = intelligentMatch.topMatch;
+            fallbackText = `Did you mean **${cleanDishName(top.name)}** from **${top.restaurantName}** (${top.priceFormatted})?\n\n${top.description} It's prepared fresh in about ${top.prepTime}. You can add it directly to your cart or check out the options below.`;
+          } else if (dietary.excludedIngredients.length > 0) {
+            const excludedList = dietary.excludedIngredients.join(", ");
+            fallbackText = `Here are our chef-recommended dishes prepared completely without **${excludedList}**. Every dish below has been verified against our ingredient database:\n\nCheck out the options below!`;
           } else {
             const topRest = catalogResults.restaurants[0];
-            const topDish = catalogResults.dishes[0];
+            const topDish = intelligentMatch?.topMatch || catalogResults.dishes[0];
 
             if (topDish && topRest) {
-              fallbackText = `Based on your craving for **${cleanPrompt}**, I recommend starting with the **${topDish.name}** at **${topDish.restaurantName}** (${topDish.priceFormatted}). This signature dish features ${topDish.description.toLowerCase()} and is prepared fresh in about ${topDish.prepTime}.\n\nIf you're planning a dine-in experience, **${topRest.name}** in ${topRest.neighborhood} offers an inviting atmosphere with a ${topRest.rating}★ rating from ${topRest.reviewCount}+ diners. Dishes range from ${topRest.priceRangeStr}.\n\nTake a look at the matching kitchens and dishes below. Would you like to reserve a table or view the full kitchen menu?`;
+              fallbackText = `Based on your craving for **${cleanPrompt}**, I recommend the **${cleanDishName(topDish.name)}** at **${topDish.restaurantName}** (${topDish.priceFormatted}). This signature dish features ${topDish.description.toLowerCase()} and is prepared fresh in about ${topDish.prepTime}.\n\nIf you're planning a dine-in experience, **${topRest.name}** in ${topRest.neighborhood} offers an inviting atmosphere with a ${topRest.rating}★ rating from ${topRest.reviewCount}+ diners. Dishes range from ${topRest.priceRangeStr}.\n\nTake a look at the matching kitchens and dishes below. Would you like to reserve a table or view the full kitchen menu?`;
             } else if (topRest) {
               fallbackText = `For **${cleanPrompt}**, **${topRest.name}** in ${topRest.neighborhood} is an outstanding choice. Rated ${topRest.rating}★, they specialize in ${topRest.cuisine} with dining prices typically between ${topRest.priceRangeStr}.\n\nTheir culinary team is renowned for authentic preparation and warm hospitality. I've highlighted verified options below to fit your criteria.`;
             } else {
