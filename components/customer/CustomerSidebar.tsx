@@ -301,7 +301,7 @@ export default function CustomerSidebar({
       )}
 
       <aside
-        className={`fixed left-0 top-20 bottom-0 bg-white/95 backdrop-blur-2xl z-40 flex flex-col justify-between shadow-[4px_0_24px_rgba(27,59,43,0.06)] border-r border-[#1b3b2b]/15 transition-all duration-300 ease-in-out ${isOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0 lg:w-20"
+        className={`fixed left-0 top-20 bottom-0 bg-white/95 backdrop-blur-2xl z-40 flex flex-col justify-between shadow-[4px_0_24px_rgba(27,59,43,0.06)] border-r border-[#1b3b2b]/15 transition-all duration-300 ease-in-out ${isOpen ? "translate-x-0 w-72 max-w-[85vw]" : "-translate-x-full lg:translate-x-0 lg:w-20"
           }`}
       >
         <motion.button

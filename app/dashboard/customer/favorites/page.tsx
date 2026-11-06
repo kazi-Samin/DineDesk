@@ -547,10 +547,10 @@ export default function CustomerFavoritesPage() {
       />
 
       <div
-        className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+        className={`transition-all duration-300 min-w-0 max-w-full overflow-x-hidden ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
           }`}
       >
-        <main className="w-full pt-20 bg-[#f8f9f6] min-h-screen flex flex-col justify-between">
+        <main className="w-full pt-16 sm:pt-20 min-w-0 max-w-full overflow-x-hidden bg-[#f8f9f6] min-h-screen flex flex-col justify-between">
           <div className="w-full flex flex-col">
             {/* Welcome Banner & Stats */}
             <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">

@@ -129,45 +129,65 @@ export default function CustomerHeader({
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-20 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/80 shadow-xs">
-      <div className="h-full w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-4">
+    <header className="fixed top-0 left-0 right-0 h-16 sm:h-20 z-40 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/80 shadow-xs">
+      <div className="h-full w-full px-2.5 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
 
-        {/* Left: Brand Logo */}
-        <div className="flex items-center gap-4">
+        {/* Left: Mobile Sidebar Trigger + Brand Logo */}
+        <div className="flex items-center gap-2 sm:gap-3.5 shrink-0 min-w-0">
+          {onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="lg:hidden p-1.5 sm:p-2 rounded-xl text-primary hover:bg-surface-container transition-colors cursor-pointer shrink-0"
+              aria-label="Toggle Dashboard Sidebar"
+              title={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              <span className="material-symbols-outlined text-2xl leading-none">
+                {isSidebarOpen ? "close" : "menu"}
+              </span>
+            </button>
+          )}
+
           <motion.div
             animate={{ y: [0, -3, 0] }}
             transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            className="shrink-0"
           >
             <Link
               className="flex items-center group transition-transform duration-300 hover:scale-105 shrink-0"
               href="/"
+              title="Return to DineDesk Home"
             >
-              <div className="h-12 sm:h-14 w-auto flex items-center justify-center">
+              <div className="h-7 sm:h-9 md:h-11 w-auto flex items-center justify-center">
                 <Image
                   alt="DineDesk Logo"
                   className="h-full w-auto object-contain"
                   src="/assets/DineDesk Monogram.png"
-                  width={210}
-                  height={52}
+                  width={180}
+                  height={44}
                   priority
                 />
               </div>
             </Link>
           </motion.div>
+
+          <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[9px] font-extrabold uppercase tracking-widest border border-primary/20 select-none shrink-0">
+            DINER
+          </span>
         </div>
 
-        {/* Middle: Centered Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-3 absolute left-1/2 -translate-x-1/2">
+        {/* Middle: Navigation Links in normal flex flow (eliminates absolute centering collision) */}
+        <nav className="hidden xl:flex items-center gap-2 lg:gap-3 shrink-0">
           <Link
             href="/"
-            className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
           >
             Home
           </Link>
 
           <Link
             href="/dashboard/customer/orders"
-            className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
           >
             My Orders
           </Link>
@@ -180,7 +200,7 @@ export default function CustomerHeader({
           >
             <button
               type="button"
-              className="px-4 py-2 rounded-xl text-sm font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1 cursor-pointer"
             >
               <span>Culinary Guide</span>
               <span className="material-symbols-outlined text-base">expand_more</span>
@@ -218,16 +238,16 @@ export default function CustomerHeader({
         </nav>
 
         {/* Right: Search, Notifications, User Profile Pill */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
 
           {/* Global Search Field */}
-          <form onSubmit={handleSearch} className="relative hidden md:block max-w-xs w-48 lg:w-60">
-            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">
+          <form onSubmit={handleSearch} className="relative hidden md:block w-36 lg:w-48 xl:w-56 shrink-0">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">
               search
             </span>
             <input
-              className="w-full pl-10 pr-3 py-2.5 bg-surface-container-low font-body-sm text-xs text-on-surface rounded-2xl placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest focus:border-primary border border-outline-variant/70 shadow-inner transition-all"
-              placeholder="Search dishes, kitchens..."
+              className="w-full pl-9 pr-3 py-2 bg-surface-container-low font-body-sm text-xs text-on-surface rounded-2xl placeholder:text-on-surface-variant/70 focus:outline-none focus:bg-surface-container-lowest focus:border-primary border border-outline-variant/70 shadow-inner transition-all"
+              placeholder="Search dishes..."
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -235,20 +255,20 @@ export default function CustomerHeader({
           </form>
 
           {/* Notifications Button */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               aria-label="Notifications"
-              className="p-2.5 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors rounded-2xl relative cursor-pointer border border-outline-variant/40"
+              className="p-1.5 sm:p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors rounded-xl relative cursor-pointer border border-outline-variant/40"
               type="button"
               onClick={() => setNotificationsOpen(!notificationsOpen)}
             >
-              <span className="material-symbols-outlined text-xl">notifications</span>
-              <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full animate-pulse" />
+              <span className="material-symbols-outlined text-lg sm:text-xl">notifications</span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full animate-pulse" />
             </button>
 
             {/* Notifications Dropdown */}
             {notificationsOpen && (
-              <div className="absolute right-0 top-full mt-3 w-72 sm:w-80 bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 top-full mt-3 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center justify-between pb-3 border-b border-outline-variant/40">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-primary">
                     Activity Alerts
@@ -271,20 +291,22 @@ export default function CustomerHeader({
             )}
           </div>
 
-          <div className="h-6 w-px bg-outline-variant/60 hidden sm:block" />
+          <div className="h-5 w-px bg-outline-variant/60 hidden sm:block shrink-0" />
 
           {/* Profile Dropdown */}
-          <UserProfileDropdown user={dropdownUser} logout={logout} />
+          <div className="shrink-0">
+            <UserProfileDropdown user={dropdownUser} logout={logout} />
+          </div>
 
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2.5 rounded-2xl bg-surface-container text-on-surface hover:bg-surface-container-high lg:hidden border border-outline-variant/40 cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high xl:hidden border border-outline-variant/40 cursor-pointer shrink-0"
             aria-label="Open Mobile Menu"
           >
-            <span className="material-symbols-outlined text-xl">
-              {mobileMenuOpen ? "close" : "menu"}
+            <span className="material-symbols-outlined text-lg sm:text-xl">
+              {mobileMenuOpen ? "close" : "more_vert"}
             </span>
           </button>
         </div>

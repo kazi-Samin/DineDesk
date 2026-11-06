@@ -453,7 +453,7 @@ export default function CustomerLoyaltyPage() {
         onToggleSidebar={toggleSidebar}
       />
 
-      <div className="flex pt-20 flex-1">
+      <div className="flex pt-16 sm:pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
         <CustomerSidebar
           userName={`${cleanFirstName}'s Account`}
           memberSince={profile.memberSince}
@@ -468,7 +468,7 @@ export default function CustomerLoyaltyPage() {
         />
 
         <main
-          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+          className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
             }`}
         >
           {/* Section 1: Patron Welcome Banner & Stats */}
