@@ -54,10 +54,10 @@ export default function AdminLayoutClient({
 
             {/* Main Content & Footer offset to the right on desktop */}
             <div
-                className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20"
+                className={`flex-1 flex flex-col min-w-0 max-w-full overflow-x-hidden pt-20 transition-all duration-300 ease-in-out ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20"
                     }`}
             >
-                <main className="flex-1 w-full">{children}</main>
+                <main className="flex-1 w-full min-w-0 max-w-full">{children}</main>
                 <AdminFooter />
             </div>
         </div>
