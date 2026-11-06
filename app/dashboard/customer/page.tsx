@@ -71,7 +71,8 @@ export default function CustomerDashboardOverviewPage() {
       const token = authContextToken || getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}`, "x-session-token": token, "better-auth-session-token": token } : {}),
+        ...(user?.email ? { "x-user-email": user.email } : {}),
       };
 
       // 1. Concurrent Live API Fetching (Profile, Orders, Reservations, Favorites)
@@ -292,7 +293,7 @@ export default function CustomerDashboardOverviewPage() {
       />
 
       {/* Main Layout Container */}
-      <div className="flex pt-16 flex-1">
+      <div className="flex pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
         {/* Sidebar */}
         <CustomerSidebar
           userName={cleanFirstName}
@@ -309,7 +310,7 @@ export default function CustomerDashboardOverviewPage() {
 
         {/* Main Content Area */}
         <main
-          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+          className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
             }`}
         >
           {/* Welcome Banner & Stats */}

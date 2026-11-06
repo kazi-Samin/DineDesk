@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { SAVED_ADDRESSES, DEFAULT_CONTACT } from "@/data/mockCartData";
 import { FulfillmentMode, PaymentMethod, DeliveryAddress, CustomerContact } from "@/types/order";
+import EmbeddedStripeCheckout from "@/components/checkout/EmbeddedStripeCheckout";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_BACKEND_URL ||
@@ -50,10 +51,10 @@ export default function CheckoutPage() {
 
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
-  const [cardholderName, setCardholderName] = useState("Tahmid Rahman");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expDate, setExpDate] = useState("08/28");
-  const [cvc, setCvc] = useState("");
+  const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+  const [stripeOrderId, setStripeOrderId] = useState<string | null>(null);
+  const [stripeVerifiedTotal, setStripeVerifiedTotal] = useState<number>(0);
+  const [isInitializingStripe, setIsInitializingStripe] = useState(false);
 
   // Coupon
   const [couponCode, setCouponCode] = useState(cart.appliedCoupon || "FIRSTDINE");
@@ -69,18 +70,122 @@ export default function CheckoutPage() {
     setApartment(addr.apartment);
     setFloor(addr.floor);
     setInstructions(addr.instructions);
+    // Reset stripe client secret if address changes so backend re-validates
+    setStripeClientSecret(null);
   };
 
   const handleApplyCoupon = () => {
     if (applyCoupon(couponCode)) {
       setCouponError("");
+      setStripeClientSecret(null);
     } else {
       setCouponError("Invalid coupon code. Try FIRSTDINE");
     }
   };
 
+  const initializeStripeIntent = async () => {
+    if (cart.items.length === 0) return;
+    setIsInitializingStripe(true);
+    setOrderError(null);
+
+    try {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const backendOrderType =
+        fulfillmentMode === "takeaway"
+          ? "PICKUP"
+          : (fulfillmentMode as string) === "dinein"
+            ? "DINE_IN"
+            : "DELIVERY";
+
+      const formattedAddress = `${apartment ? apartment + ", " : ""}${streetAddress}${floor ? " (" + floor + ")" : ""}`;
+
+      const payload = {
+        orderType: backendOrderType,
+        paymentMethod: "STRIPE",
+        deliveryAddress: formattedAddress,
+        deliveryLat: 22.3384,
+        deliveryLng: 91.8317,
+        couponCode: cart.appliedCoupon || undefined,
+        items: cart.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          restaurantId: (item as any).restaurantId || cart.restaurantId,
+        })),
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/v1/orders`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.message || "Failed to initialize payment gateway.");
+      }
+
+      if (json.data?.clientSecret) {
+        setStripeClientSecret(json.data.clientSecret);
+        setStripeOrderId(json.data.order?.id);
+        setStripeVerifiedTotal(Number(json.data.total) || grandTotal);
+      }
+    } catch (err: any) {
+      console.error("Stripe initialization error:", err);
+      setOrderError(err.message || "Unable to initialize Stripe payment. Please check your network or try again.");
+    } finally {
+      setIsInitializingStripe(false);
+    }
+  };
+
+  const handlePaymentSuccess = async (orderId: string) => {
+    try {
+      const token = getAuthToken();
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      await fetch(`${API_BASE_URL}/api/v1/orders/confirm-payment`, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({
+          orderId,
+          paymentIntentId: stripeClientSecret ? stripeClientSecret.split("_secret_")[0] : undefined,
+        }),
+      }).catch(() => null);
+
+      clearCart();
+      router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+    } catch (e) {
+      clearCart();
+      router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (cart.items.length === 0) return;
+
+    if (paymentMethod === "card") {
+      if (!stripeClientSecret) {
+        await initializeStripeIntent();
+      } else {
+        const el = document.getElementById("stripe-payment-container");
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
+
+    // Cash On Delivery flow
     setIsPlacingOrder(true);
     setOrderError(null);
 
@@ -98,15 +203,11 @@ export default function CheckoutPage() {
             ? "DINE_IN"
             : "DELIVERY";
 
-      const backendPaymentMethod = paymentMethod === "card" ? "STRIPE" : "COD";
+      const formattedAddress = `${apartment ? apartment + ", " : ""}${streetAddress}${floor ? " (" + floor + ")" : ""}`;
 
-      const formattedAddress = `${apartment ? apartment + ", " : ""}${streetAddress}${floor ? " (" + floor + ")" : ""
-        }`;
-
-      // Build payload matching backend createOrder controller
       const payload = {
         orderType: backendOrderType,
-        paymentMethod: backendPaymentMethod,
+        paymentMethod: "COD",
         deliveryAddress: formattedAddress,
         deliveryLat: 22.3384,
         deliveryLng: 91.8317,
@@ -133,16 +234,9 @@ export default function CheckoutPage() {
         throw new Error(json.message || "Failed to initiate order.");
       }
 
-      // STRIPE CARD PAYMENT: Redirect to Stripe Checkout (Cart preserved until verified payment)
-      if (backendPaymentMethod === "STRIPE" && json.data?.stripeSessionUrl) {
-        window.location.href = json.data.stripeSessionUrl;
-        return;
-      }
-
-      // CASH ON DELIVERY: Cart is cleared and user is redirected to confirmation
       clearCart();
       const createdOrderId = json.data?.order?.id;
-      router.push(`/order-confirmation/${createdOrderId}`);
+      router.push(`/dashboard/customer/orders?order_success=true&order_id=${createdOrderId}`);
     } catch (err: any) {
       console.error("Order dispatch error:", err);
       setOrderError(err.message || "An error occurred while creating your order.");
@@ -157,13 +251,38 @@ export default function CheckoutPage() {
     cart.subtotal + activeDeliveryFee + cart.packagingFee + cart.tax - cart.discount
   );
 
+  if (cart.items.length === 0) {
+    return (
+      <main className="w-full pt-28 pb-20 bg-stone-50 min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-stone-200/80 shadow-md p-8 text-center space-y-4">
+          <div className="w-16 h-16 bg-emerald-50 text-[#1b3b2b] rounded-2xl flex items-center justify-center mx-auto">
+            <span className="material-symbols-outlined text-3xl">shopping_cart</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold font-heading text-[#1b3b2b]">
+            Your Dining Cart is Empty
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-500 leading-relaxed">
+            Looks like you haven't added any dishes yet. Browse our verified culinary kitchens to discover delicious chef-recommended meals.
+          </p>
+          <Link
+            href="/explore"
+            className="inline-flex items-center justify-center gap-2 w-full py-3 px-5 bg-[#1b3b2b] hover:bg-[#142e21] text-white font-bold text-sm rounded-xl transition-all shadow-sm"
+          >
+            <span>Explore Verified Menus</span>
+            <span className="material-symbols-outlined text-sm">arrow_forward</span>
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="w-full pt-20 bg-surface">
       <div className="flex flex-col w-full">
         <div className="w-full bg-surface py-space-xl">
           <div className="max-w-[1440px] mx-auto px-margin">
             {/* Breadcrumb and Top Narrative Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-space-md mb-space-xl">
+            <div className="flex flex-wrap items-center justify-between gap-space-md mb-space-md">
               <div className="flex items-center gap-space-sm font-label-md text-label-md text-on-surface-variant">
                 <Link className="hover:text-primary transition-colors" href="/explore">
                   Directory
@@ -189,6 +308,23 @@ export default function CheckoutPage() {
                   <span className="material-symbols-outlined text-sm">shopping_bag</span>
                   <span>Cart Drawer ({cart.items.reduce((s, i) => s + i.quantity, 0)})</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Prominent Secure Checkout Heading */}
+            <div className="mb-space-xl pb-space-sm border-b border-stone-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold font-heading text-[#1b3b2b] flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-700 text-2xl sm:text-3xl">verified_user</span>
+                  <span>Secure Checkout</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-stone-500 mt-1">
+                  Complete your order inside DineDesk • 256-Bit SSL Encrypted
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-xl self-start sm:self-auto shadow-2xs">
+                <span className="material-symbols-outlined text-sm text-emerald-600">lock</span>
+                <span>Direct In-Page Payment</span>
               </div>
             </div>
 
@@ -488,12 +624,12 @@ export default function CheckoutPage() {
 
                   {/* Radio Options Stack */}
                   <div className="space-y-space-md">
-                    {/* Option 1: Credit / Debit Card via Stripe */}
+                    {/* Option 1: Credit / Debit Card via Stripe Embedded Elements */}
                     <div
                       onClick={() => setPaymentMethod("card")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "card"
-                          ? "bg-surface-container-low border border-primary-container/30"
-                          : "bg-surface-container-lowest hover:bg-surface-container-low"
+                      className={`p-space-md rounded-2xl cursor-pointer transition-all border ${paymentMethod === "card"
+                          ? "bg-white border-[#1b3b2b] shadow-sm ring-1 ring-[#1b3b2b]/15"
+                          : "bg-surface-container-lowest border-stone-200/80 hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -501,40 +637,101 @@ export default function CheckoutPage() {
                           <input
                             checked={paymentMethod === "card"}
                             onChange={() => setPaymentMethod("card")}
-                            className="w-4 h-4 text-primary-container accent-primary-container"
+                            className="w-4 h-4 text-[#1b3b2b] accent-[#1b3b2b]"
                             name="payment_method"
                             type="radio"
                             value="card"
                           />
                           <div>
-                            <p className="font-label-lg text-label-lg font-semibold text-on-surface">
-                              Credit / Debit Card via Stripe
+                            <p className="font-label-lg text-label-lg font-bold text-on-surface flex items-center gap-2">
+                              <span>Credit / Debit Card</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                                Direct In-Page
+                              </span>
                             </p>
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
-                              Secure hosted payment checkout for all credit and debit cards
+                              Pay securely directly on DineDesk without external redirects
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-space-xs">
-                          <span className="px-2 py-0.5 bg-surface-container-lowest text-primary font-bold text-[10px] tracking-wider rounded">
+                          <span className="px-2 py-0.5 bg-stone-100 text-primary font-bold text-[10px] tracking-wider rounded">
                             VISA
                           </span>
-                          <span className="px-2 py-0.5 bg-surface-container-lowest text-secondary font-bold text-[10px] tracking-wider rounded">
+                          <span className="px-2 py-0.5 bg-stone-100 text-secondary font-bold text-[10px] tracking-wider rounded">
                             MC
                           </span>
-                          <span className="px-2 py-0.5 bg-surface-container-lowest text-on-surface font-bold text-[10px] tracking-wider rounded">
+                          <span className="px-2 py-0.5 bg-stone-100 text-on-surface font-bold text-[10px] tracking-wider rounded">
                             AMEX
                           </span>
                         </div>
                       </label>
+
+                      {/* Embedded Stripe Payment Elements Form Container */}
+                      {paymentMethod === "card" && (
+                        <div id="stripe-payment-container" className="mt-4 pt-4 border-t border-stone-100">
+                          {!stripeClientSecret ? (
+                            <div className="p-5 bg-stone-50/80 rounded-xl border border-stone-200/80 text-center space-y-3">
+                              <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-bold text-[#1b3b2b]">
+                                <span className="material-symbols-outlined text-emerald-600 text-base">lock</span>
+                                <span>Direct Embedded Payment Gateway</span>
+                              </div>
+                              <p className="text-xs text-stone-500 max-w-sm mx-auto leading-relaxed">
+                                Complete your payment directly on DineDesk. Click below to load the secure payment form.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={initializeStripeIntent}
+                                disabled={isInitializingStripe || cart.items.length === 0}
+                                className="px-6 py-2.5 bg-[#1b3b2b] hover:bg-[#142e21] text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 mx-auto cursor-pointer disabled:opacity-50"
+                              >
+                                {isInitializingStripe ? (
+                                  <>
+                                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Connecting to Stripe...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="material-symbols-outlined text-base">credit_card</span>
+                                    <span>Load Embedded Payment Form (${grandTotal.toFixed(2)})</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between pb-1">
+                                <span className="text-xs font-bold text-[#1b3b2b] uppercase tracking-wider flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-emerald-600 text-sm">verified_user</span>
+                                  <span>Embedded Stripe Payment Form</span>
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setStripeClientSecret(null)}
+                                  className="text-xs text-stone-500 hover:text-stone-800 underline cursor-pointer"
+                                >
+                                  Change Details
+                                </button>
+                              </div>
+                              <EmbeddedStripeCheckout
+                                clientSecret={stripeClientSecret}
+                                orderId={stripeOrderId!}
+                                total={stripeVerifiedTotal || grandTotal}
+                                onPaymentSuccess={handlePaymentSuccess}
+                                onCancel={() => setStripeClientSecret(null)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Option 2: Cash on Delivery */}
                     <div
                       onClick={() => setPaymentMethod("cod")}
-                      className={`p-space-md rounded cursor-pointer transition-colors ${paymentMethod === "cod"
-                          ? "bg-surface-container-low border border-primary-container/30"
-                          : "bg-surface-container-lowest hover:bg-surface-container-low"
+                      className={`p-space-md rounded-2xl cursor-pointer transition-all border ${paymentMethod === "cod"
+                          ? "bg-white border-[#1b3b2b] shadow-sm ring-1 ring-[#1b3b2b]/15"
+                          : "bg-surface-container-lowest border-stone-200/80 hover:bg-surface-container-low"
                         }`}
                     >
                       <label className="flex items-center justify-between cursor-pointer">
@@ -542,14 +739,14 @@ export default function CheckoutPage() {
                           <input
                             checked={paymentMethod === "cod"}
                             onChange={() => setPaymentMethod("cod")}
-                            className="w-4 h-4 text-primary-container accent-primary-container"
+                            className="w-4 h-4 text-[#1b3b2b] accent-[#1b3b2b]"
                             name="payment_method"
                             type="radio"
                             value="cod"
                           />
                           <div>
-                            <p className="font-label-lg text-label-lg font-semibold text-on-surface">
-                              Cash on Delivery
+                            <p className="font-label-lg text-label-lg font-bold text-on-surface">
+                              Cash on Delivery (COD)
                             </p>
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
                               Pay with cash directly to the courier upon delivery
@@ -694,36 +891,51 @@ export default function CheckoutPage() {
                   </div>
 
                   {/* Action Button */}
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={isPlacingOrder || cart.items.length === 0}
-                    className="w-full mt-space-lg py-space-md px-space-lg bg-primary-container hover:bg-primary text-on-primary rounded font-label-lg text-label-lg font-semibold tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-space-sm group cursor-pointer disabled:opacity-70"
-                    type="button"
-                  >
-                    {isPlacingOrder ? (
-                      <>
-                        <span className="material-symbols-outlined animate-spin text-lg">
-                          progress_activity
-                        </span>
-                        <span>
-                          {paymentMethod === "card"
-                            ? "Connecting to Stripe..."
-                            : "Confirming Order..."}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <span>
-                          {paymentMethod === "card"
-                            ? `Pay $${grandTotal.toLocaleString()} with Card`
-                            : `Place COD Order ($${grandTotal.toLocaleString()})`}
-                        </span>
-                        <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
-                          arrow_forward
-                        </span>
-                      </>
-                    )}
-                  </button>
+                  {paymentMethod === "card" && stripeClientSecret ? (
+                    <button
+                      onClick={() => {
+                        const el = document.getElementById("stripe-payment-container");
+                        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }}
+                      className="w-full mt-space-lg py-space-md px-space-lg bg-[#1b3b2b] hover:bg-[#142e21] text-white rounded-xl font-label-lg text-label-lg font-bold tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-space-sm cursor-pointer"
+                      type="button"
+                    >
+                      <span className="material-symbols-outlined text-lg">credit_card</span>
+                      <span>Complete Payment in Form</span>
+                      <span className="material-symbols-outlined text-lg">arrow_upward</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handlePlaceOrder}
+                      disabled={isPlacingOrder || isInitializingStripe || cart.items.length === 0}
+                      className="w-full mt-space-lg py-space-md px-space-lg bg-[#1b3b2b] hover:bg-[#142e21] text-white rounded-xl font-label-lg text-label-lg font-bold tracking-wide shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-space-sm group cursor-pointer disabled:opacity-70"
+                      type="button"
+                    >
+                      {isPlacingOrder || isInitializingStripe ? (
+                        <>
+                          <span className="material-symbols-outlined animate-spin text-lg">
+                            progress_activity
+                          </span>
+                          <span>
+                            {paymentMethod === "card"
+                              ? "Initializing Stripe Gateway..."
+                              : "Confirming Order..."}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            {paymentMethod === "card"
+                              ? `Pay $${grandTotal.toFixed(2)} with Card`
+                              : `Place Cash on Delivery ($${grandTotal.toFixed(2)})`}
+                          </span>
+                          <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">
+                            arrow_forward
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )}
 
                   {/* Trust Badges */}
                   <div className="mt-space-md pt-space-sm text-center">

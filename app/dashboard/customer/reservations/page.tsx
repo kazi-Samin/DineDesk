@@ -111,7 +111,8 @@ export default function CustomerReservationsPage() {
       const token = authContextToken || getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}`, "x-session-token": token, "better-auth-session-token": token } : {}),
+        ...(user?.email ? { "x-user-email": user.email } : {}),
       };
 
       const [profileRes, resApi, ordersRes, favoritesRes] = await Promise.all([
@@ -514,10 +515,10 @@ export default function CustomerReservationsPage() {
       />
 
       <div
-        className={`transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+        className={`transition-all duration-300 min-w-0 max-w-full overflow-x-hidden ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
           }`}
       >
-        <main className="w-full pt-16 bg-background min-h-screen">
+        <main className="w-full pt-16 sm:pt-20 min-w-0 max-w-full overflow-x-hidden bg-background min-h-screen">
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">
               <div className="flex flex-col gap-1">

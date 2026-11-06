@@ -104,12 +104,12 @@ export default function Navbar() {
     : { name: activeName, role: "USER", avatar: activeAvatar };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 lg:px-16 pt-4 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-8 lg:px-16 pt-2 sm:pt-4 pointer-events-none">
       <motion.nav
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className={`pointer-events-auto max-w-[1400px] mx-auto h-20 px-5 sm:px-8 flex items-center justify-between gap-4 transition-all duration-500 rounded-3xl border shadow-xl ${scrolled
+        className={`pointer-events-auto max-w-[1400px] mx-auto h-16 sm:h-20 px-3 sm:px-8 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-500 rounded-2xl sm:rounded-3xl border shadow-xl ${scrolled
           ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
           : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
           }`}

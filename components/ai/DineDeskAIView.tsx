@@ -106,7 +106,7 @@ const DishCardItem = memo(function DishCardItem({
           </span>
           <Link href={itemHref} className="hover:text-[#9f4122] transition-colors">
             <h4 className="font-heading font-bold text-sm text-[#1b3b2b] line-clamp-1 hover:underline">
-              {dish.name}
+              {cleanSearchQuery}
             </h4>
           </Link>
           <p className="text-xs text-[#1b3b2b]/70 font-normal line-clamp-2 leading-relaxed">
@@ -478,7 +478,8 @@ export default function DineDeskAIView() {
 
   // Add Dish to Cart
   const handleAddDishToCart = useCallback(
-    (dish: AIDish) => {
+    (dish: AIDish, quantity: number = 1) => {
+      const qty = Math.max(1, quantity || 1);
       const newItem = {
         id: dish.id,
         menuId: dish.id,
@@ -486,14 +487,14 @@ export default function DineDeskAIView() {
         price: dish.price,
         image: dish.image,
         restaurantName: dish.restaurantName,
-        quantity: 1,
+        quantity: qty,
       };
 
       try {
         const existingCart = JSON.parse(localStorage.getItem("dine_desk_cart") || "[]");
         const idx = existingCart.findIndex((i: any) => i.id === dish.id || i.menuId === dish.id);
         if (idx > -1) {
-          existingCart[idx].quantity = (existingCart[idx].quantity || 1) + 1;
+          existingCart[idx].quantity = (existingCart[idx].quantity || 1) + qty;
         } else {
           existingCart.push(newItem);
         }
@@ -511,7 +512,7 @@ export default function DineDeskAIView() {
         } catch {}
       }
 
-      toast.success(`${dish.name} added to cart! ($${dish.price.toFixed(2)})`, { icon: "🛒" });
+      toast.success(`${qty > 1 ? `${qty}x ` : ""}${dish.name} added to cart! (${(dish.price * qty).toFixed(2)})`, { icon: "🛒" });
     },
     [addItem]
   );
@@ -620,6 +621,28 @@ export default function DineDeskAIView() {
                   : msg
               )
             );
+          } else if (data.type === "cart_action" && Array.isArray(data.items)) {
+            data.items.forEach((item: any) => {
+              handleAddDishToCart({
+                id: item.dishId || item.id,
+                restaurantId: item.restaurantId || "devcore-kitchen",
+                restaurantName: item.restaurantName || "DineDesk Kitchen",
+                name: item.name,
+                category: item.category || "Main",
+                price: item.price,
+                priceFormatted: item.priceFormatted || `${Number(item.price).toFixed(2)}`,
+                image: item.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop",
+                description: item.description || item.name,
+                rating: 4.9,
+                reviewCount: 150,
+                neighborhood: item.neighborhood || "Gulshan 1 & 2",
+                tags: item.tags || ["Signature"],
+                isHalal: true,
+                isVegetarian: !!item.isVegetarian,
+                isSpicy: !!item.isSpicy,
+                prepTime: item.prepTime || "20 mins",
+              }, item.quantity || 1);
+            });
           } else if (data.type === "done") {
             // Immediate flush on stream completion
             if (flushTimeoutRef.current) {

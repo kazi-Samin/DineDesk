@@ -242,14 +242,14 @@ export default function AdminHeader({
             : "bg-white/90 backdrop-blur-md border-[#1b3b2b]/10 shadow-[0_4px_24px_-4px_rgba(27,59,43,0.06)]"
           }`}
       >
-        <div className="h-full w-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+        <div className="h-full w-full px-2.5 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
           {/* LEFT: Mobile Sidebar Trigger + Monogram + Badges */}
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0 min-w-0">
             {onToggleSidebar && (
               <button
                 type="button"
                 onClick={onToggleSidebar}
-                className="p-2 mr-2 rounded-xl text-[#1b3b2b] hover:bg-[#1b3b2b]/5 active:scale-95 transition-all cursor-pointer lg:hidden flex items-center justify-center"
+                className="p-1.5 sm:p-2 mr-1 sm:mr-2 rounded-xl text-[#1b3b2b] hover:bg-[#1b3b2b]/5 active:scale-95 transition-all cursor-pointer lg:hidden flex items-center justify-center shrink-0"
                 title={isSidebarOpen ? "Close navigation" : "Open navigation"}
                 aria-label="Toggle Navigation Sidebar"
               >
@@ -261,7 +261,7 @@ export default function AdminHeader({
 
             <Link
               href="/"
-              className="flex items-center group pr-6 sm:pr-10 mr-3 sm:mr-4 border-r border-[#1b3b2b]/10"
+              className="flex items-center group pr-3 sm:pr-6 md:pr-10 mr-1.5 sm:mr-3 md:mr-4 border-r border-[#1b3b2b]/10 shrink-0"
               title="Return to DineDesk Home"
             >
               <motion.div
@@ -279,30 +279,30 @@ export default function AdminHeader({
                   y: -2,
                   transition: { duration: 0.25 },
                 }}
-                className="h-12 sm:h-14 w-auto flex items-center justify-center relative cursor-pointer"
+                className="h-8 sm:h-11 md:h-13 w-auto flex items-center justify-center relative cursor-pointer"
               >
                 <div className="absolute inset-0 bg-[#E2B774]/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Image
                   alt="DineDesk Logo"
                   className="h-full w-auto object-contain relative z-10 drop-shadow-xs"
                   src="/assets/DineDesk Monogram.png"
-                  width={230}
-                  height={58}
+                  width={180}
+                  height={46}
                   priority
                 />
               </motion.div>
             </Link>
 
-            <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1b3b2b]/5 border border-[#1b3b2b]/10">
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1b3b2b]/5 border border-[#1b3b2b]/10 shrink-0">
               <span className="w-2 h-2 rounded-full bg-[#E2B774]" />
               <span className="text-[11px] font-bold text-[#1b3b2b] uppercase tracking-wider">
                 Governance Hub
               </span>
             </div>
 
-            <div className="h-6 w-px bg-neutral-200 hidden lg:block mx-4" />
+            <div className="h-6 w-px bg-neutral-200 hidden 2xl:block mx-4 shrink-0" />
 
-            <div className="hidden xl:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/80">
+            <div className="hidden 2xl:flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-50/80 border border-emerald-200/80 shrink-0">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
@@ -313,8 +313,8 @@ export default function AdminHeader({
             </div>
           </div>
 
-          {/* CENTER: Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1.5 bg-neutral-100/80 p-1.5 rounded-2xl border border-neutral-200/70">
+          {/* CENTER: Navigation Tabs (Shown on xl+ desktops to prevent 100% zoom collision) */}
+          <nav className="hidden xl:flex items-center gap-1.5 bg-neutral-100/80 p-1.5 rounded-2xl border border-neutral-200/70 shrink-0">
             <Link href="/dashboard/admin" className={navLinkClass(isOverview)}>
               Overview
             </Link>
@@ -337,10 +337,10 @@ export default function AdminHeader({
                   {searchOpen && (
                     <motion.div
                       initial={{ width: 0, opacity: 0 }}
-                      animate={{ width: 280, opacity: 1 }}
+                      animate={{ width: 220, opacity: 1 }}
                       exit={{ width: 0, opacity: 0 }}
                       transition={{ duration: 0.25, ease: "easeOut" }}
-                      className="overflow-hidden mr-1 sm:mr-2"
+                      className="overflow-hidden mr-1 sm:mr-2 max-w-[calc(100vw-11rem)] sm:max-w-xs"
                     >
                       <div className="relative w-full">
                         <input
@@ -349,13 +349,13 @@ export default function AdminHeader({
                           value={searchQuery}
                           onChange={(e) => handleSearchChange(e.target.value)}
                           placeholder="Search merchant, order, audit..."
-                          className="w-full bg-white/95 text-[#1b3b2b] text-xs pl-3.5 pr-8 py-2.5 rounded-xl border border-[#1b3b2b]/20 focus:border-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] shadow-xs font-medium placeholder:text-neutral-400"
+                          className="w-full bg-white/95 text-[#1b3b2b] text-xs pl-3 pr-7 py-2 rounded-xl border border-[#1b3b2b]/20 focus:border-[#1b3b2b] focus:outline-none focus:ring-1 focus:ring-[#1b3b2b] shadow-xs font-medium placeholder:text-neutral-400"
                         />
                         {searchQuery && (
                           <button
                             type="button"
                             onClick={() => handleSearchChange("")}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs cursor-pointer p-0.5 rounded-md"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 text-xs cursor-pointer p-0.5 rounded-md"
                           >
                             ✕
                           </button>
@@ -368,7 +368,7 @@ export default function AdminHeader({
                 <button
                   type="button"
                   onClick={() => setSearchOpen(!searchOpen)}
-                  className={`p-2.5 rounded-xl transition-all cursor-pointer ${searchOpen
+                  className={`p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${searchOpen
                       ? "bg-[#1b3b2b] text-[#E2B774]"
                       : "text-neutral-600 hover:bg-neutral-100 hover:text-[#1b3b2b]"
                     }`}
@@ -390,7 +390,7 @@ export default function AdminHeader({
                   setNotificationsOpen(!notificationsOpen);
                   setRoleMenuOpen(false);
                 }}
-                className={`relative p-2.5 rounded-xl transition-all cursor-pointer ${notificationsOpen
+                className={`relative p-1.5 sm:p-2 rounded-xl transition-all cursor-pointer ${notificationsOpen
                     ? "bg-[#1b3b2b] text-white"
                     : "text-neutral-600 hover:bg-neutral-100 hover:text-[#1b3b2b]"
                   }`}
@@ -399,7 +399,7 @@ export default function AdminHeader({
               >
                 <span className="material-symbols-outlined text-xl">notifications</span>
                 {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 flex h-2.5 w-2.5">
+                  <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600 border-2 border-white" />
                   </span>
@@ -413,7 +413,7 @@ export default function AdminHeader({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-3.5 z-50 overflow-hidden"
+                    className="absolute right-0 top-full mt-3 w-80 sm:w-96 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-3.5 z-50 overflow-hidden"
                   >
                     <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
                       <div className="flex items-center gap-2">
@@ -475,13 +475,13 @@ export default function AdminHeader({
                   setRoleMenuOpen(!roleMenuOpen);
                   setNotificationsOpen(false);
                 }}
-                className={`flex items-center gap-3 p-1.5 sm:px-3 sm:py-2 rounded-2xl border transition-all cursor-pointer ${roleMenuOpen
+                className={`flex items-center gap-2 sm:gap-3 p-1 sm:px-2.5 sm:py-1.5 rounded-2xl border transition-all cursor-pointer ${roleMenuOpen
                     ? "bg-[#1b3b2b] text-white border-[#1b3b2b] shadow-sm"
                     : "bg-neutral-50/80 hover:bg-neutral-100 text-[#1b3b2b] border-neutral-200/80"
                   }`}
               >
                 {/* Navbar Avatar: strictly either image OR initials */}
-                <div className="w-9 h-9 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/30 shadow-xs shrink-0 flex items-center justify-center p-0.5">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl overflow-hidden bg-[#1b3b2b] border border-[#E2B774]/30 shadow-xs shrink-0 flex items-center justify-center p-0.5">
                   {userAvatarUrl && !avatarError ? (
                     <img
                       src={userAvatarUrl}
@@ -496,13 +496,13 @@ export default function AdminHeader({
 
                 <div className="hidden sm:flex flex-col text-left">
                   <span
-                    className={`text-xs font-bold leading-tight truncate max-w-[130px] ${roleMenuOpen ? "text-white" : "text-[#1b3b2b]"
+                    className={`text-xs font-bold leading-tight truncate max-w-[90px] md:max-w-[120px] xl:max-w-[140px] ${roleMenuOpen ? "text-white" : "text-[#1b3b2b]"
                       }`}
                   >
                     {currentDisplayName}
                   </span>
                   <span
-                    className={`text-[10px] font-semibold leading-tight uppercase tracking-wider ${roleMenuOpen ? "text-[#E2B774]" : "text-amber-800"
+                    className={`text-[9px] font-semibold leading-tight uppercase tracking-wider ${roleMenuOpen ? "text-[#E2B774]" : "text-amber-800"
                       }`}
                   >
                     Super Admin
@@ -523,7 +523,7 @@ export default function AdminHeader({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.18, ease: "easeOut" }}
-                    className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-2.5 z-50"
+                    className="absolute right-0 top-full mt-3 w-72 max-w-[calc(100vw-1.5rem)] bg-white/95 backdrop-blur-xl border border-[#1b3b2b]/15 rounded-2xl shadow-xl p-2.5 z-50"
                   >
                     <div className="relative px-3 py-3 rounded-xl bg-neutral-50/90 border border-neutral-100 mb-1 flex items-center gap-3 group/profile">
                       <div

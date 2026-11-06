@@ -15,9 +15,34 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "https://dine-desk-backend.vercel.app";
+const FALLBACK_API_URL = "https://dine-desk-backend.vercel.app";
+
+async function fetchWithFallback(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok && (url.startsWith(API_BASE_URL) && (API_BASE_URL.includes("localhost") || API_BASE_URL.includes("127.0.0.1")))) {
+      const fallbackUrl = url.replace(API_BASE_URL, FALLBACK_API_URL);
+      console.warn(`Local API returned status ${res.status} at ${url}. Falling back to live backend: ${fallbackUrl}`);
+      const fallbackRes = await fetch(fallbackUrl, options);
+      if (fallbackRes.ok) return fallbackRes;
+    }
+    return res;
+  } catch (err) {
+    if (url.startsWith(API_BASE_URL) && (API_BASE_URL.includes("localhost") || API_BASE_URL.includes("127.0.0.1"))) {
+      const fallbackUrl = url.replace(API_BASE_URL, FALLBACK_API_URL);
+      console.warn(`Local API unreachable at ${url}. Falling back to live backend: ${fallbackUrl}`);
+      return await fetch(fallbackUrl, options);
+    }
+    throw err;
+  }
+}
 
 const getAuthToken = () => {
   if (typeof window === "undefined") return "";
+  const match = document.cookie.match(
+    /(?:^|;s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
+  );
+  if (match && match[1]) return match[1].trim();
   return (
     localStorage.getItem("dinedesk_auth_token") ||
     localStorage.getItem("token") ||
@@ -99,7 +124,12 @@ export default function CustomerAddressesPage() {
       const token = getAuthToken();
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(token ? { 
+          Authorization: `Bearer ${token}`,
+          "x-session-token": token,
+          "better-auth-session-token": token,
+        } : {}),
+        ...(user?.email ? { "x-user-email": user.email } : {}),
       };
 
       const [profileRes, ordersRes, resApi, favsRes, addressesRes] =
@@ -128,7 +158,7 @@ export default function CustomerAddressesPage() {
             credentials: "include",
           }).catch(() => null),
 
-          fetch(`${API_BASE_URL}/api/v1/users/addresses`, {
+          fetchWithFallback(`${API_BASE_URL}/api/v1/users/addresses`, {
             method: "GET",
             headers,
             credentials: "include",
@@ -271,13 +301,18 @@ export default function CustomerAddressesPage() {
   const handleSetDefault = async (addressId: string, addressLabel: string) => {
     try {
       const token = getAuthToken();
-      const res = await fetch(
+      const res = await fetchWithFallback(
         `${API_BASE_URL}/api/v1/users/addresses/${addressId}/default`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(token ? { 
+              Authorization: `Bearer ${token}`,
+              "x-session-token": token,
+              "better-auth-session-token": token,
+            } : {}),
+            ...(user?.email ? { "x-user-email": user.email } : {}),
           },
           credentials: "include",
         }
@@ -328,11 +363,16 @@ export default function CustomerAddressesPage() {
         : `${API_BASE_URL}/api/v1/users/addresses/${address.id}`;
       const method = isNew ? "POST" : "PUT";
 
-      const res = await fetch(endpoint, {
+      const res = await fetchWithFallback(endpoint, {
         method,
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { 
+            Authorization: `Bearer ${token}`,
+            "x-session-token": token,
+            "better-auth-session-token": token,
+          } : {}),
+          ...(user?.email ? { "x-user-email": user.email } : {}),
         },
         body: JSON.stringify(address),
         credentials: "include",
@@ -369,13 +409,18 @@ export default function CustomerAddressesPage() {
     const label = deletingAddress.label;
     try {
       const token = getAuthToken();
-      const res = await fetch(
+      const res = await fetchWithFallback(
         `${API_BASE_URL}/api/v1/users/addresses/${deletingAddress.id}`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(token ? { 
+              Authorization: `Bearer ${token}`,
+              "x-session-token": token,
+              "better-auth-session-token": token,
+            } : {}),
+            ...(user?.email ? { "x-user-email": user.email } : {}),
           },
           credentials: "include",
         }
@@ -497,7 +542,7 @@ export default function CustomerAddressesPage() {
         isSidebarOpen={isSidebarOpen}
       />
 
-      <div className="flex pt-20 flex-1">
+      <div className="flex pt-16 sm:pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
         <CustomerSidebar
           userName={cleanFirstName}
           memberSince={profile.memberSince}
@@ -512,7 +557,7 @@ export default function CustomerAddressesPage() {
         />
 
         <main
-          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+          className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
             }`}
         >
           {/* Top Quick Stats Banner */}

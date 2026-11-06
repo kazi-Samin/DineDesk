@@ -45,40 +45,37 @@ export async function POST(req: Request) {
             }
         }
 
-        // Map line items for Stripe Checkout Session
-        const lineItems = items.map((item: any) => ({
-            price_data: {
-                currency: "usd",
-                product_data: {
-                    name: item.name || "DineDesk Menu Item",
-                    images: item.image ? [item.image] : [],
-                },
-                unit_amount: Math.round(Number(item.price || 0) * 100),
-            },
-            quantity: Number(item.quantity) || 1,
-        }));
-
-        const appUrl = (
-            process.env.NEXT_PUBLIC_APP_URL ||
-            (process.env.NODE_ENV === "production" ? "https://dine-desk-one.vercel.app" : "http://localhost:3000")
-        ).replace(/\/+$/, "");
+        // Calculate total amount in cents
+        const totalAmountInCents = items.reduce((sum: number, item: any) => {
+            const price = Number(item.price || 0);
+            const quantity = Number(item.quantity || 1);
+            return sum + Math.round(price * quantity * 100);
+        }, 0);
 
         const email = typeof customerEmail === "string" && customerEmail.trim() ? customerEmail.trim() : undefined;
 
-        // Create Stripe Checkout Session
-        const session = await stripe.checkout.sessions.create({
-            customer_email: email,
-            line_items: lineItems,
-            mode: "payment",
-            success_url: `${appUrl}/order-confirmation?order_id=${createdOrderId}&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${appUrl}/order-confirmation/error?payment=cancelled`,
+        // Create Stripe PaymentIntent for embedded Stripe Payment Element (No external redirect!)
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: Math.max(50, totalAmountInCents),
+            currency: "usd",
+            description: `DineDesk Order #${createdOrderId}`,
+            receipt_email: email,
+            automatic_payment_methods: {
+                enabled: true,
+            },
             metadata: {
                 orderId: String(createdOrderId),
                 customerEmail: email || "",
             },
         });
 
-        return NextResponse.json({ url: session.url, orderId: createdOrderId });
+        return NextResponse.json({
+            success: true,
+            clientSecret: paymentIntent.client_secret,
+            paymentIntentId: paymentIntent.id,
+            orderId: createdOrderId,
+            total: Math.max(0.5, totalAmountInCents / 100),
+        });
     } catch (error: any) {
         console.error("Stripe Checkout Error:", error);
         return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });

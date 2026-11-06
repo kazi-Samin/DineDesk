@@ -11,9 +11,9 @@ export interface LogoProps {
 }
 
 const SIZE_MAP = {
-  sm: { height: 32, width: 140, className: "h-8" },
-  md: { height: 42, width: 180, className: "h-10 sm:h-11" },
-  lg: { height: 52, width: 220, className: "h-12 sm:h-14" },
+  sm: { height: 32, width: 140, className: "h-7 sm:h-8" },
+  md: { height: 42, width: 180, className: "h-8 sm:h-9 md:h-11" },
+  lg: { height: 52, width: 220, className: "h-8 sm:h-10 md:h-12 lg:h-14" },
 };
 
 export default function Logo({ size = "md", className = "", withLink = true }: LogoProps) {

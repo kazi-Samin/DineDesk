@@ -77,72 +77,72 @@ export default function VendorHeader({
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-white/95 backdrop-blur-xl border-b border-[#1b3b2b]/10 shadow-xs">
-      <div className="h-full w-full px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="h-full w-full px-2 sm:px-4 lg:px-8 flex items-center justify-between gap-1.5 sm:gap-3">
 
         {/* Left: Mobile Toggle + Large Brand Logo + Compact Console Tag */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 min-w-0">
           {/* Mobile Sidebar Toggle */}
           {onToggleSidebar && (
             <button
               type="button"
               onClick={onToggleSidebar}
-              className="lg:hidden p-1.5 sm:p-2 rounded-xl text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors cursor-pointer"
+              className="lg:hidden p-1.5 rounded-xl text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors cursor-pointer shrink-0"
               aria-label="Toggle Navigation Sidebar"
             >
-              <span className="material-symbols-outlined text-2xl">
+              <span className="material-symbols-outlined text-2xl leading-none">
                 {isSidebarOpen ? "close" : "menu"}
               </span>
             </button>
           )}
 
-          {/* Standalone Large Animated Brand Logo (Transparent background) */}
+          {/* Standalone Brand Logo */}
           <Link
-            className="group relative flex items-center transition-transform duration-300 hover:scale-105"
+            className="group relative flex items-center transition-transform duration-300 hover:scale-105 shrink-0"
             href="/"
             title="DineDesk Vendor Suite"
           >
             {/* Luminous aura behind logo */}
-            <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-tr from-[#1b3b2b]/15 via-[#C05621]/15 to-emerald-400/20 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-tr from-[#1b3b2b]/15 via-[#C05621]/15 to-emerald-400/20 blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
 
-            {/* Expanded Responsive Logo Dimensions */}
-            <div className="relative h-9 sm:h-10 w-28 sm:w-36 flex items-center justify-start bg-transparent">
+            {/* Responsive Logo Dimensions */}
+            <div className="relative h-7 sm:h-9 w-24 sm:w-32 md:w-36 flex items-center justify-start bg-transparent">
               <Image
                 alt="DineDesk Logo"
                 className="w-full h-full object-contain object-left drop-shadow-xs transition-transform duration-300 group-hover:rotate-0.5"
                 src="/assets/DineDesk Monogram.png"
-                width={160}
-                height={44}
+                width={150}
+                height={40}
                 priority
               />
             </div>
           </Link>
 
           {/* Compact Minimalist Vendor Console Tag */}
-          <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-[#1b3b2b]/5 text-[#1b3b2b] text-[9px] font-extrabold uppercase tracking-widest border border-[#1b3b2b]/10 select-none">
+          <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded-md bg-[#1b3b2b]/5 text-[#1b3b2b] text-[9px] font-extrabold uppercase tracking-widest border border-[#1b3b2b]/10 select-none shrink-0">
             VENDOR
           </span>
 
-          <div className="h-5 w-px bg-neutral-200 hidden md:block ml-0.5" />
+          <div className="h-4 w-px bg-neutral-200 hidden md:block shrink-0 ml-0.5" />
 
           {/* Restaurant Status Pill */}
-          <div className="hidden md:flex items-center gap-2 bg-[#FBFBFA] px-2.5 py-1.5 rounded-xl border border-[#1b3b2b]/10 shadow-2xs">
-            <span className="material-symbols-outlined text-base text-[#C05621]">
+          <div className="hidden md:flex items-center gap-1.5 bg-[#FBFBFA] px-2 py-1 rounded-xl border border-[#1b3b2b]/10 shadow-2xs shrink-0 max-w-[130px] lg:max-w-[160px] xl:max-w-[220px]">
+            <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0">
               storefront
             </span>
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-[#1b3b2b] truncate max-w-[120px] lg:max-w-[180px]">
+            <div className="flex items-center gap-1 min-w-0">
+              <span className="text-[11px] font-bold text-[#1b3b2b] truncate">
                 {displayRestaurant}
               </span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[9px] font-extrabold border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                Live Shift
+              <span className="hidden lg:inline-flex items-center gap-1 px-1 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[8px] font-extrabold border border-emerald-200 shrink-0">
+                <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" />
+                Live
               </span>
             </div>
           </div>
         </div>
 
-        {/* Center: Clean Proportional Navigation Tabs */}
-        <nav ref={navRef} className="hidden md:flex items-center gap-1.5">
+        {/* Center: Clean Proportional Navigation Tabs (Responsive Laptop/Desktop) */}
+        <nav ref={navRef} className="hidden lg:flex items-center gap-1 xl:gap-1.5 shrink-0">
 
           {/* Group 1: Live Operations */}
           <div
@@ -153,13 +153,14 @@ export default function VendorHeader({
             <button
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "ops" ? null : "ops")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isOpsActive
+              className={`flex items-center gap-1 xl:gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isOpsActive
                 ? "bg-[#1b3b2b] text-white shadow-2xs"
                 : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
             >
               <span className="material-symbols-outlined text-base">tune</span>
-              <span>Live Operations</span>
+              <span className="hidden xl:inline">Live Operations</span>
+              <span className="xl:hidden">Operations</span>
               <span className="material-symbols-outlined text-xs">
                 {activeDropdown === "ops" ? "expand_less" : "expand_more"}
               </span>
@@ -220,13 +221,14 @@ export default function VendorHeader({
             <button
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "menu" ? null : "menu")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isMenuActive
+              className={`flex items-center gap-1 xl:gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isMenuActive
                 ? "bg-[#1b3b2b] text-white shadow-2xs"
                 : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
             >
               <span className="material-symbols-outlined text-base">restaurant_menu</span>
-              <span>Menu &amp; Specials</span>
+              <span className="hidden xl:inline">Menu &amp; Specials</span>
+              <span className="xl:hidden">Menu</span>
               <span className="material-symbols-outlined text-xs">
                 {activeDropdown === "menu" ? "expand_less" : "expand_more"}
               </span>
@@ -268,7 +270,7 @@ export default function VendorHeader({
             <button
               type="button"
               onClick={() => setActiveDropdown(activeDropdown === "settings" ? null : "settings")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isSettingsActive
+              className={`flex items-center gap-1 xl:gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${isSettingsActive
                 ? "bg-[#1b3b2b] text-white shadow-2xs"
                 : "text-neutral-700 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5"
                 }`}
@@ -298,28 +300,29 @@ export default function VendorHeader({
         </nav>
 
         {/* Right: Live Kitchen Toggle, Refresh, Bell, Elevated Profile Capsule */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
 
           {/* Order Acceptance Switch */}
           <button
             type="button"
             onClick={() => setIsAccepting(!isAccepting)}
-            className="flex items-center gap-2 bg-[#FBFBFA] hover:bg-neutral-100 px-2 sm:px-3 py-1.5 rounded-xl border border-[#1b3b2b]/10 shadow-2xs cursor-pointer transition-colors"
-            title="Toggle kitchen order acceptance"
+            className="flex items-center gap-1.5 sm:gap-2 bg-[#FBFBFA] hover:bg-neutral-100 p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border border-[#1b3b2b]/10 shadow-2xs cursor-pointer transition-colors shrink-0"
+            title={isAccepting ? "Accepting Orders (Click to pause)" : "Kitchen Paused (Click to accept orders)"}
+            aria-label="Toggle kitchen order acceptance"
           >
             <span
-              className={`w-2 h-2 rounded-full ${isAccepting ? "bg-emerald-600 animate-pulse" : "bg-red-500"
+              className={`w-2 h-2 rounded-full shrink-0 ${isAccepting ? "bg-emerald-600 animate-pulse" : "bg-red-500"
                 }`}
             />
-            <span className="text-xs text-[#1b3b2b] font-bold hidden sm:inline">
+            <span className="text-[11px] xl:text-xs text-[#1b3b2b] font-bold hidden md:inline">
               {isAccepting ? "Accepting Orders" : "Kitchen Paused"}
             </span>
             <div
-              className={`w-7 h-4 rounded-full relative transition-colors ${isAccepting ? "bg-[#1b3b2b]" : "bg-neutral-300"
+              className={`w-6 sm:w-7 h-3.5 sm:h-4 rounded-full relative transition-colors shrink-0 ${isAccepting ? "bg-[#1b3b2b]" : "bg-neutral-300"
                 }`}
             >
               <span
-                className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-2xs transition-transform ${isAccepting ? "right-0.5" : "left-0.5"
+                className={`absolute top-0.5 w-2.5 sm:w-3 h-2.5 sm:h-3 bg-white rounded-full shadow-2xs transition-transform ${isAccepting ? "right-0.5" : "left-0.5"
                   }`}
               />
             </div>
@@ -330,39 +333,40 @@ export default function VendorHeader({
             <button
               onClick={onRefresh}
               title="Refresh live orders & bookings"
-              className="p-2 rounded-xl text-neutral-600 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl text-neutral-600 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
               type="button"
             >
-              <span className="material-symbols-outlined text-xl">refresh</span>
+              <span className="material-symbols-outlined text-lg sm:text-xl">refresh</span>
             </button>
           )}
 
           {/* Pending Alerts Bell */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <Link
               href="/dashboard/vendor/orders"
-              className="relative p-2 rounded-xl text-neutral-600 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors flex items-center justify-center"
+              className="relative p-1.5 sm:p-2 rounded-xl text-neutral-600 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 transition-colors flex items-center justify-center"
               aria-label="Pending Kitchen Orders"
             >
-              <span className="material-symbols-outlined text-2xl">notifications</span>
+              <span className="material-symbols-outlined text-xl sm:text-2xl">notifications</span>
               {pendingCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-[#C05621] text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-pulse">
+                <span className="absolute top-0.5 right-0.5 sm:top-1 sm:right-1 w-4 h-4 bg-[#C05621] text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-pulse">
                   {pendingCount}
                 </span>
               )}
             </Link>
           </div>
 
-          <div className="h-5 w-px bg-neutral-200 hidden sm:block" />
+          <div className="h-4 w-px bg-neutral-200 hidden sm:block shrink-0" />
 
           {/* Elevated Manager Profile Capsule */}
-          <div ref={profileMenuRef} className="relative">
+          <div ref={profileMenuRef} className="relative shrink-0">
             <button
               type="button"
               onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-2 rounded-2xl bg-[#FBFBFA] hover:bg-neutral-100 border border-[#1b3b2b]/15 transition-all shadow-2xs cursor-pointer group"
+              className="flex items-center gap-1.5 sm:gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-2xl bg-[#FBFBFA] hover:bg-neutral-100 border border-[#1b3b2b]/15 transition-all shadow-2xs cursor-pointer group"
+              aria-label="Manager account menu"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1b3b2b] text-white flex items-center justify-center font-black text-sm shrink-0 shadow-2xs overflow-hidden border border-white group-hover:scale-105 transition-transform">
+              <div className="w-8 h-8 rounded-xl bg-[#1b3b2b] text-white flex items-center justify-center font-black text-xs sm:text-sm shrink-0 shadow-2xs overflow-hidden border border-white group-hover:scale-105 transition-transform">
                 {userAvatar ? (
                   <img
                     src={userAvatar}
@@ -374,10 +378,10 @@ export default function VendorHeader({
                 )}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs sm:text-[13px] text-[#1b3b2b] font-black leading-tight truncate max-w-[130px]">
+                <span className="text-xs text-[#1b3b2b] font-black leading-tight truncate max-w-[85px] lg:max-w-[110px] xl:max-w-[130px]">
                   {displayName}
                 </span>
-                <span className="text-[10px] text-[#C05621] font-bold leading-tight mt-0.5">
+                <span className="text-[9px] text-[#C05621] font-bold leading-tight mt-0.5 hidden xl:block">
                   Restaurant Manager
                 </span>
               </div>
@@ -388,9 +392,9 @@ export default function VendorHeader({
 
             {/* Profile Dropdown */}
             {roleMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#1b3b2b]/10 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-1.5rem)] bg-white border border-[#1b3b2b]/10 rounded-2xl shadow-xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-3 py-2 border-b border-neutral-100 flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-[#1b3b2b] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-white">
+                  <div className="w-8 h-8 rounded-xl bg-[#1b3b2b] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-white">
                     {userAvatar ? (
                       <img
                         src={userAvatar}

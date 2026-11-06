@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { initiateStripeCheckout } from "../services/stripeService";
+import EmbeddedStripeCheckout from "@/components/checkout/EmbeddedStripeCheckout";
 
 interface OrderCartModalProps {
     item?: {
@@ -12,13 +12,19 @@ interface OrderCartModalProps {
         name: string;
         price: number;
         image: string;
+        restaurantId?: string;
     };
     quantity?: number;
 }
 
 export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [isInitializingStripe, setIsInitializingStripe] = useState(false);
+    const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
+    const [stripeOrderId, setStripeOrderId] = useState<string | null>(null);
+    const [stripeVerifiedTotal, setStripeVerifiedTotal] = useState<number>(0);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
     const { isAuthenticated, user } = useAuth();
     const router = useRouter();
 
@@ -40,26 +46,92 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
             router.push("/sign-in");
             return;
         }
+        setErrorMessage(null);
         setIsOpen(true);
     };
 
-    const handleStripePayment = async () => {
-        setIsCheckingOut(true);
+    const handleInitializePayment = async () => {
+        setIsInitializingStripe(true);
+        setErrorMessage(null);
+
         try {
-            await initiateStripeCheckout(
-                [
-                    {
-                        name: cleanDishName,
-                        price: grandTotalWithTax,
-                        quantity: 1,
-                        image: item?.image,
-                    },
-                ],
-                user?.email
-            );
-        } catch (error) {
-            toast.error("Could not initiate payment gateway.");
-            setIsCheckingOut(false);
+            const token = typeof window !== "undefined"
+                ? localStorage.getItem("dinedesk_auth_token") ||
+                  localStorage.getItem("token") ||
+                  localStorage.getItem("accessToken") ||
+                  localStorage.getItem("authToken") || ""
+                : "";
+
+            const response = await fetch("/api/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    items: [
+                        {
+                            id: item?.id,
+                            name: cleanDishName,
+                            price: grandTotalWithTax,
+                            quantity: 1,
+                            image: item?.image,
+                        },
+                    ],
+                    customerEmail: user?.email,
+                    token,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.clientSecret) {
+                setStripeClientSecret(data.clientSecret);
+                setStripeOrderId(data.orderId || `DD-${Math.floor(10000 + Math.random() * 90000)}`);
+                setStripeVerifiedTotal(Number(data.total) || grandTotalWithTax);
+            } else {
+                throw new Error(data.error || "Failed to initialize embedded Stripe payment gateway.");
+            }
+        } catch (error: any) {
+            console.error("Payment initialization error:", error);
+            setErrorMessage(error?.message || "Could not initialize payment gateway. Please try again.");
+            toast.error(error?.message || "Could not initialize payment gateway.");
+        } finally {
+            setIsInitializingStripe(false);
+        }
+    };
+
+    const handlePaymentSuccess = async (orderId: string) => {
+        try {
+            const token = typeof window !== "undefined"
+                ? localStorage.getItem("dinedesk_auth_token") ||
+                  localStorage.getItem("token") ||
+                  localStorage.getItem("accessToken") ||
+                  localStorage.getItem("authToken") || ""
+                : "";
+
+            const API_BASE_URL = (
+                process.env.NEXT_PUBLIC_BACKEND_URL ||
+                process.env.NEXT_PUBLIC_API_URL ||
+                "http://localhost:5000"
+            ).replace(/\/api\/v1\/?$/, "").replace(/\/+$/, "");
+
+            await fetch(`${API_BASE_URL}/api/v1/orders/confirm-payment`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    orderId,
+                    paymentIntentId: stripeClientSecret ? stripeClientSecret.split("_secret_")[0] : undefined,
+                }),
+            }).catch(() => null);
+
+            toast.success("Payment authorized successfully! Order placed.");
+            setIsOpen(false);
+            router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+        } catch {
+            setIsOpen(false);
+            router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
         }
     };
 
@@ -93,12 +165,15 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
 
             {/* Checkout Modal Popup */}
             {isOpen && (
-                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                    <div className="w-full max-w-lg bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-6 relative border border-outline-variant">
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-lg bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-5 relative border border-outline-variant max-h-[92vh] overflow-y-auto">
 
                         {/* Close Button */}
                         <button
-                            onClick={() => setIsOpen(false)}
+                            onClick={() => {
+                                setIsOpen(false);
+                                setStripeClientSecret(null);
+                            }}
                             className="absolute top-5 right-5 w-8 h-8 rounded-full bg-surface-container flex items-center justify-center font-bold text-on-surface hover:text-primary cursor-pointer transition-colors shadow-xs"
                             type="button"
                         >
@@ -107,17 +182,27 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
 
                         <div>
                             <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-md bg-primary/10 text-primary uppercase tracking-wider">
-                                Secure Checkout Summary
+                                Secure Checkout
                             </span>
                             <h3 className="font-heading font-extrabold text-2xl text-primary mt-2">
-                                Review Your Order
+                                {stripeClientSecret ? "Complete Your Payment" : "Review Your Order"}
                             </h3>
                             <p className="text-xs text-on-surface-variant mt-0.5">
-                                Review your selected gourmet items before final table payment confirmation.
+                                {stripeClientSecret
+                                    ? "Enter your payment details below to complete your order securely on DineDesk."
+                                    : "Review your selected gourmet items before table payment confirmation."}
                             </p>
                         </div>
 
-                        {/* Premium Selected Item Card inside Modal */}
+                        {/* Error Banner */}
+                        {errorMessage && (
+                            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm shrink-0">error</span>
+                                <span>{errorMessage}</span>
+                            </div>
+                        )}
+
+                        {/* Selected Item Card inside Modal */}
                         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-surface-container-low to-surface-container border border-outline-variant/60 shadow-sm">
                             <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container shrink-0 shadow-xs border border-outline-variant/40">
                                 <img
@@ -150,7 +235,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                         </div>
 
                         {/* Billing Breakdown */}
-                        <div className="flex flex-col gap-2.5 pt-2 border-t border-outline-variant/60 text-xs font-medium text-on-surface-variant">
+                        <div className="flex flex-col gap-2 pt-2 border-t border-outline-variant/60 text-xs font-medium text-on-surface-variant">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
                                 <span className="font-bold text-on-surface">${totalPrice.toFixed(2)}</span>
@@ -159,37 +244,55 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                                 <span>VAT &amp; Service Fee (5%)</span>
                                 <span className="font-bold text-on-surface">${(totalPrice * 0.05).toFixed(2)}</span>
                             </div>
-                            <div className="flex justify-between pt-3 border-t border-outline-variant/40 text-sm md:text-base font-black text-primary">
+                            <div className="flex justify-between pt-2 border-t border-outline-variant/40 text-sm md:text-base font-black text-primary">
                                 <span>Total Payable</span>
                                 <span>${grandTotalWithTax.toFixed(2)}</span>
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3 pt-2">
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="flex-1 py-3 px-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs whitespace-nowrap"
-                                type="button"
-                            >
-                                Continue Browsing
-                            </button>
-                            <button
-                                onClick={handleStripePayment}
-                                disabled={isCheckingOut}
-                                className="flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70"
-                                type="button"
-                            >
-                                {isCheckingOut ? (
-                                    <>
-                                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
-                                        <span>Redirecting...</span>
-                                    </>
-                                ) : (
-                                    <span>Confirm &amp; Pay Now</span>
-                                )}
-                            </button>
-                        </div>
+                        {/* EMBEDDED STRIPE PAYMENT ELEMENT */}
+                        {stripeClientSecret ? (
+                            <div className="pt-2 border-t border-outline-variant/40">
+                                <EmbeddedStripeCheckout
+                                    clientSecret={stripeClientSecret}
+                                    orderId={stripeOrderId || "DD-ORDER"}
+                                    total={stripeVerifiedTotal || grandTotalWithTax}
+                                    onPaymentSuccess={handlePaymentSuccess}
+                                    onCancel={() => setStripeClientSecret(null)}
+                                />
+                            </div>
+                        ) : (
+                            /* Action Buttons */
+                            <div className="flex flex-col gap-2.5 pt-2">
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setIsOpen(false)}
+                                        className="flex-1 py-3 px-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                                        type="button"
+                                    >
+                                        Continue Browsing
+                                    </button>
+                                    <button
+                                        onClick={handleInitializePayment}
+                                        disabled={isInitializingStripe}
+                                        className="flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70"
+                                        type="button"
+                                    >
+                                        {isInitializingStripe ? (
+                                            <>
+                                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
+                                                <span>Connecting Gateway...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="material-symbols-outlined text-sm">lock</span>
+                                                <span>Confirm &amp; Pay Now</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
                 </div>

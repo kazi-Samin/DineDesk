@@ -16,19 +16,24 @@ export async function initiateStripeCheckout(
             body: JSON.stringify({
                 items,
                 customerEmail,
-                token // Pass the auth token so checkout can authenticate with the backend
+                token
             }),
         });
 
         const data = await response.json();
 
-        if (response.ok && data.url) {
-            window.location.href = data.url; // Redirects user to Stripe's secure checkout page
+        if (response.ok && data.clientSecret) {
+            return {
+                clientSecret: data.clientSecret,
+                paymentIntentId: data.paymentIntentId,
+                orderId: data.orderId,
+                total: data.total,
+            };
         } else {
-            throw new Error(data.error || "Failed to create checkout session");
+            throw new Error(data.error || "Failed to initialize embedded Stripe payment gateway");
         }
     } catch (err) {
-        console.error("Stripe redirect error:", err);
+        console.error("Stripe payment gateway initialization error:", err);
         throw err;
     }
 }

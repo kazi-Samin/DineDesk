@@ -94,38 +94,8 @@ export default function CartDrawer() {
       return;
     }
 
-    setIsCheckingOut(true);
-
-    try {
-      // Explicitly typed line items array to prevent TS property mismatch errors
-      const lineItems: Array<{ name: string; price: number; quantity: number; image?: string }> = cartItems.map((item: any) => ({
-        name: item.name,
-        price: Number(item.price || 0),
-        quantity: item.quantity || 1,
-        image: item.image,
-      }));
-
-      if (deliveryFee > 0) {
-        lineItems.push({ name: "Delivery Fee", price: deliveryFee, quantity: 1 });
-      }
-      if (packagingFee > 0) {
-        lineItems.push({ name: "Restaurant Packaging", price: packagingFee, quantity: 1 });
-      }
-      if (tax > 0) {
-        lineItems.push({ name: "State & Local Tax (6%)", price: Number(tax.toFixed(2)), quantity: 1 });
-      }
-
-      // Automatically clear cart storage upon initiating checkout redirect
-      localStorage.removeItem("dine_desk_cart");
-      setCartItems([]);
-      window.dispatchEvent(new Event("storage"));
-
-      // Pass user?.email so Stripe pre-fills the customer's email automatically
-      await initiateStripeCheckout(lineItems, user?.email);
-    } catch (error) {
-      toast.error("Stripe checkout session failed.");
-      setIsCheckingOut(false);
-    }
+    handleClose();
+    router.push("/checkout");
   };
 
   const subtotal = cartItems.reduce((acc, i) => acc + Number(i.price || 0) * Number(i.quantity || 0), 0);

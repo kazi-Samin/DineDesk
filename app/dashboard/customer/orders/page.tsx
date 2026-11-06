@@ -243,6 +243,13 @@ export default function CustomerOrdersPage() {
   useEffect(() => {
     loadDatabaseOrders();
 
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("order_success")) {
+        showToast("Payment successful! Your order has been placed and is live.", "success");
+      }
+    }
+
     const handleSync = () => loadDatabaseOrders();
 
     window.addEventListener("profile-updated", handleSync);
@@ -393,7 +400,7 @@ export default function CustomerOrdersPage() {
         onToggleSidebar={toggleSidebar}
       />
 
-      <div className="flex pt-16 flex-1">
+      <div className="flex pt-16 sm:pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
         <CustomerSidebar
           userName={`${cleanFirstName}'s Account`}
           memberSince={profile.memberSince}
@@ -408,7 +415,7 @@ export default function CustomerOrdersPage() {
         />
 
         <main
-          className={`flex-1 flex flex-col min-h-screen w-full transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
+          className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
             }`}
         >
           <section className="w-full px-space-xl py-space-lg bg-surface-container-low border-b border-outline-variant/30">

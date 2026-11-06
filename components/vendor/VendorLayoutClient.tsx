@@ -43,11 +43,11 @@ export default function VendorLayoutClient({ children }: { children: ReactNode }
 
                 {/* Viewport Wrapper: pushes both content & footer past sidebar */}
                 <div
-                    className={`flex-1 flex flex-col min-h-full w-full transition-[margin] duration-300 ease-in-out ${isSidebarOpen ? "lg:ml-72 ml-0" : "lg:ml-20 ml-0"
+                    className={`flex-1 flex flex-col min-h-full w-full min-w-0 max-w-full transition-[margin] duration-300 ease-in-out ${isSidebarOpen ? "lg:ml-72 ml-0" : "lg:ml-20 ml-0"
                         }`}
                 >
                     {/* Main Page Area */}
-                    <main className="flex-1 w-full">
+                    <main className="flex-1 w-full min-w-0 max-w-full">
                         {children}
                     </main>
 
