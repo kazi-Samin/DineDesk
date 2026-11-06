@@ -10,6 +10,20 @@ export const normalizeApiUrl = (rawUrl?: string): string => {
 };
 
 const API_BASE_URL = normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL);
+const FALLBACK_API_URL = "https://dine-desk-backend.vercel.app/api/v1";
+
+async function fetchWithFallback(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, options);
+  } catch (err) {
+    if (url.startsWith(API_BASE_URL) && (API_BASE_URL.includes("localhost") || API_BASE_URL.includes("127.0.0.1"))) {
+      const fallbackUrl = url.replace(API_BASE_URL, FALLBACK_API_URL);
+      console.warn(`Local API unreachable at ${url}. Falling back to live backend: ${fallbackUrl}`);
+      return await fetch(fallbackUrl, options);
+    }
+    throw err;
+  }
+}
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
@@ -84,7 +98,7 @@ export const setStoredUser = (user: AuthUser): void => {
 };
 
 export async function loginApi(credentials: LoginCredentials): Promise<AuthResponse> {
-  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response = await fetchWithFallback(`${API_BASE_URL}/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -121,7 +135,7 @@ export async function registerApi(credentials: RegisterCredentials): Promise<Aut
     ...(credentials.phone ? { phone: credentials.phone } : {}),
   };
 
-  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+  const response = await fetchWithFallback(`${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -140,7 +154,7 @@ export async function getMeApi(): Promise<{ success: boolean; data?: AuthUser; m
     return { success: false, message: "No token available" };
   }
 
-  const response = await fetch(`${API_BASE_URL}/auth/me`, {
+  const response = await fetchWithFallback(`${API_BASE_URL}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -197,7 +211,7 @@ export async function socialLoginApi(userData: {
     }
 
     // 2. Try /auth/social-login endpoint first
-    const response = await fetch(`${API_BASE_URL}/auth/social-login`, {
+    const response = await fetchWithFallback(`${API_BASE_URL}/auth/social-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -220,7 +234,7 @@ export async function socialLoginApi(userData: {
     }
 
     // 3. Fallback: try /auth/google endpoint
-    const res2 = await fetch(`${API_BASE_URL}/auth/google`, {
+    const res2 = await fetchWithFallback(`${API_BASE_URL}/auth/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -242,7 +256,7 @@ export async function socialLoginApi(userData: {
     }
 
     // 4. Fallback: try /auth/oauth-callback
-    const res3 = await fetch(`${API_BASE_URL}/auth/oauth-callback`, {
+    const res3 = await fetchWithFallback(`${API_BASE_URL}/auth/oauth-callback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
