@@ -184,8 +184,8 @@ function ExploreContent() {
     <div className="flex flex-col w-full min-h-screen bg-surface">
       <ExploreHeader totalCount={filteredMenus.length} />
 
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12 py-10 w-full">
-        <div className="flex flex-col lg:flex-row gap-8 items-start relative">
+      <div className="max-w-[1440px] mx-auto px-3.5 sm:px-6 lg:px-12 py-6 sm:py-10 w-full">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start relative">
 
           {/* Desktop Sidebar */}
           <div className="hidden lg:block">
@@ -228,7 +228,7 @@ function ExploreContent() {
           )}
 
           {/* Main Column */}
-          <div className="flex-1 w-full min-w-0 flex flex-col gap-6">
+          <div className="flex-1 w-full min-w-0 flex flex-col gap-5 sm:gap-6">
             <ExploreToolbar
               search={search}
               setSearch={setSearch}
@@ -242,12 +242,12 @@ function ExploreContent() {
             />
 
             {/* Active Filters Bar */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span className="text-xs text-on-surface-variant uppercase tracking-wider font-bold mr-1">
                 Active Filters:
               </span>
               {openKitchensOnly && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
                   <span>Open Now</span>
                   <button onClick={() => setOpenKitchensOnly(false)} className="hover:text-secondary cursor-pointer" type="button">
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -255,7 +255,7 @@ function ExploreContent() {
                 </span>
               )}
               {minRating > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
                   <span>Rating: {minRating}+ ★</span>
                   <button onClick={() => setMinRating(0)} className="hover:text-secondary cursor-pointer" type="button">
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -263,7 +263,7 @@ function ExploreContent() {
                 </span>
               )}
               {selectedCuisines.map((c) => (
-                <span key={c} className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold capitalize shadow-2xs">
+                <span key={c} className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold capitalize shadow-2xs">
                   <span>{c}</span>
                   <button onClick={() => toggleCuisine(c)} className="hover:text-secondary cursor-pointer" type="button">
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -271,7 +271,7 @@ function ExploreContent() {
                 </span>
               ))}
               {selectedPriceTiers.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
+                <span key={t} className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 bg-surface-container-lowest border border-outline-variant rounded-xl text-xs text-primary font-bold shadow-2xs">
                   <span>Tier: {t}</span>
                   <button onClick={() => togglePriceTier(t)} className="hover:text-secondary cursor-pointer" type="button">
                     <span className="material-symbols-outlined text-xs">close</span>
@@ -285,16 +285,16 @@ function ExploreContent() {
 
             {/* Menu Cards */}
             {loading ? (
-              <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6" : "flex flex-col gap-4"}>
+              <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6" : "flex flex-col gap-4"}>
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-80 bg-surface-container animate-pulse rounded-3xl shadow-sm" />
+                  <div key={i} className="h-80 bg-surface-container animate-pulse rounded-2xl sm:rounded-3xl shadow-sm" />
                 ))}
               </div>
             ) : paginatedMenus.length > 0 ? (
               <div
                 className={
                   viewMode === "grid"
-                    ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 w-full"
+                    ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 w-full"
                     : "flex flex-col gap-4 w-full"
                 }
               >
@@ -308,12 +308,12 @@ function ExploreContent() {
                 ))}
               </div>
             ) : (
-              <div className="bg-surface-container-lowest border border-outline-variant rounded-3xl p-12 flex flex-col items-center justify-center text-center my-6 shadow-sm">
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl sm:rounded-3xl p-8 sm:p-12 flex flex-col items-center justify-center text-center my-6 shadow-sm">
                 <div className="w-16 h-16 rounded-2xl bg-surface-container flex items-center justify-center text-primary mb-4">
                   <span className="material-symbols-outlined text-3xl">soup_kitchen</span>
                 </div>
-                <h3 className="font-heading font-bold text-xl text-on-surface mb-1">No matching menus found</h3>
-                <p className="text-sm text-on-surface-variant max-w-sm mb-6">
+                <h3 className="font-heading font-bold text-lg sm:text-xl text-on-surface mb-1">No matching menus found</h3>
+                <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm mb-6">
                   Try adjusting your search query, price tier, or disabling active filters.
                 </p>
                 <button
@@ -349,20 +349,20 @@ function ExploreContent() {
         const cleanName = rawName.replace(/^Menu Item #\d+:\s*/, '');
 
         return (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div className="w-full max-w-lg bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-6 relative border border-outline-variant mt-6">
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+            <div className="w-full max-w-lg bg-surface-container-lowest rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 shadow-2xl flex flex-col gap-4 sm:gap-6 relative border border-outline-variant max-h-[92vh] overflow-y-auto">
 
               {/* Safe Non-Overlapping Close Button */}
               <button
                 onClick={() => setSelectedMenuPreview(null)}
-                className="absolute -top-3 -right-3 md:top-4 md:right-4 w-9 h-9 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant flex items-center justify-center font-bold hover:text-primary cursor-pointer transition-colors shadow-lg z-20"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-surface-container-lowest text-on-surface border border-outline-variant flex items-center justify-center font-bold hover:text-primary cursor-pointer transition-colors shadow-lg z-20"
                 type="button"
               >
                 ✕
               </button>
 
               {/* Modal Header Image with Error Fallback */}
-              <div className="relative w-full h-52 md:h-60 rounded-2xl overflow-hidden bg-surface-container shadow-sm border border-outline-variant/40">
+              <div className="relative w-full h-48 sm:h-56 md:h-60 rounded-xl sm:rounded-2xl overflow-hidden bg-surface-container shadow-sm border border-outline-variant/40 shrink-0">
                 <img
                   src={selectedMenuPreview.image || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop"}
                   alt={cleanName}
@@ -375,11 +375,11 @@ function ExploreContent() {
 
               {/* Modal Info */}
               <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-secondary uppercase tracking-widest">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-secondary uppercase tracking-widest truncate">
                     {selectedMenuPreview.restaurantName}
                   </span>
-                  <span className="text-xs text-on-surface-variant font-semibold">
+                  <span className="text-xs text-on-surface-variant font-semibold shrink-0">
                     Location: <span className="text-on-surface font-bold">{selectedMenuPreview.neighborhood || "Gulshan, Dhaka"}</span>
                   </span>
                 </div>
@@ -388,7 +388,7 @@ function ExploreContent() {
                   <span className="w-fit text-[10px] font-extrabold px-2 py-0.5 rounded bg-primary/10 text-primary uppercase tracking-wider">
                     {serialTag}
                   </span>
-                  <h3 className="font-heading font-extrabold text-lg md:text-xl text-on-surface leading-snug tracking-tight">
+                  <h3 className="font-heading font-extrabold text-base sm:text-lg md:text-xl text-on-surface leading-snug tracking-tight">
                     {cleanName}
                   </h3>
                 </div>
@@ -399,12 +399,12 @@ function ExploreContent() {
               </div>
 
               {/* Structured Footer with Price and Full-Width Action Button */}
-              <div className="flex flex-col gap-4 pt-4 border-t border-outline-variant/60">
+              <div className="flex flex-col gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-outline-variant/60">
                 <div className="flex items-center justify-between">
                   <span className="text-xs uppercase tracking-wider font-extrabold text-on-surface-variant">
                     Gourmet Price
                   </span>
-                  <span className="text-2xl font-black text-primary tracking-tight">
+                  <span className="text-xl sm:text-2xl font-black text-primary tracking-tight">
                     ${Number(selectedMenuPreview.price || 18.50).toFixed(2)}
                   </span>
                 </div>
@@ -412,7 +412,7 @@ function ExploreContent() {
                 {/* Full-Width Action Button */}
                 <Link
                   href={`/menus/${selectedMenuPreview.id}`}
-                  className="w-full py-4 rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-primary text-on-primary font-bold text-xs tracking-wider uppercase shadow-xl hover:bg-primary/90 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Full Details Page</span>
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>

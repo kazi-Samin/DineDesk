@@ -47,7 +47,7 @@ export default function ExploreSidebar({
                         Reset All
                     </button>
                     {isMobileDrawer && onCloseMobileDrawer && (
-                        <button onClick={onCloseMobileDrawer} className="p-1 rounded-full bg-surface-container text-on-surface hover:text-primary" type="button">
+                        <button onClick={onCloseMobileDrawer} className="p-1 rounded-full bg-surface-container text-on-surface hover:text-primary cursor-pointer" type="button">
                             <span className="material-symbols-outlined text-sm">close</span>
                         </button>
                     )}
@@ -194,7 +194,7 @@ export default function ExploreSidebar({
     if (isMobileDrawer) {
         return (
             <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex justify-end lg:hidden animate-fade-in">
-                <div className="w-full max-w-xs h-full bg-surface-container-lowest overflow-y-auto p-6 shadow-2xl flex flex-col justify-between">
+                <div className="w-full max-w-[85vw] sm:max-w-xs h-full bg-surface-container-lowest overflow-y-auto p-4 sm:p-6 shadow-2xl flex flex-col justify-between">
                     {content}
                 </div>
             </div>

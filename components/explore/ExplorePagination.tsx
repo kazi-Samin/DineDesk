@@ -19,16 +19,16 @@ export default function ExplorePagination({
     const endItem = Math.min(currentPage * 10, totalItems);
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 pb-4 border-t border-outline-variant/40 mt-8">
-            <p className="text-xs text-on-surface-variant font-medium">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 sm:pt-8 pb-4 border-t border-outline-variant/40 mt-6 sm:mt-8">
+            <p className="text-xs text-on-surface-variant font-medium text-center sm:text-left">
                 Showing <span className="font-bold text-primary">{startItem}</span> to <span className="font-bold text-primary">{endItem}</span> of <span className="font-bold text-primary">{totalItems}</span> master dishes
             </p>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
                 <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="px-3.5 py-2 rounded-xl border border-outline-variant/70 text-xs font-bold bg-surface-container-lowest text-on-surface hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-outline-variant/70 text-xs font-bold bg-surface-container-lowest text-on-surface hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-all text-center"
                     type="button"
                 >
                     Previous
@@ -61,7 +61,7 @@ export default function ExplorePagination({
                 <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="px-3.5 py-2 rounded-xl border border-outline-variant/70 text-xs font-bold bg-surface-container-lowest text-on-surface hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="flex-1 sm:flex-initial px-3.5 py-2.5 rounded-xl border border-outline-variant/70 text-xs font-bold bg-surface-container-lowest text-on-surface hover:bg-surface-container disabled:opacity-40 disabled:cursor-not-allowed transition-all text-center"
                     type="button"
                 >
                     Next
