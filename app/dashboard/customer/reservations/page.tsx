@@ -519,7 +519,7 @@ export default function CustomerReservationsPage() {
           }`}
       >
         <main className="w-full pt-16 sm:pt-20 min-w-0 max-w-full overflow-x-hidden bg-background min-h-screen">
-          <section className="w-full px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">
+          <section className="w-full px-3.5 sm:px-space-xl py-space-lg bg-surface-container-low shadow-[0_1px_4px_rgba(0,0,0,0.02)] border-b border-outline-variant/20">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">
               <div className="flex flex-col gap-1">
                 <span className="font-display-mobile md:font-headline-lg text-headline-lg text-on-surface font-medium">
@@ -567,7 +567,7 @@ export default function CustomerReservationsPage() {
             </div>
           </section>
 
-          <div className="w-full px-space-xl py-space-lg max-w-7xl mx-auto">
+          <div className="w-full px-3.5 sm:px-space-xl py-space-lg max-w-7xl mx-auto">
             <div className="flex flex-col gap-space-xl w-full">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md">
                 <div className="flex flex-col gap-1">

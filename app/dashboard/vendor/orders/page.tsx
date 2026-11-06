@@ -317,7 +317,7 @@ export default function VendorIncomingOrdersPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 space-y-8">
 
         {/* Synchronized Telemetry KPI Cards */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
           <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-[#1b3b2b]/10 border-l-[6px] border-l-[#1b3b2b] shadow-xs hover:shadow-md transition-all">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">

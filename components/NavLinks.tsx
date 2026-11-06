@@ -41,7 +41,7 @@ export default function NavLinks({
             }`;
 
     return (
-        <nav className={isMobile ? "flex flex-col gap-2" : "hidden xl:flex items-center gap-8"}>
+        <nav className={isMobile ? "flex flex-col gap-2" : "hidden lg:flex items-center gap-6 xl:gap-8"}>
             {/* Home Link */}
             <Link href="/" onClick={onItemClick} className={linkClass(isHome)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">home</span>}

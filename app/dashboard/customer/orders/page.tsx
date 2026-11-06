@@ -418,7 +418,7 @@ export default function CustomerOrdersPage() {
           className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full overflow-x-hidden transition-all duration-300 ${isSidebarOpen ? "lg:pl-72" : "lg:pl-20 pl-0"
             }`}
         >
-          <section className="w-full px-space-xl py-space-lg bg-surface-container-low border-b border-outline-variant/30">
+          <section className="w-full px-3.5 sm:px-space-xl py-space-lg bg-surface-container-low border-b border-outline-variant/30">
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-space-lg">
               <div className="flex flex-col gap-1">
                 <h1 className="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">
@@ -467,7 +467,7 @@ export default function CustomerOrdersPage() {
             </div>
           </section>
 
-          <div className="w-full px-space-xl py-space-xl max-w-6xl mx-auto flex-1 flex flex-col gap-space-lg">
+          <div className="w-full px-3.5 sm:px-space-xl py-space-xl max-w-6xl mx-auto flex-1 flex flex-col gap-space-lg">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md">
               <div className="flex items-center gap-1 bg-surface-container-low p-1 rounded-lg border border-outline-variant">
                 {[

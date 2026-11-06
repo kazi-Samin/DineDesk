@@ -259,7 +259,7 @@ export default function VendorExecutiveDashboardPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 space-y-9">
 
         {/* KPI Telemetry Stat Strip */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
 
           {/* Card 1: Today Revenue */}
           <motion.div
@@ -403,7 +403,7 @@ export default function VendorExecutiveDashboardPage() {
             <span className="text-xs text-neutral-400 font-medium">Quick navigation</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             <Link
               href="/dashboard/vendor/orders"
               className="group bg-white p-5 rounded-2xl border border-[#1b3b2b]/10 shadow-2xs hover:shadow-md hover:border-[#1b3b2b]/30 transition-all flex flex-col justify-between"
