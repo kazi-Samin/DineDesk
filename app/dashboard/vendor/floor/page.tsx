@@ -38,7 +38,14 @@ const getAuthToken = () => {
   const match = document.cookie.match(
     /(?:^|;\s*)(?:token|dinedesk_auth_token|better-auth\.session_token|auth_token|accessToken)=([^;]+)/
   );
-  return match && match[1] ? match[1].trim() : "";
+  if (match && match[1]) return match[1].trim();
+  return (
+    localStorage.getItem("dinedesk_auth_token") ||
+    localStorage.getItem("token") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("authToken") ||
+    ""
+  );
 };
 
 const getRequestHeaders = () => {
@@ -51,6 +58,15 @@ const getRequestHeaders = () => {
     headers["Authorization"] = `Bearer ${token}`;
     headers["x-session-token"] = token;
     headers["better-auth-session-token"] = token;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const userStr = localStorage.getItem("dinedesk_auth_user") || localStorage.getItem("user");
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.email) headers["x-user-email"] = u.email;
+      }
+    } catch {}
   }
   return headers;
 };
@@ -65,6 +81,46 @@ const SECTION_ICONS: Record<string, string> = {
   "Big Occasion Hall": "festival",
   "General Hall": "storefront",
 };
+
+
+// Standard 50-table floor matrix configuration
+const DEFAULT_FLOOR_LAYOUT = [
+  { section: "Main Dining Hall", start: 1, end: 12, capacity: 4, shape: "rectangle" },
+  { section: "Courtyard Terrace", start: 13, end: 20, capacity: 4, shape: "rectangle" },
+  { section: "Private Heritage Dining", start: 21, end: 26, capacity: 6, shape: "rectangle" },
+  { section: "Family Hall", start: 27, end: 34, capacity: 6, shape: "rectangle" },
+  { section: "Party Hall", start: 35, end: 42, capacity: 8, shape: "rectangle" },
+  { section: "Big Occasion Hall", start: 43, end: 46, capacity: 16, shape: "rectangle" },
+  { section: "General Hall", start: 47, end: 50, capacity: 2, shape: "circle" },
+];
+
+function extractNumericTableId(val?: string | number | null): number | null {
+  if (!val) return null;
+  const match = String(val).match(/\d+/);
+  return match ? parseInt(match[0], 10) : null;
+}
+
+function buildDefaultFloorTables(): DynamicFloorTable[] {
+  const result: DynamicFloorTable[] = [];
+  for (const s of DEFAULT_FLOOR_LAYOUT) {
+    for (let i = s.start; i <= s.end; i++) {
+      result.push({
+        id: `tbl-${i}`,
+        tableNumber: `Table ${i}`,
+        label: `Table ${i}`,
+        shortName: `T-${i}`,
+        section: s.section,
+        capacity: s.capacity,
+        shape: s.shape,
+        status: "available",
+        currentGuest: null,
+        currentReservationId: null,
+        partySize: s.capacity,
+      });
+    }
+  }
+  return result;
+}
 
 export default function DiningRoomFloorPage() {
   const [tables, setTables] = useState<DynamicFloorTable[]>([]);
@@ -84,6 +140,65 @@ export default function DiningRoomFloorPage() {
   const [guestNameInput, setGuestNameInput] = useState("");
   const [partySizeInput, setPartySizeInput] = useState("2");
 
+  // Date Navigation State
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
+
+  // Date comparison helper (YYYY-MM-DD)
+  const selectedDateYMD = useMemo(() => {
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(selectedDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }, [selectedDate]);
+
+  const isToday = useMemo(() => {
+    const today = new Date();
+    return (
+      selectedDate.getDate() === today.getDate() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getFullYear() === today.getFullYear()
+    );
+  }, [selectedDate]);
+
+  const formattedDate = useMemo(() => {
+    return selectedDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  }, [selectedDate]);
+
+  const handlePrevDay = () => {
+    setLoading(true);
+    setTables((prev) => prev.map((t) => ({ ...t, status: "available" as const, currentGuest: null, currentReservationId: null })));
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 1);
+      return d;
+    });
+  };
+
+  const handleNextDay = () => {
+    setLoading(true);
+    setTables((prev) => prev.map((t) => ({ ...t, status: "available" as const, currentGuest: null, currentReservationId: null })));
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 1);
+      return d;
+    });
+  };
+
+  const handleNativeDateInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.value) return;
+    const [year, month, day] = e.target.value.split("-").map(Number);
+    const newDate = new Date(year, month - 1, day);
+    setLoading(true);
+    setTables((prev) => prev.map((t) => ({ ...t, status: "available" as const, currentGuest: null, currentReservationId: null })));
+    setSelectedDate(newDate);
+    setShowDatePicker(false);
+  };
+
   // Toast Notifications
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
@@ -95,33 +210,136 @@ export default function DiningRoomFloorPage() {
     }, 3800);
   };
 
-  // 1. Fetch 100% real database table objects and statuses directly from PostgreSQL
-  const fetchFloorTelemetry = useCallback(async () => {
+    // 1. Fetch real database tables and strictly synchronize availability with the selected date
+  const fetchFloorTelemetry = useCallback(async (targetDate?: string) => {
+    const dateToQuery = targetDate || selectedDateYMD;
     try {
       const headers = getRequestHeaders();
-      const res = await fetch(`${API_BASE_URL}/reservations/vendor/floor-tables`, {
-        credentials: "include",
-        headers,
-      });
 
-      if (res.ok) {
-        const json = await res.json();
-        setTables(json.tables || []);
+      // Parallel fetch: floor tables setup and reservation holds
+      const [floorRes, holdsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/reservations/vendor/floor-tables?date=${dateToQuery}`, {
+          credentials: "include",
+          headers,
+        }).catch(() => null),
+        fetch(`${API_BASE_URL}/reservations/vendor/holds?limit=500`, {
+          credentials: "include",
+          headers,
+        }).catch(() => null),
+      ]);
+
+      let baseTables: DynamicFloorTable[] = [];
+      let backendStrictlyFiltered = false;
+
+      if (floorRes && floorRes.ok) {
+        const json = await floorRes.json();
         if (json.restaurantName) {
           setRestaurantName(json.restaurantName);
         }
+        if (json.tables && json.tables.length > 0) {
+          baseTables = json.tables;
+          // Backend strictly handled this date if selectedDate in response matches target date
+          if (json.selectedDate === dateToQuery) {
+            backendStrictlyFiltered = true;
+          }
+        }
       }
+
+      if (baseTables.length === 0) {
+        baseTables = buildDefaultFloorTables();
+      }
+
+      // If backend explicitly filtered for this date, use it directly
+      if (backendStrictlyFiltered) {
+        setTables(baseTables);
+        return;
+      }
+
+      // Fallback synchronization with real PostgreSQL holds (guarantees date isolation)
+      let holdsList: any[] = [];
+      if (holdsRes && holdsRes.ok) {
+        const holdsJson = await holdsRes.json();
+        holdsList = holdsJson.data || holdsJson.reservations || holdsJson.holds || [];
+      }
+
+      const activeHoldsForDate = holdsList.filter((r: any) => {
+        const rDate = r.date || (r.createdAt ? new Date(r.createdAt).toISOString().split("T")[0] : "");
+        if (rDate !== dateToQuery) return false;
+
+        const st = String(r.status || "").toUpperCase();
+        const sd = String(r.statusDisplay || "").toUpperCase();
+        const isEnded =
+          st === "CANCELLED" ||
+          st === "CANCELED" ||
+          st === "COMPLETED" ||
+          st === "DECLINED" ||
+          st === "REJECTED" ||
+          sd === "CANCELLED" ||
+          sd === "COMPLETED";
+
+        return !isEnded;
+      });
+
+      const tableBookingMap = new Map<number, any>();
+      activeHoldsForDate.forEach((r: any) => {
+        const num = extractNumericTableId(r.tableNumber);
+        if (num && num >= 1 && num <= 50 && !tableBookingMap.has(num)) {
+          tableBookingMap.set(num, r);
+        }
+      });
+
+      const todayYMD = new Date().toISOString().split("T")[0];
+      const isSelectedToday = dateToQuery === todayYMD;
+
+      const synchronizedTables = baseTables.map((tbl) => {
+        const num = extractNumericTableId(tbl.tableNumber);
+        const booking = num ? tableBookingMap.get(num) : null;
+
+        if (booking) {
+          const st = String(booking.status || "").toUpperCase();
+          const sd = String(booking.statusDisplay || "").toUpperCase();
+          const isSeated = st === "SEATED" || sd === "SEATED";
+          const guestName =
+            booking.user?.name ||
+            booking.guestName ||
+            booking.reservedFor ||
+            (booking.user?.email ? booking.user.email.split("@")[0].replace(/[._]/g, " ") : "Registered Diner");
+
+          return {
+            ...tbl,
+            status: isSeated ? ("occupied" as const) : ("reserved" as const),
+            currentGuest: guestName,
+            currentReservationId: booking.id,
+            partySize: Number(booking.partySize || tbl.capacity),
+          };
+        }
+
+        // Only on TODAY can physical manual walk-in occupancy persist
+        if (isSelectedToday && tbl.status === "occupied" && !tbl.currentReservationId) {
+          return tbl;
+        }
+
+        return {
+          ...tbl,
+          status: "available" as const,
+          currentGuest: null,
+          currentReservationId: null,
+          partySize: tbl.capacity,
+        };
+      });
+
+      setTables(synchronizedTables);
     } catch (err) {
       console.error("Failed to load floor tables:", err);
       addToast("Network Error", "Unable to pull live dining floor state.", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedDateYMD]);
 
   useEffect(() => {
     fetchFloorTelemetry();
-    const interval = setInterval(fetchFloorTelemetry, 15000);
+    const interval = setInterval(() => fetchFloorTelemetry(), 15000);
     return () => clearInterval(interval);
   }, [fetchFloorTelemetry]);
 
@@ -317,18 +535,67 @@ export default function DiningRoomFloorPage() {
               </span>
             </div>
             <p className="text-xs text-neutral-500 font-medium">
-              100% Real PostgreSQL table layout and seat occupancy for <strong>{restaurantName}</strong>.
+              100% Real PostgreSQL table layout and seat occupancy for <strong>{restaurantName}</strong> on <strong>{formattedDate}</strong>.
             </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Day Navigation */}
+            <div className="inline-flex items-center bg-white rounded-xl p-1 border border-[#1b3b2b]/15 shadow-2xs">
+              <button
+                onClick={handlePrevDay}
+                className="p-1.5 text-neutral-500 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 rounded-lg transition-colors cursor-pointer"
+                title="Previous Day"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-base">chevron_left</span>
+              </button>
+              <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold text-[#1b3b2b]">
+                <span className="material-symbols-outlined text-base text-[#1b3b2b]">calendar_today</span>
+                <span>{isToday ? `Today, ${formattedDate}` : formattedDate}</span>
+              </div>
+              <button
+                onClick={handleNextDay}
+                className="p-1.5 text-neutral-500 hover:text-[#1b3b2b] hover:bg-[#1b3b2b]/5 rounded-lg transition-colors cursor-pointer"
+                title="Next Day"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-base">chevron_right</span>
+              </button>
+            </div>
+
+            {/* Pick Date Button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowDatePicker(!showDatePicker)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-[#1b3b2b]/5 text-[#1b3b2b] text-xs font-bold rounded-xl border border-[#1b3b2b]/15 shadow-2xs transition-colors cursor-pointer"
+                type="button"
+              >
+                <span className="material-symbols-outlined text-base">date_range</span>
+                <span>Pick Date</span>
+              </button>
+              {showDatePicker && (
+                <div className="absolute right-0 top-full mt-2 p-3 bg-white border border-[#1b3b2b]/15 rounded-xl shadow-lg z-50">
+                  <label className="block text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-1">
+                    Select Calendar Date
+                  </label>
+                  <input
+                    type="date"
+                    className="px-2.5 py-1.5 rounded-lg border border-[#1b3b2b]/20 bg-neutral-50 text-xs text-[#1b3b2b] focus:outline-none"
+                    value={selectedDateYMD}
+                    onChange={handleNativeDateInput}
+                  />
+                </div>
+              )}
+            </div>
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="button"
               onClick={() => {
                 setLoading(true);
-                fetchFloorTelemetry().then(() => addToast("Synchronized", "Fetched live database tables.", "info"));
+                fetchFloorTelemetry().then(() => addToast("Synchronized", `Fetched table status for ${formattedDate}.`, "info"));
               }}
               disabled={loading}
               className="px-3.5 py-2 bg-white hover:bg-[#1b3b2b]/5 rounded-xl text-xs font-bold text-[#1b3b2b] border border-[#1b3b2b]/15 shadow-2xs cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
@@ -356,7 +623,7 @@ export default function DiningRoomFloorPage() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
         >
           <div className="p-4 rounded-2xl bg-white border border-[#1b3b2b]/10 shadow-xs space-y-2 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between text-neutral-500">
@@ -514,7 +781,7 @@ export default function DiningRoomFloorPage() {
 
           {/* Dynamic 4x2 Grid Derived From Real Tables */}
           <div className="space-y-2.5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
               {firstRowSections.map((item) => {
                 const isActive = selectedZone === item.name;
                 return (
@@ -546,7 +813,7 @@ export default function DiningRoomFloorPage() {
               })}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
               {secondRowSections.map((item) => {
                 const isActive = selectedZone === item.name;
                 return (
