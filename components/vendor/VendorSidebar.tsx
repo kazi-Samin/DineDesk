@@ -88,7 +88,7 @@ export default function VendorSidebar({
       {/* Main Sidebar Shell */}
       <aside
         className={`fixed left-0 top-16 bottom-0 bg-white z-40 flex flex-col justify-between border-r border-[#1b3b2b]/10 shadow-[2px_0_20px_rgba(27,59,43,0.04)] transition-all duration-300 ease-in-out ${isOpen
-            ? "translate-x-0 w-72"
+            ? "translate-x-0 w-72 max-w-[85vw]"
             : "-translate-x-full lg:translate-x-0 lg:w-20"
           }`}
       >
