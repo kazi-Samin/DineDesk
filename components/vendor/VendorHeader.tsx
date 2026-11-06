@@ -122,10 +122,10 @@ export default function VendorHeader({
             VENDOR
           </span>
 
-          <div className="h-4 w-px bg-neutral-200 hidden md:block shrink-0 ml-0.5" />
+          <div className="h-4 w-px bg-neutral-200 hidden lg:block shrink-0 ml-0.5" />
 
           {/* Restaurant Status Pill */}
-          <div className="hidden md:flex items-center gap-1.5 bg-[#FBFBFA] px-2 py-1 rounded-xl border border-[#1b3b2b]/10 shadow-2xs shrink-0 max-w-[130px] lg:max-w-[160px] xl:max-w-[220px]">
+          <div className="hidden lg:flex items-center gap-1.5 bg-[#FBFBFA] px-2 py-1 rounded-xl border border-[#1b3b2b]/10 shadow-2xs shrink-0 max-w-[130px] lg:max-w-[160px] xl:max-w-[220px]">
             <span className="material-symbols-outlined text-sm text-[#C05621] shrink-0">
               storefront
             </span>
@@ -133,7 +133,7 @@ export default function VendorHeader({
               <span className="text-[11px] font-bold text-[#1b3b2b] truncate">
                 {displayRestaurant}
               </span>
-              <span className="hidden lg:inline-flex items-center gap-1 px-1 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[8px] font-extrabold border border-emerald-200 shrink-0">
+              <span className="hidden xl:inline-flex items-center gap-1 px-1 py-0.5 rounded-md bg-emerald-50 text-emerald-800 text-[8px] font-extrabold border border-emerald-200 shrink-0">
                 <span className="w-1 h-1 rounded-full bg-emerald-600 animate-pulse" />
                 Live
               </span>
@@ -141,8 +141,8 @@ export default function VendorHeader({
           </div>
         </div>
 
-        {/* Center: Clean Proportional Navigation Tabs (Responsive Laptop/Desktop) */}
-        <nav ref={navRef} className="hidden lg:flex items-center gap-1 xl:gap-1.5 shrink-0">
+        {/* Center: Clean Navigation Tabs (Shown on md+ so they NEVER disappear at 100% zoom!) */}
+        <nav ref={navRef} className="hidden md:flex items-center gap-1 xl:gap-1.5 shrink-0">
 
           {/* Group 1: Live Operations */}
           <div

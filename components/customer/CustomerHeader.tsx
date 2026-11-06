@@ -176,18 +176,18 @@ export default function CustomerHeader({
           </span>
         </div>
 
-        {/* Middle: Navigation Links in normal flex flow (eliminates absolute centering collision) */}
-        <nav className="hidden xl:flex items-center gap-2 lg:gap-3 shrink-0">
+        {/* Middle: Navigation Links in normal flex flow (Shown on md+ so they NEVER disappear at 100% zoom!) */}
+        <nav className="hidden md:flex items-center gap-1.5 lg:gap-2.5 shrink-0">
           <Link
             href="/"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+            className="px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all whitespace-nowrap"
           >
             Home
           </Link>
 
           <Link
             href="/dashboard/customer/orders"
-            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all"
+            className="px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all whitespace-nowrap"
           >
             My Orders
           </Link>
@@ -200,7 +200,7 @@ export default function CustomerHeader({
           >
             <button
               type="button"
-              className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1 cursor-pointer"
+              className="px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
             >
               <span>Culinary Guide</span>
               <span className="material-symbols-outlined text-base">expand_more</span>
