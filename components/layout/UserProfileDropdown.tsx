@@ -117,7 +117,7 @@ export default function UserProfileDropdown({ user, logout }: UserProfileDropdow
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 12, scale: 0.96 }}
                             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-                            className="absolute right-0 mt-3 w-72 sm:w-80 bg-surface-container-lowest/95 backdrop-blur-2xl border border-outline-variant/80 rounded-[2rem] shadow-[0_20px_50px_rgba(27,59,43,0.15)] py-3 z-50 overflow-hidden"
+                            className="absolute right-0 mt-3 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-surface-container-lowest/95 backdrop-blur-2xl border border-outline-variant/80 rounded-[2rem] shadow-[0_20px_50px_rgba(27,59,43,0.15)] py-3 z-50 overflow-hidden"
                         >
                             {/* User Header Info Card */}
                             <div className="px-5 py-4 border-b border-outline-variant/60 flex items-center gap-3.5 bg-surface-container/60">
