@@ -42,6 +42,11 @@ export default function ErrorPage({
           <p className="text-xs sm:text-sm text-[#1b3b2b]/70 font-medium leading-relaxed mt-1">
             We encountered a temporary disruption while curating your request. Our culinary stewards are on it.
           </p>
+          {error?.message && (
+            <p className="text-[11px] font-mono text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200 break-all max-w-full">
+              {error.message}
+            </p>
+          )}
         </div>
 
         {/* Actions */}
