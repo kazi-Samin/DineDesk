@@ -94,6 +94,11 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
   const resolvedParams = use(params);
   const targetOrderId = resolvedParams.id || resolvedParams.orderId || "";
   const router = useRouter();
+
+  useEffect(() => {
+    router.replace(`/dashboard/customer/orders?order_success=true&order_id=${targetOrderId}`);
+  }, [router, targetOrderId]);
+
   const { user } = useAuth();
 
   const [order, setOrder] = useState<FullOrderConfirmation | null>(null);
@@ -191,13 +196,19 @@ export default function OrderConfirmationPage({ params }: OrderConfirmationPageP
       if (typeof window !== "undefined" && !confirmAttemptedRef.current) {
         const urlParams = new URLSearchParams(window.location.search);
         const sessionId = urlParams.get("session_id");
-        if (sessionId) {
+        const paymentIntentId = urlParams.get("payment_intent");
+
+        if (sessionId || paymentIntentId) {
           confirmAttemptedRef.current = true;
           await fetch(`${API_BASE_URL}/api/v1/orders/confirm-payment`, {
             method: "POST",
             headers,
             credentials: "include",
-            body: JSON.stringify({ orderId: targetOrderId, sessionId }),
+            body: JSON.stringify({
+              orderId: targetOrderId,
+              sessionId: sessionId || undefined,
+              paymentIntentId: paymentIntentId || undefined,
+            }),
           }).catch(() => null);
         }
       }

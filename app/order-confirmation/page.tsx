@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import confetti from "canvas-confetti";
@@ -39,9 +39,14 @@ const getAuthToken = () => {
 };
 
 function OrderConfirmationContent() {
+    const router = useRouter();
     const searchParams = useSearchParams();
     const orderId = searchParams.get("order_id") || searchParams.get("orderId");
     const sessionId = searchParams.get("session_id") || searchParams.get("sessionId");
+
+    useEffect(() => {
+        router.replace(`/dashboard/customer/orders?order_success=true${orderId ? `&order_id=${orderId}` : ""}`);
+    }, [router, orderId]);
 
     const { clearCart } = useCart();
 
