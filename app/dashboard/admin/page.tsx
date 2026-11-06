@@ -268,55 +268,81 @@ export default function AdminOverviewPage() {
     <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased min-h-screen">
       <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-7 max-w-7xl mx-auto w-full">
         {/* Top Header Section with Date Filtering & Action Controls */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[11px] uppercase tracking-wider text-amber-800 font-bold">
-                The Maple &amp; Vine • Executive Telemetry
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-[#E2B774]" />
-              <span className="text-[11px] text-neutral-500 font-medium">
-                Live PostgreSQL Engine
-              </span>
+        <div className="flex flex-col gap-4 pb-5 border-b border-[#1b3b2b]/10">
+          {/* Top Row: Page Title on Left, Action Buttons on Right */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <span className="text-[11px] uppercase tracking-wider text-amber-800 font-bold">
+                  The Maple &amp; Vine • Executive Telemetry
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#E2B774] hidden sm:inline-block" />
+                <span className="text-[11px] text-neutral-500 font-medium hidden sm:inline-block">
+                  Live PostgreSQL Engine
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
+                Overview &amp; Floor Analytics
+              </h1>
+              <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
+                Executive governance, dining room pacing, and transactional ledgers for 2414 Michigan Ave.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#1b3b2b] tracking-tight">
-              Overview &amp; Floor Analytics
-            </h1>
-            <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-              Executive governance, dining room pacing, and transactional ledgers for 2414 Michigan Ave.
-            </p>
+
+            {/* Quick Action Tools: Sync, Export CSV, Generate Report */}
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+              {/* Custom Premium Sync / Refresh Button */}
+              <button
+                type="button"
+                disabled={isRefreshing || isLoading}
+                onClick={() => fetchOverviewData(selectedRange, true)}
+                className="relative inline-flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1b3b2b] to-[#12281d] text-white hover:from-[#152e22] hover:to-[#0d1d15] text-xs font-semibold shadow-xs border border-[#E2B774]/30 hover:border-[#E2B774]/60 transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50 select-none group shrink-0"
+                title="Sync latest live executive telemetry from database"
+              >
+                <span
+                  className={`material-symbols-outlined text-[17px] text-[#E2B774] transition-transform duration-700 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180"
+                    }`}
+                >
+                  sync
+                </span>
+                <span className="tracking-tight">
+                  {isRefreshing ? "Syncing..." : "Sync Telemetry"}
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 hidden sm:block" />
+              </button>
+
+              <button
+                type="button"
+                disabled={isExporting || isLoading}
+                onClick={handleExportCsv}
+                className="flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-[#1b3b2b] px-3 sm:px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#1b3b2b]/15 shadow-xs transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                <span className="material-symbols-outlined text-base">file_download</span>
+                <span>{isExporting ? "Compiling..." : "Export CSV"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleGenerateReport}
+                className="flex items-center gap-1.5 bg-[#1b3b2b] text-white hover:bg-[#152e22] px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
+              >
+                <span className="material-symbols-outlined text-base text-[#E2B774]">insights</span>
+                <span className="hidden sm:inline">Generate Report</span>
+                <span className="sm:hidden">Report</span>
+              </button>
+            </div>
           </div>
 
-          {/* Action Tools */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Custom Premium Sync / Refresh Button */}
-            <button
-              type="button"
-              disabled={isRefreshing || isLoading}
-              onClick={() => fetchOverviewData(selectedRange, true)}
-              className="relative inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#1b3b2b] to-[#12281d] text-white hover:from-[#152e22] hover:to-[#0d1d15] text-xs font-semibold shadow-xs border border-[#E2B774]/30 hover:border-[#E2B774]/60 transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-50 select-none group"
-              title="Sync latest live executive telemetry from database"
-            >
-              <span
-                className={`material-symbols-outlined text-[17px] text-[#E2B774] transition-transform duration-700 ${isRefreshing ? "animate-spin" : "group-hover:rotate-180"
-                  }`}
-              >
-                sync
-              </span>
-              <span className="tracking-tight">
-                {isRefreshing ? "Syncing..." : "Sync Telemetry"}
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse ml-0.5 hidden sm:block" />
-            </button>
-
+          {/* Sub Row: Clean Date Filter Bar & Status Badge */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
             {/* Dynamic Period Selector */}
-            <div className="flex items-center bg-white p-1 rounded-xl border border-[#1b3b2b]/15 shadow-xs">
+            <div className="flex items-center bg-white p-1 rounded-xl border border-[#1b3b2b]/15 shadow-xs overflow-x-auto max-w-full no-scrollbar">
               {RANGES.map((r) => (
                 <button
                   key={r.key}
                   type="button"
                   onClick={() => setSelectedRange(r.key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${selectedRange === r.key
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${selectedRange === r.key
                       ? "bg-[#1b3b2b] text-white shadow-2xs"
                       : "text-neutral-600 hover:text-[#1b3b2b]"
                     }`}
@@ -326,24 +352,10 @@ export default function AdminOverviewPage() {
               ))}
             </div>
 
-            <button
-              type="button"
-              disabled={isExporting || isLoading}
-              onClick={handleExportCsv}
-              className="flex items-center gap-1.5 bg-white hover:bg-neutral-50 text-[#1b3b2b] px-3.5 py-2 rounded-xl text-xs font-semibold border border-[#1b3b2b]/15 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-base">file_download</span>
-              <span>{isExporting ? "Compiling..." : "Export CSV"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleGenerateReport}
-              className="flex items-center gap-1.5 bg-[#1b3b2b] text-white hover:bg-[#152e22] px-4 py-2 rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base text-[#E2B774]">insights</span>
-              <span>Generate Report</span>
-            </button>
+            <div className="flex items-center gap-2 text-xs text-neutral-500 font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Telemetry Auto-synced • Live PostgreSQL</span>
+            </div>
           </div>
         </div>
 
@@ -366,7 +378,7 @@ export default function AdminOverviewPage() {
 
         {/* Top 4 Primary Metric Stat Cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
             {[...Array(4)].map((_, i) => (
               <div
                 key={i}
@@ -379,7 +391,7 @@ export default function AdminOverviewPage() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
             <AdminStatCard
               title="Registered Patrons"
               value={(data?.kpis?.totalUsers ?? 0).toLocaleString()}

@@ -280,7 +280,7 @@ export default function CheckoutPage() {
     <main className="w-full pt-20 bg-surface">
       <div className="flex flex-col w-full">
         <div className="w-full bg-surface py-space-xl">
-          <div className="max-w-[1440px] mx-auto px-margin">
+          <div className="max-w-[1440px] mx-auto px-3.5 sm:px-margin">
             {/* Breadcrumb and Top Narrative Bar */}
             <div className="flex flex-wrap items-center justify-between gap-space-md mb-space-md">
               <div className="flex items-center gap-space-sm font-label-md text-label-md text-on-surface-variant">

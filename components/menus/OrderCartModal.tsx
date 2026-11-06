@@ -138,16 +138,16 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
     return (
         <>
             {/* Floating Bottom Bar */}
-            <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-[640px] bg-inverse-surface text-inverse-on-surface px-6 py-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-primary text-on-primary font-black text-xs flex items-center justify-center shadow-md">
+            <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[92%] max-w-[640px] bg-inverse-surface text-inverse-on-surface px-3.5 sm:px-6 py-3 sm:py-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10 backdrop-blur-md">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-primary text-on-primary font-black text-xs flex items-center justify-center shadow-md shrink-0">
                         {qty}
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-white/70">
+                        <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider text-white/70">
                             Items Selected
                         </span>
-                        <span className="text-sm font-black text-white">
+                        <span className="text-xs sm:text-sm font-black text-white">
                             ${totalPrice.toFixed(2)} Total
                         </span>
                     </div>
@@ -155,7 +155,7 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
 
                 <button
                     onClick={handleReviewAndPayClick}
-                    className="px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-2"
+                    className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-md hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-1.5 sm:gap-2 shrink-0"
                     type="button"
                 >
                     <span>Review &amp; Pay</span>
@@ -165,8 +165,8 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
 
             {/* Checkout Modal Popup */}
             {isOpen && (
-                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in overflow-y-auto">
-                    <div className="w-full max-w-lg bg-surface-container-lowest rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col gap-5 relative border border-outline-variant max-h-[92vh] overflow-y-auto">
+                <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in overflow-y-auto">
+                    <div className="w-full max-w-lg bg-surface-container-lowest rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 shadow-2xl flex flex-col gap-4 sm:gap-5 relative border border-outline-variant max-h-[92vh] overflow-y-auto">
 
                         {/* Close Button */}
                         <button
@@ -203,32 +203,32 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                         )}
 
                         {/* Selected Item Card inside Modal */}
-                        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-surface-container-low to-surface-container border border-outline-variant/60 shadow-sm">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden bg-surface-container shrink-0 shadow-xs border border-outline-variant/40">
+                        <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-surface-container-low to-surface-container border border-outline-variant/60 shadow-sm">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-surface-container shrink-0 shadow-xs border border-outline-variant/40">
                                 <img
                                     src={item?.image || "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=300&auto=format&fit=crop"}
                                     alt={cleanDishName}
                                     className="w-full h-full object-cover"
                                 />
                             </div>
-                            <div className="flex-1 flex flex-col justify-center gap-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary/15 text-primary uppercase tracking-widest">
+                            <div className="flex-1 flex flex-col justify-center gap-0.5 sm:gap-1 min-w-0">
+                                <div className="flex items-center gap-1.5 sm:gap-2">
+                                    <span className="text-[9px] sm:text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded bg-primary/15 text-primary uppercase tracking-widest shrink-0">
                                         Item {itemSerialTag}
                                     </span>
-                                    <span className="text-[10px] font-bold text-secondary">
+                                    <span className="text-[9px] sm:text-[10px] font-bold text-secondary truncate">
                                         Chef&apos;s Special
                                     </span>
                                 </div>
                                 <h4 className="font-heading font-bold text-xs sm:text-sm text-on-surface leading-tight tracking-tight line-clamp-2">
                                     {cleanDishName}
                                 </h4>
-                                <span className="text-[11px] font-medium text-on-surface-variant">
+                                <span className="text-[10px] sm:text-[11px] font-medium text-on-surface-variant">
                                     Qty: <span className="text-primary font-bold">{qty}</span> × ${unitPrice.toFixed(2)}
                                 </span>
                             </div>
                             <div className="text-right shrink-0">
-                                <span className="text-base font-black text-primary tracking-tight">
+                                <span className="text-sm sm:text-base font-black text-primary tracking-tight">
                                     ${totalPrice.toFixed(2)}
                                 </span>
                             </div>
@@ -264,10 +264,10 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                         ) : (
                             /* Action Buttons */
                             <div className="flex flex-col gap-2.5 pt-2">
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                                     <button
                                         onClick={() => setIsOpen(false)}
-                                        className="flex-1 py-3 px-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs whitespace-nowrap"
+                                        className="w-full sm:flex-1 py-3 px-3 rounded-xl bg-surface-container text-on-surface font-bold text-xs hover:bg-surface-container-high transition-all cursor-pointer shadow-xs text-center"
                                         type="button"
                                     >
                                         Continue Browsing
@@ -275,14 +275,14 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
                                     <button
                                         onClick={handleInitializePayment}
                                         disabled={isInitializingStripe}
-                                        className="flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-70"
+                                        className="w-full sm:flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 text-center"
                                         type="button"
                                     >
                                         {isInitializingStripe ? (
-                                            <>
-                                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
-                                                <span>Connecting Gateway...</span>
-                                            </>
+                                             <>
+                                                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
+                                                 <span>Connecting Gateway...</span>
+                                             </>
                                         ) : (
                                             <>
                                                 <span className="material-symbols-outlined text-sm">lock</span>

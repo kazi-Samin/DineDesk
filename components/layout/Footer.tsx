@@ -152,7 +152,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative max-w-[1440px] mx-auto px-margin py-space-xl">
+      <div className="relative max-w-[1440px] mx-auto px-4 sm:px-margin py-space-xl">
         {/* Feedback / queries band */}
         <div
           className={`${rv} mb-space-xl rounded-2xl border border-outline-variant/70 bg-surface-container-lowest/70 p-space-lg backdrop-blur`}

@@ -218,7 +218,7 @@ export default function AdminAnalyticsPage() {
     <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased min-h-screen">
       <div className="px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-7 max-w-7xl mx-auto w-full">
         {/* Top Header & Range Filters */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[11px] uppercase tracking-wider text-amber-800 font-bold">

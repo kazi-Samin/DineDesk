@@ -229,7 +229,7 @@ export default function AdminHeader({
   };
 
   const navLinkClass = (active: boolean) =>
-    `relative px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${active
+    `relative px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${active
       ? "bg-[#1b3b2b] text-white shadow-xs"
       : "text-neutral-600 hover:text-[#1b3b2b] hover:bg-neutral-100/70"
     }`;
@@ -261,7 +261,7 @@ export default function AdminHeader({
 
             <Link
               href="/"
-              className="flex items-center group pr-3 sm:pr-6 md:pr-10 mr-1.5 sm:mr-3 md:mr-4 border-r border-[#1b3b2b]/10 shrink-0"
+              className="flex items-center group pr-2.5 sm:pr-4 mr-1.5 sm:mr-3 border-r border-[#1b3b2b]/10 shrink-0"
               title="Return to DineDesk Home"
             >
               <motion.div
@@ -279,21 +279,21 @@ export default function AdminHeader({
                   y: -2,
                   transition: { duration: 0.25 },
                 }}
-                className="h-8 sm:h-11 md:h-13 w-auto flex items-center justify-center relative cursor-pointer"
+                className="h-8 sm:h-10 md:h-11 w-auto flex items-center justify-center relative cursor-pointer"
               >
                 <div className="absolute inset-0 bg-[#E2B774]/20 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                 <Image
                   alt="DineDesk Logo"
                   className="h-full w-auto object-contain relative z-10 drop-shadow-xs"
                   src="/assets/DineDesk Monogram.png"
-                  width={180}
-                  height={46}
+                  width={150}
+                  height={38}
                   priority
                 />
               </motion.div>
             </Link>
 
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1b3b2b]/5 border border-[#1b3b2b]/10 shrink-0">
+            <div className="hidden lg:flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#1b3b2b]/5 border border-[#1b3b2b]/10 shrink-0">
               <span className="w-2 h-2 rounded-full bg-[#E2B774]" />
               <span className="text-[11px] font-bold text-[#1b3b2b] uppercase tracking-wider">
                 Governance Hub
@@ -313,8 +313,8 @@ export default function AdminHeader({
             </div>
           </div>
 
-          {/* CENTER: Navigation Tabs (Shown on xl+ desktops to prevent 100% zoom collision) */}
-          <nav className="hidden xl:flex items-center gap-1.5 bg-neutral-100/80 p-1.5 rounded-2xl border border-neutral-200/70 shrink-0">
+          {/* CENTER: Navigation Tabs (Shown on md+ desktops & laptops at 100% zoom!) */}
+          <nav className="hidden md:flex items-center gap-1 bg-neutral-100/80 p-1 sm:p-1.5 rounded-xl sm:rounded-2xl border border-neutral-200/70 shrink-0">
             <Link href="/dashboard/admin" className={navLinkClass(isOverview)}>
               Overview
             </Link>
