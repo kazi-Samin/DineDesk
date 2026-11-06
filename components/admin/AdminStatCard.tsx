@@ -75,7 +75,7 @@ export default function AdminStatCard({
             {changeText}
           </span>
 
-          <span className="text-xs text-on-surface-variant">{changeNote}</span>
+          <span className="text-xs text-on-surface-variant truncate max-w-full" title={changeNote}>{changeNote}</span>
         </div>
       </div>
 

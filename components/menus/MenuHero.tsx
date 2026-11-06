@@ -63,14 +63,14 @@ export default function MenuHero({ restaurantName, neighborhood, rating, reviewC
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                 {/* Top Badges */}
-                <div className="absolute top-6 left-6 flex items-center gap-3">
+                <div className="absolute top-3 sm:top-6 left-3 sm:left-6 flex flex-wrap items-center gap-1.5 sm:gap-3 max-w-[calc(100%-1.5rem)]">
                     <span className="px-3 py-1.5 rounded-xl bg-surface-container-lowest/90 backdrop-blur-md text-xs font-extrabold text-primary shadow-md border border-outline-variant/40 flex items-center gap-1.5">
                         <span className="material-symbols-outlined text-sm text-amber-500" style={{ fontVariationSettings: "'FILL' 1" }}>
                             verified
                         </span>
                         Grand 5-Star Dine-In Rating
                     </span>
-                    <span className="px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold shadow-md">
+                    <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs font-bold shadow-md">
                         Global Elite Venue
                     </span>
                 </div>
@@ -92,7 +92,7 @@ export default function MenuHero({ restaurantName, neighborhood, rating, reviewC
                 </button>
 
                 {/* Bottom Right Slideshow Thumbnails */}
-                <div className="absolute bottom-6 right-6 flex items-center gap-2.5 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/20 shadow-lg">
+                <div className="hidden sm:flex absolute bottom-6 right-6 items-center gap-2.5 bg-black/40 backdrop-blur-md p-2 rounded-2xl border border-white/20 shadow-lg">
                     {SLIDESHOW_IMAGES.map((slide, idx) => (
                         <button
                             key={idx}

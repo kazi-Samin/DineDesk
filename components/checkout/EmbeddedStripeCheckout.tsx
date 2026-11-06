@@ -150,12 +150,12 @@ function StripePaymentForm({
         />
       </div>
 
-      <div className="flex items-center justify-between text-xs text-stone-500 pt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px] sm:text-xs text-stone-500 pt-1">
         <div className="flex items-center gap-1.5">
-          <span className="material-symbols-outlined text-emerald-600 text-sm">lock</span>
-          <span>Guaranteed 256-Bit SSL Encrypted Payment</span>
+          <span className="material-symbols-outlined text-emerald-600 text-sm shrink-0">lock</span>
+          <span className="truncate sm:overflow-visible">Guaranteed 256-Bit SSL Encrypted Payment</span>
         </div>
-        <div className="font-semibold text-[#1b3b2b]">Total: ${safeTotal.toFixed(2)}</div>
+        <div className="font-semibold text-[#1b3b2b] shrink-0">Total: ${safeTotal.toFixed(2)}</div>
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
