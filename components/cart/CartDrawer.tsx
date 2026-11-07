@@ -43,12 +43,10 @@ export default function CartDrawer() {
 
   // Review Your Order Modal State
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "cod">("card");
   const [isInitializingStripe, setIsInitializingStripe] = useState(false);
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   const [stripeOrderId, setStripeOrderId] = useState<string | null>(null);
   const [stripeVerifiedTotal, setStripeVerifiedTotal] = useState<number>(0);
-  const [isPlacingCodOrder, setIsPlacingCodOrder] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const checkCart = () => {
@@ -237,64 +235,6 @@ export default function CartDrawer() {
       clearEntireCart();
       setIsReviewModalOpen(false);
       router.push(`/order-confirmation/${orderId}`);
-    }
-  };
-
-  // Place Cash On Delivery Order
-  const handlePlaceCodOrder = async () => {
-    setIsPlacingCodOrder(true);
-    setErrorMessage(null);
-
-    try {
-      const token = getAuthToken();
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      };
-
-      const payload = {
-        orderType: "DELIVERY",
-        paymentMethod: "COD",
-        deliveryAddress: "Customer Registered Address",
-        deliveryLat: 22.3384,
-        deliveryLng: 91.8317,
-        items: cartItems.map((item) => ({
-          id: item.id || item.menuId,
-          name: item.name,
-          price: Number(item.price || 0),
-          quantity: Number(item.quantity || 1),
-          restaurantId: item.restaurantId,
-        })),
-      };
-
-      let createdOrderId = `DD-${Math.floor(10000 + Math.random() * 90000)}`;
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/orders`, {
-          method: "POST",
-          headers,
-          credentials: "include",
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.data?.order?.id) {
-            createdOrderId = String(json.data.order.id);
-          }
-        }
-      } catch (err) {
-        console.warn("Backend order creation fallback:", err);
-      }
-
-      clearEntireCart();
-      toast.success("Order placed successfully with Cash on Delivery!");
-      setIsReviewModalOpen(false);
-      router.push(`/order-confirmation/${createdOrderId}`);
-    } catch (err: any) {
-      setErrorMessage(err?.message || "Failed to place order.");
-    } finally {
-      setIsPlacingCodOrder(false);
     }
   };
 
@@ -562,41 +502,6 @@ export default function CartDrawer() {
               ))}
             </div>
 
-            {/* Payment Method Selector (if Stripe not opened yet) */}
-            {!stripeClientSecret && (
-              <div className="flex flex-col gap-1.5 pt-2 border-t border-outline-variant/40">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-on-surface-variant">
-                  Payment Method
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("card")}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
-                      paymentMethod === "card"
-                        ? "border-primary bg-primary/10 text-primary shadow-xs"
-                        : "border-outline-variant/60 text-on-surface-variant hover:border-primary/50"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-base">credit_card</span>
-                    <span>Card (Stripe)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("cod")}
-                    className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 border transition-all cursor-pointer ${
-                      paymentMethod === "cod"
-                        ? "border-primary bg-primary/10 text-primary shadow-xs"
-                        : "border-outline-variant/60 text-on-surface-variant hover:border-primary/50"
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-base">payments</span>
-                    <span>Cash on Delivery</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Billing Breakdown */}
             <div className="flex flex-col gap-1.5 pt-2 border-t border-outline-variant/60 text-xs font-medium text-on-surface-variant">
               <div className="flex justify-between">
@@ -646,45 +551,24 @@ export default function CartDrawer() {
                     Back to Cart
                   </button>
 
-                  {paymentMethod === "card" ? (
-                    <button
-                      onClick={handleInitializePayment}
-                      disabled={isInitializingStripe}
-                      className="w-full sm:flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 text-center"
-                      type="button"
-                    >
-                      {isInitializingStripe ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
-                          <span>Connecting Gateway...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-sm">lock</span>
-                          <span>Confirm &amp; Pay Now</span>
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handlePlaceCodOrder}
-                      disabled={isPlacingCodOrder}
-                      className="w-full sm:flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 text-center"
-                      type="button"
-                    >
-                      {isPlacingCodOrder ? (
-                        <>
-                          <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
-                          <span>Placing Order...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-sm">shopping_bag</span>
-                          <span>Place Order (COD)</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <button
+                    onClick={handleInitializePayment}
+                    disabled={isInitializingStripe}
+                    className="w-full sm:flex-1 py-3 px-3 rounded-xl bg-primary text-on-primary font-bold text-xs tracking-tight shadow-lg hover:bg-primary/90 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-70 text-center"
+                    type="button"
+                  >
+                    {isInitializingStripe ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin shrink-0"></span>
+                        <span>Connecting Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-sm">lock</span>
+                        <span>Confirm &amp; Pay Now</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             )}
