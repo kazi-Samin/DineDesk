@@ -237,7 +237,7 @@ export default function AdminHeader({
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 h-20 z-40 transition-all duration-500 border-b ${scrolled
+        className={`fixed top-0 left-0 right-0 h-16 sm:h-20 z-40 transition-all duration-500 border-b ${scrolled
             ? "bg-[#e8f3ee]/75 backdrop-blur-xl border-[#2a7a58]/20 shadow-[0_8px_32px_0_rgba(27,75,54,0.1)] [background-image:radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(168,218,200,0.4),rgba(255,255,255,0))]"
             : "bg-white/90 backdrop-blur-md border-[#1b3b2b]/10 shadow-[0_4px_24px_-4px_rgba(27,59,43,0.06)]"
           }`}

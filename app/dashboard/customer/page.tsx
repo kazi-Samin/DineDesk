@@ -293,7 +293,7 @@ export default function CustomerDashboardOverviewPage() {
       />
 
       {/* Main Layout Container */}
-      <div className="flex pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
+      <div className="flex pt-16 sm:pt-20 flex-1 min-w-0 max-w-full overflow-x-hidden">
         {/* Sidebar */}
         <CustomerSidebar
           userName={cleanFirstName}
@@ -314,7 +314,7 @@ export default function CustomerDashboardOverviewPage() {
             }`}
         >
           {/* Welcome Banner & Stats */}
-          <section className="w-full px-6 sm:px-10 py-8 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+          <section className="w-full px-3.5 sm:px-10 py-4 sm:py-6 md:py-8 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}

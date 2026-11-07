@@ -542,7 +542,7 @@ export default function VendorReservationsPage() {
   return (
     <div className="w-full min-h-screen bg-[#FBFBFA] text-[#1b3b2b] pb-16 font-sans selection:bg-[#1b3b2b] selection:text-white">
       {/* 1. Top Executive Banner */}
-      <section className="w-full bg-white/90 backdrop-blur-md border-b border-[#1b3b2b]/10 px-4 sm:px-6 lg:px-10 py-6 sticky top-0 z-20 shadow-2xs">
+      <section className="w-full bg-white/90 backdrop-blur-md border-b border-[#1b3b2b]/10 px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 sticky top-0 z-20 shadow-2xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -585,7 +585,7 @@ export default function VendorReservationsPage() {
       </section>
 
       {/* 2. Main Centered Workspace Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-10 pt-4 sm:pt-6 md:pt-8 space-y-6 sm:space-y-8">
         {/* Metric Cards Strip */}
         <ReservationMetricCards stats={stats} />
 
