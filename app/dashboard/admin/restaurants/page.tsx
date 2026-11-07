@@ -255,7 +255,7 @@ export default function AdminRestaurantsPage() {
 
   return (
     <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased min-h-screen">
-      <div className="px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 flex flex-col gap-5 sm:gap-6 md:gap-7 max-w-7xl mx-auto w-full">
+      <div className="px-3.5 sm:px-6 lg:px-8 py-6 md:py-8 flex flex-col gap-5 sm:gap-6 md:gap-7 max-w-7xl mx-auto w-full">
         {/* Top Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1b3b2b]/10">
           <div>
