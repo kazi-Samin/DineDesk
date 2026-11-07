@@ -104,24 +104,24 @@ export default function Navbar() {
     : { name: activeName, role: "USER", avatar: activeAvatar };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-8 lg:px-16 pt-2 sm:pt-4 pointer-events-none">
+    <header className="fixed top-0 left-0 right-0 z-50 px-2 sm:px-5 lg:px-6 xl:px-10 pt-2 sm:pt-4 pointer-events-none">
       <motion.nav
         initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className={`pointer-events-auto max-w-[1400px] mx-auto h-16 sm:h-20 px-3 sm:px-8 flex items-center justify-between gap-2 sm:gap-4 transition-all duration-500 rounded-2xl sm:rounded-3xl border shadow-xl ${scrolled
+        className={`pointer-events-auto max-w-[1400px] mx-auto h-16 sm:h-20 px-3 sm:px-5 lg:px-5 xl:px-7 flex items-center justify-between gap-2 sm:gap-3 transition-all duration-500 rounded-2xl sm:rounded-3xl border shadow-xl ${scrolled
           ? "bg-surface-container-lowest/85 backdrop-blur-2xl border-outline-variant/60 shadow-[0_12px_40px_rgba(31,61,43,0.08)] scale-[0.99]"
           : "bg-surface-container-low/90 backdrop-blur-xl border-outline-variant/80 shadow-[0_8px_30px_rgba(31,61,43,0.04)] scale-100"
           }`}
       >
         {/* Brand Logo Image & Desktop Navigation Links */}
-        <div className="flex items-center gap-8 shrink-0">
+        <div className="flex items-center gap-3 xl:gap-7 shrink-0">
           <Logo size="lg" />
           <NavLinks openReservationModal={openReservationModal} />
         </div>
 
         {/* Floating Search Bar */}
-        <div className="hidden lg:flex flex-1 max-w-sm mx-4">
+        <div className="hidden lg:flex flex-1 min-w-[140px] max-w-xs xl:max-w-sm mx-1.5 xl:mx-3">
           <form onSubmit={handleSearchSubmit} className="relative w-full group">
             <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">
               <span className="material-symbols-outlined text-lg">search</span>
@@ -174,7 +174,7 @@ export default function Navbar() {
             whileTap={{ scale: 0.9 }}
             aria-label="Open mobile navigation"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="xl:hidden p-3 text-on-surface-variant hover:text-primary rounded-2xl bg-surface-container/50 hover:bg-surface-container border border-outline-variant/40 transition-colors cursor-pointer"
+            className="lg:hidden p-3 text-on-surface-variant hover:text-primary rounded-2xl bg-surface-container/50 hover:bg-surface-container border border-outline-variant/40 transition-colors cursor-pointer"
             type="button"
           >
             <span className="material-symbols-outlined text-xl">
@@ -192,7 +192,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.98 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-auto xl:hidden bg-surface-container-lowest/95 backdrop-blur-2xl border border-outline-variant mt-3 mx-2 sm:mx-6 rounded-3xl shadow-2xl overflow-hidden px-6 py-6 flex flex-col gap-5"
+            className="pointer-events-auto lg:hidden bg-surface-container-lowest/95 backdrop-blur-2xl border border-outline-variant mt-3 mx-2 sm:mx-6 rounded-3xl shadow-2xl overflow-hidden px-6 py-6 flex flex-col gap-5"
           >
             <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
               <span className="font-bold text-xs text-on-surface uppercase tracking-widest">Navigation Suite</span>

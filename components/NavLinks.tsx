@@ -35,13 +35,13 @@ export default function NavLinks({
                 ? "bg-primary text-on-primary shadow-sm font-semibold"
                 : "text-on-surface hover:bg-surface-container"
             }`
-            : `relative transition-colors py-2 text-sm font-medium ${active
+            : `relative transition-colors py-2 text-xs xl:text-sm font-medium whitespace-nowrap ${active
                 ? "text-primary font-semibold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:rounded-full"
                 : "text-on-surface-variant hover:text-primary"
             }`;
 
     return (
-        <nav className={isMobile ? "flex flex-col gap-2" : "hidden lg:flex items-center gap-6 xl:gap-8"}>
+        <nav className={isMobile ? "flex flex-col gap-2" : "hidden lg:flex items-center gap-3 xl:gap-5 2xl:gap-7 shrink-0"}>
             {/* Home Link */}
             <Link href="/" onClick={onItemClick} className={linkClass(isHome)}>
                 {isMobile && <span className="material-symbols-outlined text-xl">home</span>}
