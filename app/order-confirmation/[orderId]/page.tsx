@@ -3,7 +3,6 @@
 
 import { use, useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -93,11 +92,6 @@ const getAuthToken = () => {
 export default function OrderConfirmationPage({ params }: OrderConfirmationPageProps) {
   const resolvedParams = use(params);
   const targetOrderId = resolvedParams.id || resolvedParams.orderId || "";
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace(`/dashboard/customer/orders?order_success=true&order_id=${targetOrderId}`);
-  }, [router, targetOrderId]);
 
   const { user } = useAuth();
 
