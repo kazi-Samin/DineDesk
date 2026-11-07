@@ -553,7 +553,7 @@ export default function CustomerFavoritesPage() {
         <main className="w-full pt-16 sm:pt-20 min-w-0 max-w-full overflow-x-hidden bg-[#f8f9f6] min-h-screen flex flex-col justify-between">
           <div className="w-full flex flex-col">
             {/* Welcome Banner & Stats */}
-            <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+            <section className="w-full px-3.5 sm:px-10 py-4 sm:py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -599,7 +599,7 @@ export default function CustomerFavoritesPage() {
             </section>
 
             {/* Page Content */}
-            <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto">
+            <div className="w-full px-3.5 sm:px-10 py-6 sm:py-8 md:py-10 max-w-7xl mx-auto">
               <div className="flex flex-col w-full">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                   <div>

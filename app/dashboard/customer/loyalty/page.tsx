@@ -472,7 +472,7 @@ export default function CustomerLoyaltyPage() {
             }`}
         >
           {/* Section 1: Patron Welcome Banner & Stats */}
-          <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+          <section className="w-full px-3.5 sm:px-10 py-4 sm:py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-3">
@@ -532,7 +532,7 @@ export default function CustomerLoyaltyPage() {
           </section>
 
           {/* Section 2: Core Loyalty Content */}
-          <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-10">
+          <div className="w-full px-3.5 sm:px-10 py-6 sm:py-8 md:py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-6 sm:gap-10">
             {/* Conditional Gold Tier Status Bar */}
             {isGoldTierOrHigher && (
               <div className="bg-white/95 backdrop-blur-xl rounded-3xl border border-amber-500/40 shadow-xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">

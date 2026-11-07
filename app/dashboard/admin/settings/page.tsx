@@ -318,7 +318,7 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="w-full flex-1 bg-[#FBFBFA] text-[#1b3b2b] font-body-md antialiased pb-44">
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 md:py-8 flex flex-col gap-8">
+      <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 md:py-8 flex flex-col gap-6 sm:gap-8">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-4 border-b border-[#1b3b2b]/10">
           <div className="flex flex-col gap-1.5 max-w-3xl">

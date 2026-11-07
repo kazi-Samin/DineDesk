@@ -561,7 +561,7 @@ export default function CustomerAddressesPage() {
             }`}
         >
           {/* Top Quick Stats Banner */}
-          <section className="w-full px-6 sm:px-10 py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
+          <section className="w-full px-3.5 sm:px-10 py-4 sm:py-6 bg-gradient-to-r from-white via-[#f8f9f6] to-white border-b border-[#1b3b2b]/10 shadow-xs">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -615,7 +615,7 @@ export default function CustomerAddressesPage() {
           </section>
 
           {/* Main Content Area */}
-          <div className="w-full px-6 sm:px-10 py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-8">
+          <div className="w-full px-3.5 sm:px-10 py-6 sm:py-8 md:py-10 max-w-7xl mx-auto flex-1 flex flex-col gap-6 sm:gap-8">
             <div className="flex flex-col w-full">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
