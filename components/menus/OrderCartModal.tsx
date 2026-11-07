@@ -128,10 +128,10 @@ export default function OrderCartModal({ item, quantity = 1 }: OrderCartModalPro
 
             toast.success("Payment authorized successfully! Order placed.");
             setIsOpen(false);
-            router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+            router.push(`/order-confirmation/${orderId}`);
         } catch {
             setIsOpen(false);
-            router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+            router.push(`/order-confirmation/${orderId}`);
         }
     };
 
