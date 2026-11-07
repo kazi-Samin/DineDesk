@@ -115,20 +115,20 @@ export default function Navbar() {
           }`}
       >
         {/* Brand Logo Image & Desktop Navigation Links */}
-        <div className="flex items-center gap-3 xl:gap-7 shrink-0">
-          <Logo size="lg" />
+        <div className="flex items-center gap-5 xl:gap-8 shrink-0">
+          <Logo size="md" className="h-8 sm:h-9 md:h-10" />
           <NavLinks openReservationModal={openReservationModal} />
         </div>
 
         {/* Floating Search Bar */}
-        <div className="hidden lg:flex flex-1 min-w-[140px] max-w-xs xl:max-w-sm mx-1.5 xl:mx-3">
+        <div className="hidden lg:flex w-44 xl:w-56 2xl:w-64 mx-2 xl:mx-4 shrink-0">
           <form onSubmit={handleSearchSubmit} className="relative w-full group">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">
-              <span className="material-symbols-outlined text-lg">search</span>
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">
+              <span className="material-symbols-outlined text-base">search</span>
             </span>
             <input
-              className="w-full bg-surface-container/60 hover:bg-surface-container focus:bg-surface-container-lowest border border-outline-variant/60 focus:border-primary rounded-2xl py-2.5 pl-11 pr-4 text-xs font-medium text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none transition-all shadow-inner"
-              placeholder="Search gourmet dishes, kitchens..."
+              className="w-full bg-surface-container/60 hover:bg-surface-container focus:bg-surface-container-lowest border border-outline-variant/60 focus:border-primary rounded-2xl py-2 pl-9 pr-3 text-xs font-medium text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none transition-all shadow-inner"
+              placeholder="Search dishes, kitchens..."
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
