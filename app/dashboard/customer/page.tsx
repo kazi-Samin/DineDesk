@@ -169,7 +169,7 @@ export default function CustomerDashboardOverviewPage() {
         const apiData = await resApi.json();
         const list = apiData.reservations || apiData.data || apiData || [];
         parsedReservations = list.map((item: any) => {
-          const rawStatus = (item.status || "confirmed").toLowerCase();
+          const rawStatus = (item.status || "pending").toLowerCase();
           return {
             id: String(item.id),
             restaurantId: item.restaurantId,
@@ -577,9 +577,23 @@ export default function CustomerDashboardOverviewPage() {
                   <div>
                     <div className="flex items-center justify-between pb-3 border-b border-[#1b3b2b]/10">
                       <div className="flex items-center gap-2.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#1b3b2b] animate-ping" />
-                        <span className="text-[11px] uppercase tracking-widest text-[#1b3b2b] font-extrabold">
-                          Confirmed Table Hold
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            upcomingReservation.status === "confirmed"
+                              ? "bg-emerald-600 animate-ping"
+                              : "bg-amber-500 animate-pulse"
+                          }`}
+                        />
+                        <span
+                          className={`text-[11px] uppercase tracking-widest font-extrabold ${
+                            upcomingReservation.status === "confirmed"
+                              ? "text-[#1b3b2b]"
+                              : "text-amber-800"
+                          }`}
+                        >
+                          {upcomingReservation.status === "confirmed"
+                            ? "Confirmed Table Hold"
+                            : "Pending Manager Confirmation"}
                         </span>
                       </div>
                       <span className="font-mono text-xs text-[#1b3b2b]/70 font-bold bg-[#1b3b2b]/5 px-2.5 py-1 rounded-lg">
@@ -597,8 +611,16 @@ export default function CustomerDashboardOverviewPage() {
                           {upcomingReservation.seatingArea}
                         </p>
                       </div>
-                      <span className="px-3 py-1 rounded-full bg-[#C05621] text-white text-xs font-bold shrink-0 shadow-sm">
-                        Table {upcomingReservation.tableNumber || "Reserved"}
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 shadow-sm ${
+                          upcomingReservation.status === "confirmed"
+                            ? "bg-[#C05621] text-white"
+                            : "bg-amber-100 text-amber-900 border border-amber-300"
+                        }`}
+                      >
+                        {upcomingReservation.status === "confirmed"
+                          ? `Table ${upcomingReservation.tableNumber || "Reserved"}`
+                          : "Awaiting Allocation"}
                       </span>
                     </div>
 
@@ -638,9 +660,15 @@ export default function CustomerDashboardOverviewPage() {
                       href="/dashboard/customer/reservations"
                       className="px-5 py-2.5 bg-white border border-[#1b3b2b]/20 hover:bg-[#1b3b2b]/5 text-[#1b3b2b] rounded-xl text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 shadow-xs cursor-pointer"
                     >
-                      <span>Digital Pass</span>
+                      <span>
+                        {upcomingReservation.status === "confirmed"
+                          ? "Digital Pass"
+                          : "Review Status"}
+                      </span>
                       <span className="material-symbols-outlined text-sm">
-                        confirmation_number
+                        {upcomingReservation.status === "confirmed"
+                          ? "confirmation_number"
+                          : "hourglass_top"}
                       </span>
                     </Link>
                   </div>

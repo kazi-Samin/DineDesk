@@ -125,9 +125,11 @@ export default function ReservationsPage() {
                 mealPeriod: "Dinner",
                 partySize: Number(guests) || 2,
                 seatingArea: String(seatingArea || "Main Hall"),
-                tableNumber: "12",
+                tableNumber: "Pending Allocation",
+                status: "PENDING",
+                statusDisplay: "Pending",
                 reservedFor: `${effectiveRawDate}T12:00:00.000Z`,
-                specialNotes: "Confirmed via DineDesk Web Portal",
+                specialNotes: "Pending Manager Approval via DineDesk Web Portal",
             };
 
             const response = await fetch(`${API_BASE_URL}/api/v1/reservations`, {
@@ -141,7 +143,7 @@ export default function ReservationsPage() {
             });
 
             if (response.ok) {
-                toast.success(`Table successfully reserved at ${currentRestaurant} for ${guests} guests!`);
+                toast.success(`Table reservation requested at ${currentRestaurant}! Awaiting manager confirmation.`);
                 router.push("/dashboard/customer/reservations");
             } else {
                 const errData = await response.json();

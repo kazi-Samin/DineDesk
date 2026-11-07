@@ -159,7 +159,7 @@ export default function VendorReservationsPage() {
 
   // Convert raw DB model strictly reading exact partySize, time, and user relation
   const mapDbReservationToUi = useCallback((dbRes: any, index: number): VendorReservation => {
-    const rawStatus = String(dbRes.status || "CONFIRMED").toUpperCase();
+    const rawStatus = String(dbRes.status || "PENDING").toUpperCase();
     let normalizedStatus: ReservationStatus = "confirmed";
 
     if (rawStatus === "PENDING") normalizedStatus = "pending";
