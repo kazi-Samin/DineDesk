@@ -379,13 +379,21 @@ export default function CustomerOrdersPage() {
       });
     }
 
+    const searchDishName = targetItem?.name || "";
+    const menuId = (targetItem as any)?.menuId || (targetItem as any)?.menuItemId;
+
     showToast(
-      `Redirecting to explore "${targetItem?.name || order.restaurantName}"...`
+      `Reordering "${searchDishName || order.restaurantName}"... Opening menu & cart.`
     );
     openDrawer();
 
-    const searchDishName = targetItem?.name || "";
-    router.push(`/explore?search=${encodeURIComponent(searchDishName)}`);
+    if (menuId) {
+      router.push(`/menus/${menuId}`);
+    } else if (searchDishName) {
+      router.push(`/explore?q=${encodeURIComponent(searchDishName)}`);
+    } else {
+      router.push(`/explore`);
+    }
   };
 
   const cleanFirstName = profile.fullName.split(" ")[0] || "Diner";
@@ -612,7 +620,30 @@ export default function CustomerOrdersPage() {
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Dynamic Live Tracker Button */}
+                          <Link
+                            href={`/order-confirmation/${order.orderId}`}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                              isActive
+                                ? "bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white"
+                                : "bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/60"
+                            }`}
+                            title={`Open live telemetry tracker for #${order.orderId}`}
+                          >
+                            <span className="relative flex h-2 w-2">
+                              {isActive && (
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              )}
+                              <span
+                                className={`relative inline-flex rounded-full h-2 w-2 ${
+                                  isActive ? "bg-emerald-400" : "bg-neutral-400"
+                                }`}
+                              />
+                            </span>
+                            <span>Live Tracker</span>
+                          </Link>
+
                           {isActive && (
                             <button
                               type="button"

@@ -11,7 +11,7 @@ import ExplorePagination from "@/components/explore/ExplorePagination";
 
 function ExploreContent() {
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get("q") || "";
+  const initialQuery = searchParams.get("q") || searchParams.get("search") || "";
   const initialCuisine = searchParams.get("cuisine") || "";
 
   // Interactive Filter States
@@ -67,6 +67,12 @@ function ExploreContent() {
         setLoading(false);
       });
   }, [search, selectedCuisines]);
+
+  // Sync search state if URL query changes
+  useEffect(() => {
+    const q = searchParams.get("q") || searchParams.get("search") || "";
+    if (q) setSearch(q);
+  }, [searchParams]);
 
   // Reset to page 1 whenever filters change
   useEffect(() => {
