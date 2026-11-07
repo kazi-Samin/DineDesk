@@ -553,10 +553,11 @@ export default function CustomerOrdersPage() {
                   return (
                     <article
                       key={order.orderId}
-                      className="bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-space-md hover:border-primary/40 transition-colors"
+                      className="bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant/60 shadow-xs flex flex-col xl:flex-row xl:items-center justify-between gap-4 hover:border-primary/40 hover:shadow-sm transition-all"
                     >
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-11 h-11 rounded-lg bg-surface-container-low flex items-center justify-center shrink-0 text-primary">
+                      {/* Left: Fulfillment Icon + Restaurant Details & Item Chips */}
+                      <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                        <div className="w-11 h-11 rounded-xl bg-surface-container-low flex items-center justify-center shrink-0 text-primary border border-outline-variant/40 shadow-2xs">
                           <span className="material-symbols-outlined text-xl">
                             {order.fulfillmentMode === "delivery"
                               ? "two_wheeler"
@@ -564,26 +565,29 @@ export default function CustomerOrdersPage() {
                           </span>
                         </div>
 
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-col gap-1 min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-headline-sm text-base text-primary font-bold">
+                            <h3 className="font-heading font-extrabold text-sm sm:text-base text-primary truncate max-w-[260px] sm:max-w-md">
                               {order.restaurantName}
                             </h3>
-                            <span className="font-mono text-xs text-on-surface-variant">
+                            <span className="font-mono text-[11px] text-on-surface-variant font-medium">
                               #{order.orderId}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-sm text-[11px] font-medium uppercase tracking-wider ${isCancelled
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-primary-fixed text-on-primary-fixed"
-                                }`}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
+                                isCancelled
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : isDelivered
+                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                  : "bg-amber-50 text-amber-800 border border-amber-200"
+                              }`}
                             >
                               {order.status}
                             </span>
                           </div>
 
                           <div className="flex flex-wrap items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">
-                            <span className="font-semibold text-on-surface">
+                            <span className="font-semibold text-on-surface text-[11px] sm:text-xs shrink-0">
                               {order.items.reduce(
                                 (sum, item) => sum + item.quantity,
                                 0
@@ -595,13 +599,13 @@ export default function CustomerOrdersPage() {
                                 key={idx}
                                 type="button"
                                 onClick={() => handleReorder(order, i)}
-                                className="hover:underline hover:text-primary transition-colors cursor-pointer text-left inline-flex items-center gap-0.5 bg-surface-container-low px-1.5 py-0.5 rounded border border-outline-variant/30"
+                                className="hover:underline hover:text-primary transition-colors cursor-pointer text-left inline-flex items-center gap-1 bg-surface-container-low hover:bg-surface-container px-2 py-0.5 rounded-lg border border-outline-variant/40 text-[11px] sm:text-xs font-medium"
                                 title={`Reorder & explore "${i.name}"`}
                               >
-                                <span>
+                                <span className="truncate max-w-[160px] sm:max-w-none">
                                   {i.quantity}x {i.name}
                                 </span>
-                                <span className="material-symbols-outlined text-[11px] text-primary">
+                                <span className="material-symbols-outlined text-[12px] text-primary shrink-0">
                                   open_in_new
                                 </span>
                               </button>
@@ -610,21 +614,22 @@ export default function CustomerOrdersPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between md:justify-end gap-3 pt-3 md:pt-0 border-t md:border-t-0 border-outline-variant/30">
-                        <div className="text-left md:text-right">
-                          <span className="text-[11px] text-on-surface-variant block">
+                      {/* Right: Price & Unified Action Controls (Never wraps into zigzag on laptops) */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between xl:justify-end gap-3 sm:gap-4 shrink-0 pt-3 xl:pt-0 border-t xl:border-t-0 border-outline-variant/30">
+                        <div className="flex items-center justify-between sm:block text-left xl:text-right shrink-0 pr-1 sm:pr-2">
+                          <span className="text-[10px] sm:text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">
                             Total Bill
                           </span>
-                          <span className="font-headline-sm text-base font-bold text-primary">
+                          <span className="font-heading font-black text-base sm:text-lg text-primary">
                             ${order.total.toLocaleString()}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                           {/* Dynamic Live Tracker Button */}
                           <Link
                             href={`/order-confirmation/${order.orderId}`}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer ${
+                            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
                               isActive
                                 ? "bg-[#1b3b2b] hover:bg-[#1b3b2b]/90 text-white"
                                 : "bg-surface-container-high hover:bg-surface-container-highest text-on-surface border border-outline-variant/60"
@@ -648,18 +653,19 @@ export default function CustomerOrdersPage() {
                             <button
                               type="button"
                               onClick={() => handleCancelOrder(order.orderId)}
-                              className="px-3 py-1.5 bg-error-container hover:bg-error text-on-error-container hover:text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                              className="px-3 py-1.5 sm:px-3 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 whitespace-nowrap"
                             >
                               Cancel
                             </button>
                           )}
+
                           <button
                             type="button"
                             onClick={() => handleReorder(order)}
-                            className="px-3 py-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-lg text-xs font-medium transition-colors border border-outline-variant/60 flex items-center gap-1 cursor-pointer"
+                            className="px-3 py-1.5 sm:px-3.5 sm:py-2 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-xl text-xs font-semibold transition-colors border border-outline-variant/60 flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
                             title={`Reorder and explore items from ${order.restaurantName}`}
                           >
-                            <span className="material-symbols-outlined text-sm">
+                            <span className="material-symbols-outlined text-[15px]">
                               replay
                             </span>
                             <span>Reorder</span>
