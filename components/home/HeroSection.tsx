@@ -78,8 +78,8 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="relative w-full bg-surface-container-low overflow-hidden pt-28 pb-16">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <section className="relative w-full bg-surface-container-low overflow-hidden pt-4 sm:pt-8 lg:pt-10 pb-12 sm:pb-16">
+      <div className="max-w-[1440px] mx-auto px-3.5 sm:px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
 
           {/* Text & Search Col with Slide Animation */}

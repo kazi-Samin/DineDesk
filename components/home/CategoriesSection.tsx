@@ -109,8 +109,8 @@ export default function CategoriesSection() {
   const [isPaused, setIsPaused] = useState(false);
 
   return (
-    <section className="w-full py-20 bg-surface-container-low overflow-hidden">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12 mb-12">
+    <section className="w-full py-12 sm:py-20 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-3.5 sm:px-6 lg:px-12 mb-8 sm:mb-12">
         <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
           <span className="text-xs text-secondary uppercase tracking-widest font-bold">
             Global Cuisines &amp; Specialties

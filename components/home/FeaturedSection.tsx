@@ -29,8 +29,8 @@ export default function FeaturedSection() {
   // Prevent server/client markup mismatch during initial hydration
   if (!mounted) {
     return (
-      <section className="w-full py-28 bg-surface-container-low overflow-hidden">
-        <div className="max-w-[1600px] mx-auto px-6 lg:px-16 xl:px-24">
+      <section className="w-full py-14 sm:py-20 lg:py-28 bg-surface-container-low overflow-hidden">
+        <div className="max-w-[1600px] mx-auto px-3.5 sm:px-6 lg:px-16 xl:px-24">
           <div className="h-96" />
         </div>
       </section>
@@ -57,8 +57,8 @@ export default function FeaturedSection() {
   };
 
   return (
-    <section className="w-full py-28 bg-surface-container-low overflow-hidden">
-      <div className="max-w-[1600px] mx-auto px-6 lg:px-16 xl:px-24">
+    <section className="w-full py-14 sm:py-20 lg:py-28 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1600px] mx-auto px-3.5 sm:px-6 lg:px-16 xl:px-24">
 
         {/* Premium Section Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 mb-16 relative">

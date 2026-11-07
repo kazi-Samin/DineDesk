@@ -10,8 +10,8 @@ export default function TopRatedSection() {
   const { openReservationModal } = useReservation();
 
   return (
-    <section className="w-full py-20 bg-surface-container-low overflow-hidden">
-      <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+    <section className="w-full py-12 sm:py-20 bg-surface-container-low overflow-hidden">
+      <div className="max-w-[1440px] mx-auto px-3.5 sm:px-6 lg:px-12">
 
         {/* Section Header */}
         <motion.div
