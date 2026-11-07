@@ -86,17 +86,28 @@ export default function ReservationStatusModal({
             </span>
           </div>
           <span
-            className={`px-3 py-1 rounded-lg font-label-sm text-xs font-semibold ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-sm text-xs font-semibold border shadow-2xs ${
               isConfirmed
-                ? "bg-primary-fixed text-on-primary-fixed"
+                ? "bg-emerald-50 text-emerald-950 border-emerald-600/30"
                 : isPending
-                ? "bg-secondary-fixed text-on-secondary-fixed"
+                ? "bg-amber-50 text-amber-900 border-amber-300/80"
                 : isCompleted
-                ? "bg-surface-container-high text-on-surface-variant"
-                : "bg-error-container text-on-error-container"
+                ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                : "bg-rose-50 text-rose-900 border-rose-200"
             }`}
           >
-            {reservation.statusDisplay}
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isConfirmed
+                  ? "bg-emerald-600"
+                  : isPending
+                  ? "bg-amber-500 animate-pulse"
+                  : isCompleted
+                  ? "bg-[#1b3b2b]/60"
+                  : "bg-rose-500"
+              }`}
+            />
+            <span>{reservation.statusDisplay}</span>
           </span>
         </div>
 

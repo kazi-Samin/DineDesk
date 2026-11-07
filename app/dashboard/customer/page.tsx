@@ -615,7 +615,7 @@ export default function CustomerDashboardOverviewPage() {
                         className={`px-3 py-1 rounded-full text-xs font-bold shrink-0 shadow-sm ${
                           upcomingReservation.status === "confirmed"
                             ? "bg-[#C05621] text-white"
-                            : "bg-amber-100 text-amber-900 border border-amber-300"
+                            : "bg-amber-50 text-amber-900 border border-amber-300/80"
                         }`}
                       >
                         {upcomingReservation.status === "confirmed"
@@ -758,11 +758,41 @@ export default function CustomerDashboardOverviewPage() {
                                 <span className="px-2 py-0.5 rounded bg-[#f8f9f6] text-[#1b3b2b]/70 text-[10px] font-mono font-bold">
                                   #{ord.orderId}
                                 </span>
-                                {isCancelled ? (
-                                  <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider">
-                                    Cancelled
-                                  </span>
-                                ) : null}
+                                {(() => {
+                                  const raw = String(ord.status || "").toLowerCase();
+                                  const isCanc = raw.includes("cancel") || raw.includes("reject");
+                                  const isDeliv = raw === "delivered" || raw === "completed";
+                                  const isTransit = raw.includes("delivery") || raw.includes("transit");
+                                  const isPrep = raw.includes("prep") || raw.includes("kitchen") || raw.includes("accept");
+
+                                  const badgeClass = isCanc
+                                    ? "bg-rose-50 text-rose-900 border-rose-200"
+                                    : isDeliv
+                                    ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                                    : isTransit
+                                    ? "bg-sky-50 text-sky-950 border-sky-300"
+                                    : isPrep
+                                    ? "bg-indigo-50 text-indigo-950 border-indigo-200"
+                                    : "bg-amber-50 text-amber-900 border-amber-300/80";
+
+                                  const label = isCanc
+                                    ? "Cancelled"
+                                    : isDeliv
+                                    ? "Completed"
+                                    : isTransit
+                                    ? "Out For Delivery"
+                                    : isPrep
+                                    ? "Preparing"
+                                    : "Pending";
+
+                                  return (
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${badgeClass}`}
+                                    >
+                                      <span>{label}</span>
+                                    </span>
+                                  );
+                                })()}
                               </div>
 
                               <p className="text-xs text-[#1b3b2b]/70 font-medium mt-1 line-clamp-1">

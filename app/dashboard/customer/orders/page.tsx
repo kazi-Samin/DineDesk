@@ -573,17 +573,52 @@ export default function CustomerOrdersPage() {
                             <span className="font-mono text-[11px] text-on-surface-variant font-medium">
                               #{order.orderId}
                             </span>
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                                isCancelled
-                                  ? "bg-red-50 text-red-700 border border-red-200"
-                                  : isDelivered
-                                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                                  : "bg-amber-50 text-amber-800 border border-amber-200"
-                              }`}
-                            >
-                              {order.status}
-                            </span>
+                            {(() => {
+                              const raw = String(order.status || "").toLowerCase();
+                              const isCanc = raw.includes("cancel") || raw.includes("reject");
+                              const isDeliv = raw === "delivered" || raw === "completed";
+                              const isTransit = raw.includes("delivery") || raw.includes("transit");
+                              const isPrep = raw.includes("prep") || raw.includes("kitchen") || raw.includes("accept");
+
+                              const badgeStyle = isCanc
+                                ? "bg-rose-50 text-rose-900 border-rose-200"
+                                : isDeliv
+                                ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                                : isTransit
+                                ? "bg-sky-50 text-sky-950 border-sky-300"
+                                : isPrep
+                                ? "bg-indigo-50 text-indigo-950 border-indigo-200"
+                                : "bg-amber-50 text-amber-900 border-amber-300/80";
+
+                              const dotColor = isCanc
+                                ? "bg-rose-500"
+                                : isDeliv
+                                ? "bg-[#1b3b2b]/60"
+                                : isTransit
+                                ? "bg-sky-600 animate-pulse"
+                                : isPrep
+                                ? "bg-indigo-600 animate-pulse"
+                                : "bg-amber-500 animate-pulse";
+
+                              const statusLabel = isCanc
+                                ? "Cancelled"
+                                : isDeliv
+                                ? "Completed"
+                                : isTransit
+                                ? "Out For Delivery"
+                                : isPrep
+                                ? "Preparing"
+                                : "Pending";
+
+                              return (
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${badgeStyle}`}
+                                >
+                                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                                  <span>{statusLabel}</span>
+                                </span>
+                              );
+                            })()}
                           </div>
 
                           <div className="flex flex-wrap items-center gap-1.5 text-xs text-on-surface-variant mt-0.5">

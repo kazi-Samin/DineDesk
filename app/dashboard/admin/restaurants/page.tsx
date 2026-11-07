@@ -201,15 +201,15 @@ export default function AdminRestaurantsPage() {
   const getStatusBadge = (st: string) => {
     switch (st) {
       case "CONFIRMED":
-        return "bg-emerald-50 text-emerald-800 border-emerald-200";
+        return "bg-emerald-50 text-emerald-950 border-emerald-600/30";
       case "SEATED":
-        return "bg-[#1b3b2b] text-[#E2B774] border-[#E2B774]/30";
+        return "bg-[#C05621]/10 text-[#C05621] border-[#C05621]/30";
       case "PENDING":
-        return "bg-amber-50 text-amber-900 border-amber-200";
+        return "bg-amber-50 text-amber-900 border-amber-300/80";
       case "COMPLETED":
-        return "bg-neutral-100 text-neutral-700 border-neutral-200";
+        return "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20";
       case "CANCELLED":
-        return "bg-rose-50 text-rose-800 border-rose-200";
+        return "bg-rose-50 text-rose-900 border-rose-200";
       default:
         return "bg-neutral-50 text-neutral-600 border-neutral-200";
     }

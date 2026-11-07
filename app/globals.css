@@ -317,12 +317,17 @@
 
   /* Verified Sage Badge */
   .dinedesk-badge-verified {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-fixed text-on-primary-fixed font-label-sm text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-950 border border-emerald-600/30 font-label-sm text-xs font-semibold shadow-2xs;
   }
 
   /* Alert Warning / Active Badge */
   .dinedesk-badge-warning {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary-fixed text-secondary font-label-sm text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300/80 font-label-sm text-xs font-semibold shadow-2xs;
+  }
+
+  /* Completed / Past Sage Badge */
+  .dinedesk-badge-completed {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#f0f4f1] text-[#1b3b2b] border border-[#1b3b2b]/20 font-label-sm text-xs font-semibold shadow-2xs;
   }
 }
 

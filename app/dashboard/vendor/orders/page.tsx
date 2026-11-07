@@ -607,16 +607,34 @@ export default function VendorIncomingOrdersPage() {
                               </span>
 
                               <span
-                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${isPending
-                                    ? "bg-amber-100 text-amber-900 border border-amber-300 animate-pulse"
-                                    : isPreparing
-                                      ? "bg-blue-100 text-blue-900 border border-blue-200"
-                                      : isDelivered
-                                        ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
-                                        : "bg-neutral-100 text-neutral-800 border border-neutral-200"
-                                  }`}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${
+                                  isPending
+                                    ? "bg-amber-50 text-amber-900 border-amber-300/80"
+                                    : isPreparing || isAccepted
+                                    ? "bg-indigo-50 text-indigo-950 border-indigo-200"
+                                    : isTransit
+                                    ? "bg-sky-50 text-sky-950 border-sky-300"
+                                    : isDelivered
+                                    ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                                    : isCancelled
+                                    ? "bg-rose-50 text-rose-900 border-rose-200"
+                                    : "bg-neutral-100 text-neutral-800 border-neutral-200"
+                                }`}
                               >
-                                {ord.status.replace("_", " ")}
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    isPending
+                                      ? "bg-amber-500 animate-pulse"
+                                      : isPreparing || isAccepted
+                                      ? "bg-indigo-600 animate-pulse"
+                                      : isTransit
+                                      ? "bg-sky-600 animate-pulse"
+                                      : isDelivered
+                                      ? "bg-[#1b3b2b]/60"
+                                      : "bg-rose-500"
+                                  }`}
+                                />
+                                {ord.status.replace(/_/g, " ")}
                               </span>
 
                               <span className="text-[11px] text-neutral-400 font-medium uppercase">
@@ -764,16 +782,34 @@ export default function VendorIncomingOrdersPage() {
                   </div>
 
                   <span
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${selectedOrder.status === "PENDING"
-                        ? "bg-amber-100 text-amber-900"
-                        : selectedOrder.status === "PREPARING"
-                          ? "bg-blue-100 text-blue-900"
-                          : selectedOrder.status === "DELIVERED"
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "bg-neutral-100 text-neutral-800"
-                      }`}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${
+                      selectedOrder.status === "PENDING"
+                        ? "bg-amber-50 text-amber-900 border-amber-300/80"
+                        : selectedOrder.status === "PREPARING" || selectedOrder.status === "ACCEPTED"
+                        ? "bg-indigo-50 text-indigo-950 border-indigo-200"
+                        : selectedOrder.status === "OUT_FOR_DELIVERY"
+                        ? "bg-sky-50 text-sky-950 border-sky-300"
+                        : selectedOrder.status === "DELIVERED"
+                        ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                        : selectedOrder.status === "CANCELLED" || selectedOrder.status === "REJECTED"
+                        ? "bg-rose-50 text-rose-900 border-rose-200"
+                        : "bg-neutral-100 text-neutral-800 border-neutral-200"
+                    }`}
                   >
-                    {selectedOrder.status}
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        selectedOrder.status === "PENDING"
+                          ? "bg-amber-500 animate-pulse"
+                          : selectedOrder.status === "PREPARING" || selectedOrder.status === "ACCEPTED"
+                          ? "bg-indigo-600 animate-pulse"
+                          : selectedOrder.status === "OUT_FOR_DELIVERY"
+                          ? "bg-sky-600 animate-pulse"
+                          : selectedOrder.status === "DELIVERED"
+                          ? "bg-[#1b3b2b]/60"
+                          : "bg-rose-500"
+                      }`}
+                    />
+                    {selectedOrder.status.replace(/_/g, " ")}
                   </span>
                 </div>
 
