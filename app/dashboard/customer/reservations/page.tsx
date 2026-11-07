@@ -171,7 +171,7 @@ export default function CustomerReservationsPage() {
         const apiData = await resApi.json();
         const list = apiData.reservations || apiData.data || apiData || [];
         dbReservations = list.map((item: any) => {
-          const rawStatus = String(item.status || "confirmed").toLowerCase();
+          const rawStatus = String(item.status || "pending").toLowerCase();
           return {
             id: String(item.id),
             restaurantId: String(item.restaurantId || item.restaurant?.id || ""),
@@ -196,7 +196,7 @@ export default function CustomerReservationsPage() {
             mealPeriod: item.mealPeriod || "Dinner",
             partySize: Number(item.partySize || 2),
             seatingArea: item.seatingArea || "Main Dining",
-            tableNumber: item.tableNumber || "1",
+            tableNumber: item.tableNumber || "Pending Allocation",
             status: rawStatus,
             statusDisplay:
               item.statusDisplay ||
@@ -204,7 +204,9 @@ export default function CustomerReservationsPage() {
                 ? "Confirmed"
                 : rawStatus === "cancelled"
                   ? "Cancelled"
-                  : "Pending"),
+                  : rawStatus === "completed"
+                    ? "Completed"
+                    : "Pending"),
             specialNotes: item.specialNotes || "",
             isFeaturedUpcoming:
               item.isFeaturedUpcoming ?? (rawStatus === "confirmed"),
@@ -298,6 +300,7 @@ export default function CustomerReservationsPage() {
         (r) => r.isFeaturedUpcoming && r.status === "confirmed"
       ) ||
       reservations.find((r) => r.status === "confirmed") ||
+      reservations.find((r) => r.status === "pending") ||
       null
     );
   }, [reservations]);
@@ -609,19 +612,45 @@ export default function CustomerReservationsPage() {
                           {featuredReservation.seatingArea}
                         </span>
                         <span className="font-label-sm text-label-sm flex items-center gap-1 font-semibold">
-                          <span className="material-symbols-outlined text-sm text-surface-tint">
-                            verified
+                          <span
+                            className={`material-symbols-outlined text-sm ${
+                              featuredReservation.status === "confirmed"
+                                ? "text-surface-tint"
+                                : "text-amber-600"
+                            }`}
+                          >
+                            {featuredReservation.status === "confirmed"
+                              ? "verified"
+                              : "hourglass_top"}
                           </span>{" "}
-                          Verified Hold
+                          {featuredReservation.status === "confirmed"
+                            ? "Verified Hold"
+                            : "Pending Review"}
                         </span>
                       </div>
                     </div>
 
                     <div className="lg:col-span-8 flex flex-col justify-between h-full gap-space-md">
                       <div className="flex flex-wrap items-center justify-between gap-space-sm">
-                        <div className="inline-flex items-center gap-space-xs px-2.5 py-1 bg-primary-fixed text-on-primary-fixed rounded-md font-label-sm text-label-sm font-semibold">
-                          <span className="w-2 h-2 rounded-full bg-surface-tint animate-pulse" />
-                          <span>Upcoming Seating Confirmed</span>
+                        <div
+                          className={`inline-flex items-center gap-space-xs px-2.5 py-1 rounded-md font-label-sm text-label-sm font-semibold ${
+                            featuredReservation.status === "confirmed"
+                              ? "bg-primary-fixed text-on-primary-fixed"
+                              : "bg-amber-100 text-amber-900 border border-amber-300"
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              featuredReservation.status === "confirmed"
+                                ? "bg-surface-tint animate-pulse"
+                                : "bg-amber-600 animate-pulse"
+                            }`}
+                          />
+                          <span>
+                            {featuredReservation.status === "confirmed"
+                              ? "Upcoming Seating Confirmed"
+                              : "Pending Manager Confirmation"}
+                          </span>
                         </div>
                         <span className="font-label-sm text-label-sm text-on-surface-variant font-mono font-medium">
                           CONFIRMATION REF: #{featuredReservation.id}
@@ -677,16 +706,29 @@ export default function CustomerReservationsPage() {
                       </div>
 
                       <div className="flex flex-wrap items-center gap-space-sm pt-space-xs">
-                        <button
-                          type="button"
-                          onClick={() => setPassModalRes(featuredReservation)}
-                          className="px-space-md py-2 bg-primary-container text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1.5 shadow-sm font-semibold cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-sm">
-                            confirmation_number
-                          </span>
-                          <span>Digital Seating Pass</span>
-                        </button>
+                        {featuredReservation.status === "confirmed" ? (
+                          <button
+                            type="button"
+                            onClick={() => setPassModalRes(featuredReservation)}
+                            className="px-space-md py-2 bg-primary-container text-on-primary rounded-lg font-label-sm text-label-sm hover:bg-primary transition-colors flex items-center gap-1.5 shadow-sm font-semibold cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              confirmation_number
+                            </span>
+                            <span>Digital Seating Pass</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setStatusModalRes(featuredReservation)}
+                            className="px-space-md py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-label-sm text-label-sm transition-colors flex items-center gap-1.5 shadow-sm font-semibold cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">
+                              hourglass_top
+                            </span>
+                            <span>Awaiting Manager Approval</span>
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setModifyModalRes(featuredReservation)}
@@ -915,15 +957,27 @@ export default function CustomerReservationsPage() {
 
                                 <td className="py-space-md px-space-md">
                                   <span
-                                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-label-sm text-label-sm font-semibold ${item.status === "cancelled"
-                                        ? "bg-red-100 text-red-800"
-                                        : "bg-primary-fixed text-on-primary-fixed"
-                                      }`}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] font-bold ${
+                                      item.status === "cancelled"
+                                        ? "bg-red-100 text-red-800 border border-red-200"
+                                        : item.status === "confirmed"
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                        : "bg-amber-100 text-amber-800 border border-amber-300"
+                                    }`}
                                   >
-                                    {item.statusDisplay ||
-                                      (item.status === "cancelled"
-                                        ? "Cancelled"
-                                        : "Confirmed")}
+                                    {item.status === "pending" && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
+                                    )}
+                                    {item.status === "confirmed" && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                                    )}
+                                    <span>
+                                      {item.status === "pending"
+                                        ? "Pending"
+                                        : item.status === "confirmed"
+                                        ? "Confirmed"
+                                        : item.statusDisplay || "Pending"}
+                                    </span>
                                   </span>
                                 </td>
 
@@ -937,6 +991,26 @@ export default function CustomerReservationsPage() {
                                           className="px-2.5 py-1 text-on-surface hover:bg-surface-container font-label-sm text-label-sm rounded-lg border border-outline-variant/40 cursor-pointer"
                                         >
                                           Voucher
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setCancelModalRes(item)
+                                          }
+                                          className="px-2.5 py-1 text-error hover:bg-error-container font-label-sm text-label-sm rounded-lg cursor-pointer"
+                                        >
+                                          Cancel
+                                        </button>
+                                      </>
+                                    )}
+                                    {item.status === "pending" && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => setStatusModalRes(item)}
+                                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-label-sm text-label-sm rounded-lg cursor-pointer font-medium"
+                                        >
+                                          Status
                                         </button>
                                         <button
                                           type="button"
