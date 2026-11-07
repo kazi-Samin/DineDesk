@@ -35,23 +35,23 @@ export default function OrderDetailDrawer({
   const getBadgeStyle = () => {
     switch (order.status) {
       case "pending":
-        return "bg-secondary text-on-secondary animate-pulse";
+        return "bg-amber-50 text-amber-900 border border-amber-300/80 animate-pulse";
       case "confirmed":
-        return "bg-primary-container text-on-primary";
+        return "bg-emerald-50 text-emerald-950 border border-emerald-600/30";
       case "preparing":
-        return "bg-amber-100 text-amber-900 border border-amber-300";
+        return "bg-indigo-50 text-indigo-950 border border-indigo-200 animate-pulse";
       case "ready":
-        return "bg-purple-100 text-purple-900 border border-purple-300";
+        return "bg-teal-50 text-teal-950 border border-teal-300";
       case "out_for_delivery":
-        return "bg-blue-100 text-blue-900 border border-blue-300";
+        return "bg-sky-50 text-sky-950 border border-sky-300 animate-pulse";
       case "delivered":
       case "completed":
-        return "bg-emerald-100 text-emerald-900 border border-emerald-300";
+        return "bg-[#f0f4f1] text-[#1b3b2b] border border-[#1b3b2b]/20";
       case "rejected":
       case "cancelled":
-        return "bg-error/10 text-error border border-error/20";
+        return "bg-rose-50 text-rose-900 border border-rose-200";
       default:
-        return "bg-surface-container text-on-surface";
+        return "bg-neutral-50 text-neutral-600 border border-neutral-200";
     }
   };
 

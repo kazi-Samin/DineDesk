@@ -174,32 +174,32 @@ export default function ReservationCard({
               </h3>
 
               {isConfirmed && (
-                <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-950 border border-emerald-600/30 text-[10px] font-bold uppercase tracking-wider shadow-2xs">
                   Confirmed
                 </span>
               )}
               {isSeated && (
-                <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#C05621]/10 text-[#C05621] border border-[#C05621]/30 text-[10px] font-bold uppercase tracking-wider animate-pulse">
                   Seated Now
                 </span>
               )}
               {isPending && (
-                <span className="px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-300/80 text-[10px] font-bold uppercase tracking-wider shadow-2xs animate-pulse">
                   Pending Request
                 </span>
               )}
               {isRejected && (
-                <span className="px-2.5 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-900 border border-rose-200 text-[10px] font-bold uppercase tracking-wider">
                   Declined
                 </span>
               )}
               {isCancelled && (
-                <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-600 border border-neutral-200 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200 text-[10px] font-bold uppercase tracking-wider">
                   Cancelled
                 </span>
               )}
               {reservation.status === "completed" && (
-                <span className="px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-full bg-[#f0f4f1] text-[#1b3b2b] border border-[#1b3b2b]/20 text-[10px] font-bold uppercase tracking-wider shadow-2xs">
                   Completed
                 </span>
               )}

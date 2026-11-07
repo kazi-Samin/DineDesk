@@ -615,16 +615,22 @@ export default function CustomerReservationsPage() {
                           <span
                             className={`material-symbols-outlined text-sm ${
                               featuredReservation.status === "confirmed"
-                                ? "text-surface-tint"
+                                ? "text-emerald-700"
+                                : featuredReservation.status === "completed"
+                                ? "text-[#1b3b2b]"
                                 : "text-amber-600"
                             }`}
                           >
                             {featuredReservation.status === "confirmed"
                               ? "verified"
+                              : featuredReservation.status === "completed"
+                              ? "task_alt"
                               : "hourglass_top"}
                           </span>{" "}
                           {featuredReservation.status === "confirmed"
                             ? "Verified Hold"
+                            : featuredReservation.status === "completed"
+                            ? "Seating Completed"
                             : "Pending Review"}
                         </span>
                       </div>
@@ -633,22 +639,28 @@ export default function CustomerReservationsPage() {
                     <div className="lg:col-span-8 flex flex-col justify-between h-full gap-space-md">
                       <div className="flex flex-wrap items-center justify-between gap-space-sm">
                         <div
-                          className={`inline-flex items-center gap-space-xs px-2.5 py-1 rounded-md font-label-sm text-label-sm font-semibold ${
+                          className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-label-sm text-xs font-semibold shadow-2xs border ${
                             featuredReservation.status === "confirmed"
-                              ? "bg-primary-fixed text-on-primary-fixed"
-                              : "bg-amber-100 text-amber-900 border border-amber-300"
+                              ? "bg-emerald-50 text-emerald-950 border-emerald-600/30"
+                              : featuredReservation.status === "completed"
+                              ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                              : "bg-amber-50 text-amber-900 border-amber-300/80"
                           }`}
                         >
                           <span
                             className={`w-2 h-2 rounded-full ${
                               featuredReservation.status === "confirmed"
-                                ? "bg-surface-tint animate-pulse"
-                                : "bg-amber-600 animate-pulse"
+                                ? "bg-emerald-600 animate-pulse"
+                                : featuredReservation.status === "completed"
+                                ? "bg-[#1b3b2b]/60"
+                                : "bg-amber-500 animate-pulse"
                             }`}
                           />
                           <span>
                             {featuredReservation.status === "confirmed"
                               ? "Upcoming Seating Confirmed"
+                              : featuredReservation.status === "completed"
+                              ? "Seating Completed"
                               : "Pending Manager Confirmation"}
                           </span>
                         </div>
@@ -956,29 +968,50 @@ export default function CustomerReservationsPage() {
                                 </td>
 
                                 <td className="py-space-md px-space-md">
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-label-sm text-[11px] font-bold ${
-                                      item.status === "cancelled"
-                                        ? "bg-red-100 text-red-800 border border-red-200"
-                                        : item.status === "confirmed"
-                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                                        : "bg-amber-100 text-amber-800 border border-amber-300"
-                                    }`}
-                                  >
-                                    {item.status === "pending" && (
-                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse" />
-                                    )}
-                                    {item.status === "confirmed" && (
-                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                                    )}
-                                    <span>
-                                      {item.status === "pending"
-                                        ? "Pending"
-                                        : item.status === "confirmed"
-                                        ? "Confirmed"
-                                        : item.statusDisplay || "Pending"}
-                                    </span>
-                                  </span>
+                                  {(() => {
+                                    const st = String(item.status || "").toLowerCase();
+                                    const isConf = st === "confirmed";
+                                    const isPend = st === "pending";
+                                    const isComp = st === "completed" || st === "seated";
+                                    const isCanc = st === "cancelled" || st === "declined" || st === "rejected";
+
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-label-sm text-[11px] font-semibold tracking-wide border shadow-2xs ${
+                                          isConf
+                                            ? "bg-emerald-50 text-emerald-950 border-emerald-600/30"
+                                            : isPend
+                                            ? "bg-amber-50 text-amber-900 border-amber-300/80"
+                                            : isComp
+                                            ? "bg-[#f0f4f1] text-[#1b3b2b] border-[#1b3b2b]/20"
+                                            : "bg-rose-50 text-rose-900 border-rose-200"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`w-1.5 h-1.5 rounded-full ${
+                                            isConf
+                                              ? "bg-emerald-600"
+                                              : isPend
+                                              ? "bg-amber-500 animate-pulse"
+                                              : isComp
+                                              ? "bg-[#1b3b2b]/60"
+                                              : "bg-rose-500"
+                                          }`}
+                                        />
+                                        <span>
+                                          {isPend
+                                            ? "Pending"
+                                            : isConf
+                                            ? "Confirmed"
+                                            : isComp
+                                            ? "Completed"
+                                            : isCanc
+                                            ? "Cancelled"
+                                            : item.statusDisplay || "Pending"}
+                                        </span>
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
 
                                 <td className="py-space-md px-space-lg text-right">
@@ -1008,7 +1041,7 @@ export default function CustomerReservationsPage() {
                                         <button
                                           type="button"
                                           onClick={() => setStatusModalRes(item)}
-                                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-label-sm text-label-sm rounded-lg cursor-pointer font-medium"
+                                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 font-label-sm text-label-sm rounded-lg cursor-pointer font-medium"
                                         >
                                           Status
                                         </button>
@@ -1022,6 +1055,15 @@ export default function CustomerReservationsPage() {
                                           Cancel
                                         </button>
                                       </>
+                                    )}
+                                    {(item.status === "completed" || (item.status as string) === "seated") && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setRateModalRes(item)}
+                                        className="px-2.5 py-1 bg-[#f0f4f1] hover:bg-[#1b3b2b]/10 text-[#1b3b2b] border border-[#1b3b2b]/20 font-label-sm text-label-sm rounded-lg cursor-pointer font-medium transition-colors"
+                                      >
+                                        Rate Visit
+                                      </button>
                                     )}
                                   </div>
                                 </td>
