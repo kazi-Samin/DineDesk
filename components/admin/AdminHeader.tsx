@@ -637,8 +637,6 @@ export default function AdminHeader({
         </div>
       </header>
 
-      <div className="h-20 w-full" />
-
       {/* Profile Edit Modal */}
       <AnimatePresence>
         {isEditProfileOpen && (
