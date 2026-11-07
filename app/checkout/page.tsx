@@ -165,10 +165,10 @@ export default function CheckoutPage() {
       }).catch(() => null);
 
       clearCart();
-      router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+      router.push(`/order-confirmation/${orderId}`);
     } catch (e) {
       clearCart();
-      router.push(`/dashboard/customer/orders?order_success=true&order_id=${orderId}`);
+      router.push(`/order-confirmation/${orderId}`);
     }
   };
 
@@ -236,7 +236,7 @@ export default function CheckoutPage() {
 
       clearCart();
       const createdOrderId = json.data?.order?.id;
-      router.push(`/dashboard/customer/orders?order_success=true&order_id=${createdOrderId}`);
+      router.push(`/order-confirmation/${createdOrderId}`);
     } catch (err: any) {
       console.error("Order dispatch error:", err);
       setOrderError(err.message || "An error occurred while creating your order.");
